@@ -50,9 +50,9 @@ category: Hub
 
 아니요. 저장된 CLI 로그인은 인간 조직 자격 증명입니다. 등록된 데몬에는 자체 관계 자격 증명이 있습니다. 대화형 `paseo hub logout`은 동일한 허브와 관련된 데몬 연결을 끊도록 제안합니다. 거부는 일반적인 현상이며, `--disconnect-daemon`을 전달하지 않으면 JSON 또는 비대화형 로그아웃이 절대로 연결 해제되지 않습니다.
 
-## 상담원이 Slack이나 Discord에 답장을 보낼 수 있나요?
+## 에이전트가 Slack이나 Discord에 답장을 보낼 수 있나요?
 
-그렇습니다. 단계에 `allow_outputs`을 입력하고 프롬프트에서 에이전트에게 `hub.reply`으로 전화하라고 지시하세요. [상담원에게 어떤 도구를 호출할지 알려주세요](/docs/hub/workflows#tell-the-agent-which-tool-to-call) 메시지가 표시됩니다. 응답 제한 및 `required`은 [출력 기능 참조](/docs/hub/configuration/hub-yml#output-capability)에 있습니다.
+그렇습니다. 단계에 `allow_outputs`을 입력하고 프롬프트에서 에이전트에게 `hub.reply`으로 호출하라고 지시하세요. [에이전트에게 어떤 도구를 호출할지 알려주세요](/docs/hub/workflows#tell-the-agent-which-tool-to-call) 메시지가 표시됩니다. 응답 제한 및 `required`은 [출력 기능 참조](/docs/hub/configuration/hub-yml#output-capability)에 있습니다.
 
 GitHub에는 응답 기능이 없습니다. 단계에 [`github` 블록](/docs/hub/github)을 제공하면 에이전트가 `gh` CLI를 통해 작동합니다.
 

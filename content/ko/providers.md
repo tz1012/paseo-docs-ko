@@ -8,7 +8,7 @@ category: Providers
 
 # 제공자
 
-Paseo는 자체 코딩 에이전트를 배송하지 않습니다. **이미 설치하고 인증한 기존 CLI**, Claude Code, Codex, OpenCode, Cursor, Gemini 등을 시작하고 감독합니다. 구독, 구성, 기술, MCP 서버는 모두 그대로 유지됩니다. Paseo는 UI, CLI, 릴레이 및 오케스트레이션을 제공합니다.
+Paseo는 자체 코딩 에이전트를 제공하지 않습니다. **이미 설치하고 인증한 기존 CLI**, Claude Code, Codex, OpenCode, Cursor, Gemini 등을 시작하고 감독합니다. 구독, 구성, 기술, MCP 서버는 모두 그대로 유지됩니다. Paseo는 UI, CLI, 릴레이 및 오케스트레이션을 제공합니다.
 
 ## 정신 모델
 

@@ -53,7 +53,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `list(options?)` | `PaseoAgentListResult` | 에이전트 페이지를 나열합니다. `scope`, `filter`, `sort`, `page` 및 `subscribe`은 데몬 디렉터리 쿼리와 일치합니다. |
 | `create(options)` | `PaseoAgentHandle` | `cwd`에 대한 에이전트와 새로운 작업 영역을 만듭니다. `config`이 필요합니다.                                         |
 | `ref(agentOrId)` | `PaseoAgentHandle` | 가져오지 않고 로컬 핸들을 만듭니다.                                                                     |
-| `subscribe(handler)` | 구독 취소 기능 | 연결-로컬 에이전트 디렉터리 업데이트를 수신합니다. 먼저 `list({ subscribe })`에 전화하세요.                      |
+| `subscribe(handler)` | 구독 취소 기능 | 연결-로컬 에이전트 디렉터리 업데이트를 수신합니다. 먼저 `list({ subscribe })`에 호출하세요.                      |
 
 생성 옵션에는 `config`, `cwd`, `parent`, `title`, `prompt`, `env`, `outputSchema`, `images`, `attachments`, `git`, `worktree`, `autoArchive` 및 `labels`.
 
@@ -104,7 +104,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `create(options)` | `PaseoWorkspaceHandle` | 항상 새로운 디렉터리 지원 또는 Paseo-worktree 작업 공간을 만듭니다.              |
 | `ref(workspaceOrId)` | `PaseoWorkspaceHandle` | 로컬 핸들을 만듭니다.                                                           |
 | `archive(workspaceOrId)` | `PaseoWorkspaceArchiveResult` | 먼저 핸들을 만들지 않고 보관합니다.                                         |
-| `subscribe(handler)` | 구독 취소 기능 | 연결-로컬 작업공간 업데이트를 수신합니다. `list({ subscribe })`에 먼저 전화하세요. |
+| `subscribe(handler)` | 구독 취소 기능 | 연결-로컬 작업공간 업데이트를 수신합니다. `list({ subscribe })`에 먼저 호출하세요. |
 
 작업 영역 핸들은 `id`, `projectId`, `directory`, `name`, `status`, `current()`, `refresh()`, `archive()` 및 `subscribe()`을 노출합니다. 작업공간 ID나 디렉터리를 반복하지 않고 에이전트를 생성하려면 `workspace.agents.create(options)`을 사용하세요.
 

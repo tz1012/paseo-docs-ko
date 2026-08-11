@@ -62,6 +62,6 @@ docker run -d --name paseo \
 
 ## 전제조건
 
-Paseo는 다른 에이전트를 관리하지만 배송하지는 않습니다. 유용하게 사용하려면 공급자 CLI를 하나 이상 직접 설치하고 자격 증명과 작동하는지 확인하세요. 전체 목록은 [지원되는 제공업체](/docs/supported-providers)를 참조하세요.
+Paseo는 다른 에이전트를 관리하지만 자체 제공하지는 않습니다. 유용하게 사용하려면 공급자 CLI를 하나 이상 직접 설치하고 자격 증명과 작동하는지 확인하세요. 전체 목록은 [지원되는 제공업체](/docs/supported-providers)를 참조하세요.
 
 또한 [GitHub CLI](https://cli.github.com/)(`gh`)를 설치하고 인증해야 하며 Paseo는 이를 PR 인식 작업 트리 및 몇 가지 오케스트레이션 기능에 사용합니다.

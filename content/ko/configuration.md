@@ -189,7 +189,7 @@ URI의 `password=`은 항상 env var보다 우선하므로 `PASEO_PASSWORD`을 �
 
 ## 릴레이
 
-새 집에는 `daemon.relay.enabled: false`을 쓰세요. Paseo는 장치를 페어링할 때 릴레이를 활성화하기 전에 묻습니다. 기존 주택은 저장된 가치를 유지합니다. 연결 방법을 선택 및 구성하려면 [연결](/docs/connectivity)을 참조하고, 릴레이 암호화 모델은 [보안](/docs/security)을 참조하세요.
+새 Paseo 홈 디렉터리에는 `daemon.relay.enabled: false`을 쓰세요. Paseo는 장치를 페어링할 때 릴레이를 활성화하기 전에 묻습니다. 기존 Paseo 홈 디렉터리는 저장된 값을 유지합니다. 연결 방법을 선택 및 구성하려면 [연결](/docs/connectivity)을 참조하고, 릴레이 암호화 모델은 [보안](/docs/security)을 참조하세요.
 
 `config.json`에서 지속 값을 설정합니다.
 

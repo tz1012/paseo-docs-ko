@@ -205,7 +205,7 @@ allow_outputs:
 
 Slack 워크플로는 `slack.reply`을 사용합니다. Discord 워크플로는 `discord.reply`을 사용합니다. 선언은 `hub.reply`을 부여하고 프롬프트는 에이전트에게 이를 호출하도록 지시해야 합니다. GitHub에는 응답 출력이 없습니다. 명시적인 [`github` 블록](/docs/hub/github)을 사용하세요.
 
-모든 단계는 `hub.finish_execution`을 받습니다. 프롬프트는 상담원에게 전화할 시기를 알려주어야 합니다. 허브는 완료 또는 응답 지침을 추가하지 않습니다. `output.schema`이 있는 경우 `hub.finish_execution`에는 스키마와 일치하는 `output` 값이 필요합니다. `allow_outputs` 항목이 `required: true`인 경우 에이전트는 완료하기 전에 해당 출력을 내보내야 합니다. `max`의 기본값은 `1`입니다.
+모든 단계는 `hub.finish_execution`을 받습니다. 프롬프트는 에이전트에게 호출할 시기를 알려주어야 합니다. 허브는 완료 또는 응답 지침을 추가하지 않습니다. `output.schema`이 있는 경우 `hub.finish_execution`에는 스키마와 일치하는 `output` 값이 필요합니다. `allow_outputs` 항목이 `required: true`인 경우 에이전트는 완료하기 전에 해당 출력을 내보내야 합니다. `max`의 기본값은 `1`입니다.
 
 ## 모놀리식 파일 마이그레이션
 

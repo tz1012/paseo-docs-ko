@@ -36,7 +36,7 @@ Paseo는 코딩 환경에서 받아쓰기 및 음성 모드 대화를 위한 최
 | `parakeet-tdt-0.6b-v2-int8` | 영어로만 제공됩니다(기본값). 구두점과 대문자를 포함합니다.                                                                                                                                                                                                             |
 | `parakeet-tdt-0.6b-v3-int8` | 25개 유럽 언어, 자동 감지됨: 불가리아어, 크로아티아어, 체코어, 덴마크어, 네덜란드어, 영어, 에스토니아어, 핀란드어, 프랑스어, 독일어, 그리스어, 헝가리어, 이탈리아어, 라트비아어, 리투아니아어, 몰타어, 폴란드어, 포르투갈어, 루마니아어, 러시아어, 슬로바키아어, 슬로베니아어, 스페인어, 스웨덴어, 우크라이나어. |
 
-**영어가 아닌 언어를 사용하려면 로컬 STT 모델을 `parakeet-tdt-0.6b-v3-int8`으로 전환하세요.** v3에서는 음성 언어를 자동으로 감지합니다. 언어별 설정은 없습니다. 아래의 `language` 필드는 로컬 앵무새 모델을 조종하지 **않습니다**(v2는 영어로만 제공되고 v3는 자동 감지됩니다). OpenAI STT 공급자에만 적용됩니다.
+**영어가 아닌 언어를 사용하려면 로컬 STT 모델을 `parakeet-tdt-0.6b-v3-int8`으로 전환하세요.** v3에서는 음성 언어를 자동으로 감지합니다. 언어별 설정은 없습니다. 아래의 `language` 필드는 로컬 Parakeet 모델을 조종하지 **않습니다**(v2는 영어로만 제공되고 v3는 자동 감지됩니다). OpenAI STT 공급자에만 적용됩니다.
 
 ```json
 {
@@ -72,7 +72,7 @@ Paseo는 코딩 환경에서 받아쓰기 및 음성 모드 대화를 위한 최
 }
 ```
 
-`language` 필드는 OpenAI STT 공급자에만 적용됩니다. 받아쓰기의 경우 `features.dictation.stt.language`을 설정하고 음성 모드의 경우 `features.voiceMode.stt.language`을 설정합니다. 음성 언어가 생략되면 Paseo는 `en`으로 대체되기 전에 받아쓰기 언어를 사용합니다. 로컬 앵무새 모델에는 영향을 미치지 않습니다.
+`language` 필드는 OpenAI STT 공급자에만 적용됩니다. 받아쓰기의 경우 `features.dictation.stt.language`을 설정하고 음성 모드의 경우 `features.voiceMode.stt.language`을 설정합니다. 음성 언어가 생략되면 Paseo는 `en`으로 대체되기 전에 받아쓰기 언어를 사용합니다. 로컬 Parakeet 모델에는 영향을 미치지 않습니다.
 
 ## OpenAI 음성 옵션
 
@@ -120,10 +120,10 @@ Paseo는 구성된 OpenAI 기본 URL에서 다음 경로를 사용합니다.
 - `PASEO_LOCAL_MODELS_DIR`, 로컬 모델 저장 디렉터리
 - `PASEO_DICTATION_LOCAL_STT_MODEL`, 로컬 받아쓰기 STT 모델 ID
 - `PASEO_VOICE_LOCAL_STT_MODEL`, `PASEO_VOICE_LOCAL_TTS_MODEL`, 현지 음성 STT/TTS 모델 ID
-- `PASEO_DICTATION_LANGUAGE`, 받아쓰기 STT 언어(OpenAI STT만 해당, 로컬 앵무새는 무시함)
-- `PASEO_VOICE_LANGUAGE`, 음성 모드 STT 언어; 설정 해제 시 `PASEO_DICTATION_LANGUAGE`으로 대체됩니다(OpenAI STT만 해당, 로컬 앵무새는 무시됨).
+- `PASEO_DICTATION_LANGUAGE`, 받아쓰기 STT 언어(OpenAI STT만 해당, 로컬 Parakeet 모델은 무시함)
+- `PASEO_VOICE_LANGUAGE`, 음성 모드 STT 언어; 설정 해제 시 `PASEO_DICTATION_LANGUAGE`으로 대체됩니다(OpenAI STT만 해당, 로컬 Parakeet 모델은 무시됨).
 - `PASEO_VOICE_LOCAL_TTS_SPEAKER_ID`, `PASEO_VOICE_LOCAL_TTS_SPEED`, 선택적으로 로컬 음성 TTS 튜닝
 
 ## 운영 참고 사항
 
-음성 모드에서는 에이전트를 시작하고 제어할 수 있습니다. 특히 작업 디렉터리나 파괴적인 작업을 지정할 때 직접 상담원 지침과 마찬가지로 음성 프롬프트를 주의해서 다루십시오.
+음성 모드에서는 에이전트를 시작하고 제어할 수 있습니다. 특히 작업 디렉터리나 파괴적인 작업을 지정할 때 직접 에이전트 지침과 마찬가지로 음성 프롬프트를 주의해서 다루십시오.

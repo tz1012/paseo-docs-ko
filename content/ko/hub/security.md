@@ -64,7 +64,7 @@ allow_outputs:
   - { type: discord.reply, max: 1, required: true }
 ```
 
-선언은 `hub.reply`을 부여합니다. 프롬프트는 상담원에게 전화하라고 알려야 합니다. GitHub에는 응답 추상화가 없습니다.
+선언은 `hub.reply`을 부여합니다. 프롬프트는 에이전트에게 호출하라고 알려야 합니다. GitHub에는 응답 추상화가 없습니다.
 
 ## 유한 분류자 경계 사용
 

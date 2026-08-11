@@ -76,7 +76,7 @@ paseo workspace create \
   --pr-number 2186
 ```
 
-Paseo가 소스 체크아웃에서 위조품을 추론할 수 없는 경우 `--forge <name>`을 추가하세요.
+Paseo가 소스 체크아웃에서 `forge`(코드 호스팅 서비스)를 식별할 수 없는 경우 `--forge <name>`을 추가하세요.
 
 ## paseo.json
 

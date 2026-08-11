@@ -84,7 +84,7 @@ paseo run --workspace <workspace-id> "implement authentication"
 paseo workspace archive <workspace-id>
 ```
 
-Paseo가 소스 체크아웃에서 위조품을 추론할 수 없는 경우 PR 체크아웃에 `--forge <name>`을 추가하세요. 설정 후크 및 서비스는 [Git 작업 트리](/docs/worktrees)를 참조하세요.
+Paseo가 소스 체크아웃에서 `forge`(코드 호스팅 서비스)를 식별할 수 없는 경우 PR 체크아웃에 `--forge <name>`을 추가하세요. 설정 후크 및 서비스는 [Git 작업 트리](/docs/worktrees)를 참조하세요.
 
 ## 작업공간 스크립트
 
@@ -138,7 +138,7 @@ paseo logs <id> --tail 10        # Last 10 entries
 paseo logs <id> --filter tools   # Only tool calls
 ```
 
-## 상담원을 기다리는 중
+## 에이전트를 기다리는 중
 
 에이전트가 현재 작업을 완료할 때까지 차단합니다.
 

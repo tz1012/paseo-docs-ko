@@ -100,7 +100,7 @@ await client.close();
 
 | 옵션 | 가치 |
 | ---------- | ----------------------------------------------------------------------------- |
-| `allowedTools` | 상담원이 묻지 않고 사용할 수 있는 도구 이름 |
+| `allowedTools` | 에이전트가 묻지 않고 사용할 수 있는 도구 이름 |
 | `disallowedTools` | 에이전트가 절대 사용할 수 없는 도구 이름 |
 | `additionalDirectories` | 에이전트가 액세스할 수 있는 추가 디렉터리 |
 | `sandbox` | `enabled`, `failIfUnavailable`, `allowUnsandboxedCommands`, `excludedCommands`, `filesystem`, `network` |

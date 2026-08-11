@@ -8,7 +8,7 @@ category: Orchestration
 
 # 일반적인 오케스트레이션 워크플로
 
-이 예는 주 상담원을 위한 프롬프트입니다. 작업에 맞게 공급자, 모델, 작업 및 분기 이름을 변경하세요.
+이 예는 주 에이전트를 위한 프롬프트입니다. 작업에 맞게 공급자, 모델, 작업 및 분기 이름을 변경하세요.
 
 ## 다른 모델에게 작업 보내기
 
@@ -76,7 +76,7 @@ Tell the parser worker to add the malformed-input case and rerun its test file.
 Cancel the UI worker's current turn, but keep the agent so I can redirect it.
 ```
 
-## 상담원의 지속적인 작업 유지
+## 에이전트의 지속적인 작업 유지
 
 현재 에이전트가 스스로 깨어나 작업을 재평가하고 작업을 계속해야 할 때 하트비트를 사용합니다.
 

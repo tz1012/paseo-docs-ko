@@ -99,4 +99,4 @@ filters:
 
 GitHub에는 응답 기능이 없습니다. 대신 [`github` 블록](/docs/hub/github)이 있는 단계에서는 `gh`을 통해 주석을 달았습니다. [출력 기능 참조](/docs/hub/configuration/hub-yml#output-capability)에 계약이 있습니다.
 
-선언은 `hub.reply` 도구를 부여합니다. 프롬프트는 상담원에게 전화하라고 알려야 합니다. [에이전트에게 호출할 도구 알려주기](/docs/hub/workflows#tell-the-agent-which-tool-to-call)를 참조하세요.
+선언은 `hub.reply` 도구를 부여합니다. 프롬프트는 에이전트에게 호출하라고 알려야 합니다. [에이전트에게 호출할 도구 알려주기](/docs/hub/workflows#tell-the-agent-which-tool-to-call)를 참조하세요.
