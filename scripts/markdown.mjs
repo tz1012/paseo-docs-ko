@@ -40,7 +40,9 @@ export function normalizeProductNames(text) {
     .replaceAll('상담원을', '에이전트를')
     .replaceAll('상담원은', '에이전트는')
     .replaceAll('상담원', '에이전트')
-    .replaceAll('상담사', '에이전트');
+    .replaceAll('상담사', '에이전트')
+    .replaceAll('심장박동을', '하트비트를')
+    .replaceAll('심장박동', '하트비트');
 }
 
 const navigationCategories = ['Getting started', 'Workspaces', 'Providers', 'Schedules', 'Orchestration', 'Browser', 'Configuration', 'TypeScript SDK', 'Hub', 'Troubleshooting'];

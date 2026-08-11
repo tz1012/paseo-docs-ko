@@ -62,7 +62,7 @@ paseo schedule create \
   "Review overnight CI failures and summarize anything urgent."
 ```
 
-## 심장박동
+## 하트비트
 
 실행 중인 Paseo 에이전트 내에서 동일한 대화에 대한 하트비트를 생성합니다.
 

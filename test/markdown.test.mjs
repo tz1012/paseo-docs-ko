@@ -18,6 +18,7 @@ test('creates valid relative links from nested documentation pages', () => {
 test('keeps the Paseo product name in its original spelling', () => {
   assert.equal(normalizeProductNames('파세오와 파세오 데스크톱 앱'), 'Paseo와 Paseo 데스크톱 앱');
   assert.equal(normalizeProductNames('상담원이 상담원을 기다립니다.'), '에이전트가 에이전트를 기다립니다.');
+  assert.equal(normalizeProductNames('심장박동을 만듭니다.'), '하트비트를 만듭니다.');
 });
 
 test('keeps navigation categories in the source documentation order', () => {
