@@ -32,3 +32,7 @@ export function relativePageLink(fromSlug, toSlug) {
   const path = [...up, ...toParts.slice(common)].join('/') + '.html';
   return path.startsWith('.') ? path : `./${path}`;
 }
+
+export function normalizeProductNames(text) {
+  return text.replaceAll('파세오', 'Paseo');
+}

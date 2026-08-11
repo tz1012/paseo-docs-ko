@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { protectMarkdown, restoreMarkdown, rewriteInternalLink, relativePageLink } from '../scripts/markdown.mjs';
+import { protectMarkdown, restoreMarkdown, rewriteInternalLink, relativePageLink, normalizeProductNames } from '../scripts/markdown.mjs';
 
 test('protects fenced code and inline code while translating prose', () => {
   const source = 'Install `paseo` now.\n\n```bash\nnpm install -g @getpaseo/cli\n```';
@@ -12,6 +12,10 @@ test('protects fenced code and inline code while translating prose', () => {
 test('creates valid relative links from nested documentation pages', () => {
   assert.equal(relativePageLink('hub/quickstart', 'browser'), '../browser.html');
   assert.equal(relativePageLink('hub/quickstart', 'hub/security'), './security.html');
+});
+
+test('keeps the Paseo product name in its original spelling', () => {
+  assert.equal(normalizeProductNames('파세오와 파세오 데스크톱 앱'), 'Paseo와 Paseo 데스크톱 앱');
 });
 
 test('rewrites only Paseo documentation links to mirror paths', () => {

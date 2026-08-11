@@ -12,10 +12,10 @@ Paseo 앱은 컴퓨터나 서버에서 실행되는 데몬에 연결됩니다. P
 
 이는 클라이언트에서 데몬으로의 전송입니다. GitHub, Slack, Discord 이벤트에서 에이전트를 시작하는 서비스를 찾고 있다면 바로 [Hub](/docs/hub)입니다.
 
-- [파세오 릴레이](#paseo-relay)
+- [Paseo 릴레이](#paseo-relay)
 - [테일스케일](#tailscale)
 
-## 파세오 릴레이
+## Paseo 릴레이
 
 릴레이는 Tailscale, 포트 전달 또는 네트워크 구성 없이 작동합니다. 트래픽은 엔드투엔드 암호화됩니다.
 

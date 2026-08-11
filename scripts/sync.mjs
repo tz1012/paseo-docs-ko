@@ -1,6 +1,6 @@
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join, relative, dirname } from 'node:path';
-import { protectMarkdown, restoreMarkdown } from './markdown.mjs';
+import { normalizeProductNames, protectMarkdown, restoreMarkdown } from './markdown.mjs';
 
 const source = process.env.PASEO_DOCS_SOURCE || '.upstream/public-docs';
 const target = 'content/ko';
@@ -40,7 +40,7 @@ async function translateMarkdown(markdown) {
     if (values.length !== group.length) throw new Error('Translation altered paragraph markers');
     group.forEach((index, offset) => { translated[index] = values[offset]; });
   }
-  return restoreMarkdown(translated.join(''), tokens);
+  return normalizeProductNames(restoreMarkdown(translated.join(''), tokens));
 }
 
 await rm(target, { recursive: true, force: true });
