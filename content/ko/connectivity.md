@@ -6,7 +6,7 @@ order: 4
 category: Getting started
 ---
 
-# 연결성
+# 연결
 
 Paseo 앱은 컴퓨터나 서버에서 실행되는 데몬에 연결됩니다. Paseo 릴레이를 통해 연결하거나 Tailscale을 통해 직접 연결할 수 있습니다.
 
