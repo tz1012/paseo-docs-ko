@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { protectMarkdown, restoreMarkdown, rewriteInternalLink, relativePageLink, normalizeProductNames, orderNavigationCategories } from '../scripts/markdown.mjs';
+import { renderMarkdown } from '../scripts/build.mjs';
 
 test('protects fenced code and inline code while translating prose', () => {
   const source = 'Install `paseo` now.\n\n```bash\nnpm install -g @getpaseo/cli\n```';
@@ -21,6 +22,14 @@ test('keeps the Paseo product name in its original spelling', () => {
 
 test('keeps navigation categories in the source documentation order', () => {
   assert.deepEqual(orderNavigationCategories(['Browser', 'Hub', 'Getting started', 'Workspaces']), ['Getting started', 'Workspaces', 'Browser', 'Hub']);
+});
+
+test('renders Markdown pipe tables as semantic HTML tables', () => {
+  const markdown = '| 이름 | 값 |\n| --- | --- |\n| `mode` | 활성 |';
+  const html = renderMarkdown(markdown);
+  assert.match(html, /<table>/);
+  assert.match(html, /<th>이름<\/th>/);
+  assert.match(html, /<td><code>mode<\/code><\/td>/);
 });
 
 test('rewrites only Paseo documentation links to mirror paths', () => {

@@ -22,15 +22,23 @@ function inline(text) {
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   return html;
 }
-function render(markdown) {
+export function renderMarkdown(markdown) {
   const lines = markdown.split(/\r?\n/); let html = ''; let code = false; let list = false;
   const closeList = () => { if (list) { html += '</ul>'; list = false; } };
-  for (const line of lines) {
+  const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim());
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
     if (line.startsWith('```')) { closeList(); html += code ? '</code></pre>' : `<pre><code class="language-${line.slice(3)}">`; code = !code; continue; }
     if (code) { html += `${escape(line)}\n`; continue; }
+    const separator = lines[index + 1]?.match(/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/);
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
     const item = line.match(/^[-*]\s+(.+)$/);
-    if (heading) { closeList(); const level = heading[1].length; const id = heading[2].toLowerCase().replace(/[^\w가-힣]+/g, '-'); html += `<h${level} id="${id}">${inline(heading[2])}</h${level}>`; }
+    if (line.startsWith('|') && separator) {
+      closeList(); const header = cells(line); index += 2; const rows = [];
+      while (index < lines.length && lines[index].startsWith('|')) { rows.push(cells(lines[index])); index++; }
+      index--; html += `<table><thead><tr>${header.map((cell) => `<th>${inline(cell)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${inline(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    }
+    else if (heading) { closeList(); const level = heading[1].length; const id = heading[2].toLowerCase().replace(/[^\w가-힣]+/g, '-'); html += `<h${level} id="${id}">${inline(heading[2])}</h${level}>`; }
     else if (item) { if (!list) { html += '<ul>'; list = true; } html += `<li>${inline(item[1])}</li>`; }
     else if (!line.trim()) { closeList(); }
     else { closeList(); html += `<p>${inline(line)}</p>`; }
@@ -45,11 +53,11 @@ const categoryLabels = { Browser:'브라우저', Configuration:'설정', 'Gettin
 const labelOverrides = { 'hub/triggers/discord':'Discord 트리거', 'hub/self-hosting/discord-app':'Hub용 Discord', 'hub/triggers/slack':'Slack 트리거', 'hub/self-hosting/slack-app':'Hub용 Slack', 'hub/triggers/github':'GitHub 트리거', 'hub/self-hosting/github-app':'Hub용 GitHub' };
 const groups = new Map(); for (const page of pages) { const category = page.data.category || '문서'; groups.set(category, [...(groups.get(category) || []), page]); }
 const navFor = (current) => orderNavigationCategories([...groups.keys()]).map((category) => `<section><h2>${escape(categoryLabels[category] || category)}</h2>${groups.get(category).map((page) => `<a href="${relativePageLink(current.slug, page.slug)}">${escape(labelOverrides[page.slug] || page.label || page.slug)}</a>`).join('')}</section>`).join('');
-const style = `:root{--bg:#0c1015;--panel:#121923;--text:#e7edf6;--muted:#9ba8ba;--line:#263346;--accent:#82d6ae}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.75 ui-sans-serif,system-ui,sans-serif}a{color:var(--accent);text-decoration:none}header{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;font-size:20px;font-weight:700}header span{color:var(--muted);font-size:13px;margin-left:12px;font-weight:400}.layout{display:grid;grid-template-columns:270px minmax(0,780px);gap:56px;max-width:1200px;margin:auto;padding:32px 24px}nav{position:sticky;top:18px;height:calc(100vh - 100px);overflow:auto}nav section{margin-bottom:23px}nav h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 6px}nav a{display:block;color:#c7d2df;padding:3px 0;font-size:14px}main{min-width:0}.notice{padding:14px 16px;background:#13271f;border:1px solid #28583f;border-radius:8px;color:#d5f4e0;font-size:14px}h1{font-size:38px;line-height:1.2;margin:28px 0 18px}h2{margin-top:38px;line-height:1.3}h3{margin-top:28px}p{margin:14px 0}pre{overflow:auto;padding:16px;background:#101722;border:1px solid var(--line);border-radius:8px}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#17202b;padding:2px 5px;border-radius:4px}pre code{background:none;padding:0}li{margin:4px 0}@media(max-width:760px){.layout{display:block;padding:20px}nav{position:static;height:auto;margin-bottom:30px}h1{font-size:30px}}`;
+const style = `:root{--bg:#0c1015;--panel:#121923;--text:#e7edf6;--muted:#9ba8ba;--line:#263346;--accent:#82d6ae}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.75 ui-sans-serif,system-ui,sans-serif}a{color:var(--accent);text-decoration:none}header{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;font-size:20px;font-weight:700}header span{color:var(--muted);font-size:13px;margin-left:12px;font-weight:400}.layout{display:grid;grid-template-columns:270px minmax(0,780px);gap:56px;max-width:1200px;margin:auto;padding:32px 24px}nav{position:sticky;top:18px;height:calc(100vh - 100px);overflow:auto}nav section{margin-bottom:23px}nav h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 6px}nav a{display:block;color:#c7d2df;padding:3px 0;font-size:14px}main{min-width:0}.notice{padding:14px 16px;background:#13271f;border:1px solid #28583f;border-radius:8px;color:#d5f4e0;font-size:14px}h1{font-size:38px;line-height:1.2;margin:28px 0 18px}h2{margin-top:38px;line-height:1.3}h3{margin-top:28px}p{margin:14px 0}pre{overflow:auto;padding:16px;background:#101722;border:1px solid var(--line);border-radius:8px}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#17202b;padding:2px 5px;border-radius:4px}pre code{background:none;padding:0}table{width:100%;border-collapse:collapse;display:table;overflow:auto;margin:18px 0}th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}th{background:#17202b}li{margin:4px 0}@media(max-width:760px){.layout{display:block;padding:20px}nav{position:static;height:auto;margin-bottom:30px}h1{font-size:30px}table{font-size:14px}}`;
 await rm(outputDir, { recursive: true, force: true });
 for (const page of pages) {
   const out = join(outputDir, `${page.slug}.html`); await mkdir(dirname(out), { recursive: true });
   const original = `https://paseo.sh/docs${page.slug === 'index' ? '' : `/${page.slug.replace(/\/index$/, '')}`}`;
-  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(page.label || 'Paseo 문서')} | Paseo 한국어 문서</title><style>${style}</style></head><body><header><a href="${relativePageLink(page.slug, 'index')}">Paseo</a><span>비공식 한국어 문서</span></header><div class="layout"><nav>${navFor(page)}</nav><main><div class="notice">이 문서는 Paseo 공식 문서의 비공식 한국어 번역입니다. 내용이 다를 경우 <a href="${original}">원문</a>이 우선합니다.</div>${render(page.body)}</main></div></body></html>`;
+  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(page.label || 'Paseo 문서')} | Paseo 한국어 문서</title><style>${style}</style></head><body><header><a href="${relativePageLink(page.slug, 'index')}">Paseo</a><span>비공식 한국어 문서</span></header><div class="layout"><nav>${navFor(page)}</nav><main><div class="notice">이 문서는 Paseo 공식 문서의 비공식 한국어 번역입니다. 내용이 다를 경우 <a href="${original}">원문</a>이 우선합니다.</div>${renderMarkdown(page.body)}</main></div></body></html>`;
   await writeFile(out, html, 'utf8');
 }
