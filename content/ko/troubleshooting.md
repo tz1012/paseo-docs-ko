@@ -24,6 +24,15 @@ Paseo는 이미 설치한 에이전트 CLI를 실행하지만 이를 번들로 �
 - **데몬 경로** — `PATH` Paseo가 검색 중입니다. 새로운 터미널에서 `echo $PATH`과 비교해 보세요.
 - **버전** — 바이너리가 실제로 실행되는지 여부입니다.
 
+터미널이나 에이전트에서 문제가 발생한 데몬에 동일한 진단을 요청하세요.
+
+```bash
+paseo provider diagnostic <provider>
+paseo provider diagnostic <provider> --host <host:port> --json
+```
+
+문제가 발생한 데몬이 CLI의 기본 로컬 데몬이 아니면 `--host`를 사용하세요.
+
 `not found`과 바이너리 디렉터리가 누락된 **데몬 경로**가 일반적인 경우입니다. 해당 디렉터리는 터미널의 `PATH`에 있지만 Paseo의 디렉터리에는 없습니다.
 
 ### 고치세요

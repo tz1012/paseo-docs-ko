@@ -23,6 +23,18 @@ paseo logs <id>                      # View agent timeline
 paseo stop <id>                      # Stop an agent
 ```
 
+## 공급자 진단
+
+데몬에게 실제로 사용하는 공급자 환경을 검사하도록 요청하세요.
+
+```bash
+paseo provider diagnostic claude
+paseo provider diagnostic codex --json
+paseo provider diagnostic opencode --host devbox:6767
+```
+
+진단에는 구성된 명령, 데몬 `PATH` 및 셸, 일치하는 바이너리, 확인된 경로, 버전, 모델 수, 공급자 상태가 포함됩니다. 원격 데몬에는 `--host`를 사용하세요. 이는 **설정 → 호스트 → 공급자 → 해당 공급자 → 진단**에 표시되는 것과 같은 진단입니다.
+
 ## 에이전트 실행 중
 
 작업으로 새 에이전트를 시작하려면 `paseo run`을 사용하세요.
@@ -76,11 +88,13 @@ paseo workspace create \
   --pr-number 2186
 ```
 
-그런 다음 이를 나열, 사용 또는 보관하십시오.
+그런 다음 이를 나열하거나 사용하거나 이름을 변경하거나 보관하세요.
 
 ```bash
 paseo workspace ls
 paseo run --workspace <workspace-id> "implement authentication"
+paseo workspace rename <workspace-id> "Auth rework"
+paseo workspace rename <workspace-id> --reset   # back to the branch or directory name
 paseo workspace archive <workspace-id>
 ```
 

@@ -257,6 +257,7 @@ PASEO_SERVICE_WEB_URL=http://web--my-app.localhost:6767
 ```bash
 paseo workspace ls
 paseo run --workspace <workspace-id> "implement auth"
+paseo workspace rename <workspace-id> "Auth rework"
 paseo workspace archive <workspace-id>
 ```
 
