@@ -72,9 +72,17 @@ environments:
     cwd: /workspace/project
     worktree:
       mode: branch-off
-      newBranch: paseo/review
+      newBranch: trigger-${{ paseo.execution.id }}
       base: origin/main
 ```
+
+`newBranch`는 브랜치 이름 문자열입니다. `${{ paseo.execution.id }}`를 삽입하면 실행의 UUID로 렌더링됩니다. 따라서 각 실행은 자체 브랜치로 `base`에서 분기하고, Hub가 해당 실행을 재시도하거나 복구할 때도 그 브랜치를 유지합니다.
+
+하나의 실행은 단일 단계 실행에 해당하므로, 동일한 환경을 선택하는 두 단계에는 각각 별도의 브랜치가 생성됩니다.
+
+`newBranch`가 허용하는 유일한 표현식은 `${{ paseo.execution.id }}`입니다. `paseo.prompt`, `paseo.context`, `paseo.inputs.*`, `values.*`, `steps.<id>.outputs.*` 및 제공자 이벤트 필드는 여기에서 사용할 수 없습니다. 허용되지 않은 표현식을 사용하면 `.paseo/hub.yml.environments.review.worktree.newBranch`처럼 표현식이 작성된 필드에서 번들 활성화에 실패합니다.
+
+`${{ paseo.execution.id }}`를 번들의 다른 위치에서 사용해도 같은 방식으로 활성화에 실패합니다. `branch`와 `prNumber`는 리터럴 값을 사용합니다.
 
 환경은 완전한 명명된 개체입니다. 단계는 이름을 선택합니다. 객체는 상속되거나 병합되거나 부분적으로 재정의되지 않습니다.
 

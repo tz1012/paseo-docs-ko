@@ -80,11 +80,13 @@ environments:
 ```yaml
 worktree:
   mode: branch-off
-  newBranch: hub/investigation
+  newBranch: trigger-${{ paseo.execution.id }}
   base: origin/main
 ```
 
-설정 후크 및 스크립트는 [Git 작업 트리](/docs/worktrees)를 참조하세요.
+`${{ paseo.execution.id }}`는 실행의 UUID로 렌더링되므로, 각 실행에는 `origin/main`에서 분기한 고유한 브랜치가 생성됩니다.
+
+`newBranch`가 허용하는 값은 [환경 필드](/docs/hub/configuration/hub-yml#environments)를 참조하세요. 설정 후크 및 스크립트는 [Git 작업 트리](/docs/worktrees)를 참조하세요.
 
 ## 허브가 소유한 것
 
