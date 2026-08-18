@@ -55,6 +55,7 @@ docker run -d --name paseo \
 - [Workspaces](/docs/workspaces), 프로젝트, 작업공간 및 세션 모델 Paseo는 이를 중심으로 구축되었습니다.
 - [공급자](/docs/providers), 공급자가 무엇인지, Paseo가 기존 CLI를 래핑하는 방법.
 - [오케스트레이션](/docs/orchestration): 한 에이전트가 작업을 다른 공급자 및 모델에 위임할 수 있습니다.
+- [플러그인](/docs/plugins), 신뢰할 수 있는 로컬 표면, 사이드바 작업, 데몬 동작, 작성기 첨부 파일을 추가합니다.
 - [CLI 참조](/docs/cli), 모든 명령.
 - [웹 UI 자체 호스팅](/docs/web-ui), 자체 데몬에서 브라우저 앱을 제공합니다.
 - [GitHub 저장소](https://github.com/getpaseo/paseo)

@@ -106,7 +106,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `archive(workspaceOrId)` | `PaseoWorkspaceArchiveResult` | 먼저 핸들을 만들지 않고 보관합니다.                                         |
 | `subscribe(handler)` | 구독 취소 기능 | 연결-로컬 작업공간 업데이트를 수신합니다. `list({ subscribe })`에 먼저 호출하세요. |
 
-작업 영역 핸들은 `id`, `projectId`, `directory`, `name`, `status`, `current()`, `refresh()`, `archive()` 및 `subscribe()`을 노출합니다. 작업공간 ID나 디렉터리를 반복하지 않고 에이전트를 생성하려면 `workspace.agents.create(options)`을 사용하세요.
+작업 영역 핸들은 `id`, `projectId`, `directory`, `name`, `status`, `current()`, `refresh()`, `setTitle(title)`, `archive()` 및 `subscribe()`을 노출합니다. 파생된 작업공간 이름으로 복원하려면 `setTitle`에 `null`을 전달하세요. 작업공간 ID나 디렉터리를 반복하지 않고 에이전트를 생성하려면 `workspace.agents.create(options)`을 사용하세요.
 
 ## `client.providers`
 

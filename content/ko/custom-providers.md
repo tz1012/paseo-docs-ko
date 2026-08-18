@@ -16,6 +16,8 @@ category: Providers
 - **ACP 에이전트**, Gemini CLI, Hermes 또는 stdio를 통해 에이전트 클라이언트 프로토콜을 사용하는 에이전트를 추가하세요.
 - 사용하지 않는 공급자를 **비활성화**합니다.
 
+파일을 편집한 후 `paseo reload`를 실행하세요. 공급자 변경은 데몬을 다시 시작하지 않아도 이후 실행에 적용됩니다.
+
 공급자 ID는 하이픈이 포함된 소문자 영숫자(`/^[a-z][a-z0-9-]*$/`)여야 합니다. 모든 사용자 정의 항목에는 `extends`(1급 공급자 ID 또는 `"acp"`) 및 `label`이 필요합니다.
 
 아래 예는 간략한 둘러보기입니다. 전체 최신 참조는 GitHub: [docs/custom-providers.md](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)에 있습니다.

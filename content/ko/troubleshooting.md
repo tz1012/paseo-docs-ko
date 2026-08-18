@@ -53,7 +53,7 @@ paseo provider diagnostic <provider> --host <host:port> --json
 }
 ```
 
-`command`은 `[binary, ...args]`이며 해당 공급자의 기본 시작 명령을 완전히 대체합니다. `which -a claude`으로 실제 경로를 찾으세요. `type -a claude`은 또한 `claude`이 쉘 별명 또는 함수일 뿐이라면 작동하지 않는다는 것을 알려줍니다. Paseo는 바이너리를 직접 실행하므로 그것이 가리키는 경로를 사용합니다. 편집 후 데몬을 다시 시작합니다([아래](#i-changed-configjson-but-nothing-happened) 참조).
+`command`은 `[binary, ...args]`이며 해당 공급자의 기본 시작 명령을 완전히 대체합니다. `which -a claude`으로 실제 경로를 찾으세요. `type -a claude`은 또한 `claude`이 쉘 별명 또는 함수일 뿐이라면 작동하지 않는다는 것을 알려줍니다. Paseo는 바이너리를 직접 실행하므로 그것이 가리키는 경로를 사용합니다. 편집 후 구성을 다시 로드합니다([아래](#i-changed-configjson-but-nothing-happened) 참조).
 
 대체 엔드포인트, 다중 프로필, 사용자 정의 바이너리 및 ACP 에이전트에 대해서는 [사용자 정의 공급자](/docs/custom-providers)를 참조하세요. 에이전트별 설치 링크는 [지원되는 공급자](/docs/supported-providers)를 참조하세요.
 
@@ -84,13 +84,15 @@ Dock 또는 Finder에서 **데스크톱 앱**을 열면 OS는 터미널의 `PATH
 
 ## config.json을 변경했지만 아무 일도 일어나지 않았습니다
 
-`config.json`은 데몬이 시작될 때 읽혀집니다. 편집 후 다시 시작하십시오.
+파일을 편집한 후 다시 로드합니다.
 
 ```bash
-paseo daemon restart
+paseo reload
 ```
 
-또는 앱에서 **설정 → 호스트 → 개요**를 열고 **데몬 다시 시작**을 사용하세요. 실행 중인 에이전트는 계속 진행되고 클라이언트는 자동으로 다시 연결됩니다.
+Paseo는 런타임에 안전한 설정을 적용하고 재시작이 필요한 경로를 알려줍니다. 잘못된 JSON이나 스키마 오류가 있으면 아무것도 적용하지 않습니다. 보고된 오류를 수정하고 명령을 다시 실행하세요. 시작 환경 변수나 플래그가 변경된 설정을 제어하면 다시 로드 결과에 별도로 표시됩니다.
+
+다시 로드에서 요청할 때만 `paseo daemon restart`를 실행하세요. 앱에서는 **설정 → 호스트 → 개요**를 열고 **데몬 다시 시작**을 사용합니다. 실행 중인 에이전트는 계속 진행되고 클라이언트는 자동으로 다시 연결됩니다.
 
 ## 아직도 막혔나요?
 

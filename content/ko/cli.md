@@ -1,6 +1,6 @@
 ---
 title: CLI
-description: "Paseo CLI reference: manage agents, workspaces, scripts, schedules, daemons, and permissions from your terminal."
+description: "Paseo CLI reference: manage projects, workspaces, agents, plugins, scripts, schedules, daemons, and permissions from your terminal."
 nav: CLI
 order: 3
 category: Getting started
@@ -59,6 +59,34 @@ paseo run --output-schema '{"type":"object","properties":{"summary":{"type":"str
 
 기본적으로 `paseo run`은 완료될 때까지 기다립니다. 에이전트가 계속 실행되는 동안 즉시 반환하려면 `--background`을 사용하세요.
 
+## 프로젝트
+
+현재 디렉터리를 프로젝트로 등록한 다음 데몬에 알려진 프로젝트를 나열합니다.
+
+```bash
+cd ~/dev/my-app
+paseo project create
+paseo project ls
+```
+
+`paseo project ls`에서 확인한 프로젝트 ID로 프로젝트 이름을 바꾸거나, 이름을 초기화하거나, 프로젝트를 삭제할 수 있습니다.
+
+```bash
+paseo project rename <project-id> "My app"
+paseo project rename <project-id> --reset
+paseo project delete <project-id>
+```
+
+`--reset`은 프로젝트 디렉터리에서 파생한 이름으로 복원합니다. 프로젝트를 삭제하면 활성 작업공간을 보관하고 Paseo에서 프로젝트를 제거하지만, 프로젝트 디렉터리는 삭제하지 않습니다.
+
+로컬 데몬에서 `paseo project create [path]`은 기본적으로 현재 디렉터리를 사용하며 CLI 머신을 기준으로 상대 경로를 해석합니다. `--host` 또는 `PASEO_HOST`를 사용할 때는 대상 데몬이 접근할 수 있는 경로를 지정하세요.
+
+```bash
+paseo project create /srv/repos/api --host devbox:6767
+```
+
+원격 데몬은 자체 머신을 기준으로 이 경로를 해석합니다. 프로젝트가 작업 디렉터리와 세션을 그룹화하는 방식은 [작업공간](/docs/workspaces)을 참조하세요.
+
 ## 작업공간
 
 에이전트를 시작하기 전에 파일을 준비하려면 독립적으로 작업공간을 만드세요.
@@ -98,7 +126,7 @@ paseo workspace rename <workspace-id> --reset   # back to the branch or director
 paseo workspace archive <workspace-id>
 ```
 
-Paseo가 소스 체크아웃에서 `forge`(코드 호스팅 서비스)를 식별할 수 없는 경우 PR 체크아웃에 `--forge <name>`을 추가하세요. 설정 후크 및 서비스는 [Git 작업 트리](/docs/worktrees)를 참조하세요.
+Paseo가 소스 체크아웃에서 forge(코드 호스팅 서비스)를 식별할 수 없는 경우 PR 체크아웃에 `--forge <name>`을 추가하세요. 설정 후크 및 서비스는 [Git 작업 트리](/docs/worktrees)를 참조하세요.
 
 ## 작업공간 스크립트
 
@@ -113,6 +141,23 @@ paseo script stop web
 기본적으로 Paseo는 현재 디렉토리가 있는 작업공간을 선택합니다. `--cwd <path>`을 전달하여 다른 디렉터리를 선택하거나, 디렉터리에 여러 작업 공간이 있는 경우 `--workspace <workspace-id>`을 전달합니다. 이러한 명령은 `--host` 및 `--json`과 같은 표준 출력 옵션도 허용합니다.
 
 출력에는 각 스크립트의 수명 주기와 감독되는 터미널 ID가 포함됩니다. 서비스에는 할당된 포트, 프록시 URL 및 상태도 포함됩니다. `paseo.json` 구성은 [Git 작업 트리](/docs/worktrees#scripts-and-services)를 참조하세요.
+
+## 플러그인
+
+데몬에서 신뢰할 수 있는 로컬 플러그인을 만들고 관리합니다.
+
+```bash
+paseo plugin init /absolute/path/to/plugin
+paseo plugin install /absolute/path/to/plugin
+paseo plugin ls
+paseo plugin reload my-plugin
+paseo plugin logs my-plugin
+paseo plugin disable my-plugin
+paseo plugin enable my-plugin
+paseo plugin remove my-plugin
+```
+
+`paseo plugin logs <id>`는 플러그인의 최근 데몬 측 stdout과 stderr을 반환합니다. 구조화된 항목을 받으려면 `--json`을, 다른 데몬을 대상으로 하려면 `--host <target>`을 추가하세요. 설치, 신뢰, 수명 주기, 로그 보존 동작은 [플러그인 참조](/docs/plugins/reference)를 확인하세요.
 
 ## 리스팅 에이전트
 
@@ -202,8 +247,12 @@ paseo agent detach <id>        # Make a subagent top-level
 paseo daemon start             # Start the daemon
 paseo daemon start --web-ui    # Start and serve the bundled web UI
 paseo daemon status            # Check status
+paseo reload                    # Reload config.json (top-level alias)
+paseo daemon reload             # Reload config.json
 paseo daemon stop              # Stop the daemon
 ```
+
+다시 로드는 파일 전체를 검증하고, 런타임에 안전한 변경을 적용한 다음 `appliedPaths`, `restartRequiredPaths`, `overrideControlledPaths`를 보고합니다. 사람이 읽는 출력에는 변경된 설정에 재시작이 필요할 때만 `paseo daemon restart`가 표시됩니다. 구조화된 결과에는 `--json` 또는 `--format yaml`을 사용하고, 원격 데몬의 구성 파일을 다시 로드하려면 `--host`를 사용하세요. 다시 로드를 지원하지 않는 이전 호스트는 호스트 업데이트 오류를 반환합니다.
 
 여러 개의 격리된 데몬 인스턴스를 실행하려면 `PASEO_HOME`을 사용하세요.
 
