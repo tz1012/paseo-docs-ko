@@ -41,7 +41,7 @@ my-plugin/
 
 플러그인, 표면, 사이드바 항목, 작업 공간 패널, 명령 센터 항목 및 첨부 파일 소스 ID는 소문자로 시작하고 소문자, 숫자 또는 하이픈을 포함합니다.
 
-생성된 선언 파일은 로컬 유형 검사를 위한 `@paseo/plugin` 유형을 제공합니다. Paseo는 런타임 모듈을 제공합니다. 플러그인 계약이 변경되면 일치하는 CLI를 사용하여 새 프로젝트를 다시 생성합니다.
+생성된 선언 파일은 로컬 유형 검사를 위한 `@paseo/plugin` 및 `@paseo/plugin/server` 유형을 제공합니다. Paseo는 런타임 모듈을 제공합니다. 플러그인 계약이 변경되면 일치하는 CLI를 사용하여 새 프로젝트를 다시 생성합니다.
 
 플러그인이 성장함에 따라 런타임별 파일을 추가합니다.
 
@@ -57,6 +57,13 @@ my-plugin/
 | `*.client.tsx` | React, React Native, 후크, 스타일, 표면, 패널 및 콜백. |
 | `*.server.ts` | 노드 API, 로컬 리소스, 자격 증명 및 RPC 처리기.           |
 | `*.shared.ts` | 두 런타임 모두에서 가져온 Zod RPC 계약 및 일반 값입니다.        |
+
+## SDK 모듈
+
+| 모듈 | 용도 |
+| ---------------------- | -------------------------------------------------------- |
+| `@paseo/plugin` | 후크 및 UI 유형 |
+| `@paseo/plugin/server` | `defineRpc`, `defineAttachmentSource` 및 처리기 유형 |
 
 Paseo는 `*.server` 파일에서 클라이언트 모듈로 가져오기를 거부하고 `*.client` 파일에서 서버 모듈로 가져오기를 거부합니다. Node 및 React Native 런타임 코드가 없는 공유 모듈을 유지하세요.
 
@@ -84,10 +91,28 @@ export default function contribute(plugin: PluginContext) {
 
 ```tsx
 import type { PluginSurfaceProps } from "@paseo/plugin";
-import { Text } from "react-native";
+import { useMemo } from "react";
+import { Text, View } from "react-native";
 
-export function Main({ host, layout }: PluginSurfaceProps) {
-  return <Text>{`${host.label} · ${layout.platform}`}</Text>;
+export function Main({ theme, host, layout }: PluginSurfaceProps) {
+  const styles = useMemo(
+    () => ({
+      screen: {
+        flex: 1,
+        padding: layout.compact ? 16 : 24,
+        backgroundColor: theme.colors.surface0,
+      },
+      title: { color: theme.colors.foreground },
+      detail: { color: theme.colors.foregroundMuted },
+    }),
+    [theme, layout.compact],
+  );
+  return (
+    <View style={styles.screen}>
+      <Text style={styles.title}>{host.label}</Text>
+      <Text style={styles.detail}>{layout.platform}</Text>
+    </View>
+  );
 }
 ```
 
@@ -112,14 +137,32 @@ export default function contribute(plugin: PluginContext) {
 `PluginSurfaceProps`에는 다음이 포함됩니다.
 
 | 필드 | 의미 |
-| -------- | -------------------------------------------- |
-| `theme` | Paseo 테마 값. 표면이 읽는 키의 유효성을 검사합니다. |
-| `host` | `id` 호스트를 선택하고 `label`을 표시합니다.                   |
-| `layout` | `compact` 및 `ios`, `android` 또는 `web` 플랫폼.    |
+| -------- | ------------------------------------------------------------ |
+| `theme` | 활성 Paseo 테마를 위한 형식화된 `PluginTheme` 색상 토큰. |
+| `host` | 선택한 호스트의 `id`와 표시용 `label`. |
+| `layout` | `compact` 및 `ios`, `android` 또는 `web` 플랫폼. |
 
 Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 쿼리 클라이언트를 소유합니다. 플러그인은 표면 본체를 소유합니다. 아이콘은 [Lucide](https://lucide.dev/icons/) 이름을 사용합니다.
 
-클라이언트 코드는 `react`, `react-native`, `@tanstack/react-query`, `zod` 및 `@paseo/plugin`을 가져올 수 있습니다. 유형 검사를 위해 로컬로 설치하십시오. Paseo는 클라이언트 런타임 인스턴스를 제공합니다.
+## 테마 및 레이아웃
+
+플러그인 UI는 모든 Paseo 테마에서 데스크톱, 브라우저, iOS, Android에서 실행됩니다. `theme`은 형식화된 `PluginTheme`입니다. 색상과 간격은 반드시 이 props에서 가져와야 합니다. 스타일이 지정되지 않은 `Text`는 검은색이므로 어두운 테마에서 제대로 표시되지 않습니다.
+
+`theme` 또는 `layout.compact`가 변경되면 스타일을 다시 생성하세요.
+
+| 키 | 필수 적용 대상 | 용도 |
+| ------------------------------ | -------------------------- | ----------------------------------- |
+| `theme.colors.foreground` | 모든 기본 `Text` | 제목 및 본문 |
+| `theme.colors.foregroundMuted` | 보조 `Text` | 레이블 및 보조 문구 |
+| `theme.colors.surface0` | 루트 뷰 | 패널 배경 |
+| `layout.compact` | 패딩 및 쌓기 | 모바일 및 좁은 창에서 `true` |
+| `layout.platform` | 플랫폼별 동작 | `ios`, `android` 또는 `web` |
+
+`#000`, `#fff` 또는 React Native의 기본 텍스트 색상을 하드코딩하지 마세요. 기본 문구에는 `foreground`를, 레이블에는 `foregroundMuted`를 사용하세요. `layout.compact`가 true이면 패딩을 줄이세요.
+
+작업공간 및 에이전트 패널도 동일한 `theme` 및 `layout` 필드를 받습니다.
+
+클라이언트 코드는 `react`, `react-native`, `@tanstack/react-query`, `zod`, `@paseo/plugin` 및 `@paseo/plugin/server`를 가져올 수 있습니다. 유형 검사를 위해 로컬로 설치하십시오. Paseo는 클라이언트 런타임 인스턴스를 제공합니다.
 
 ## 작업공간 패널
 
@@ -129,12 +172,30 @@ Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 �
 
 ```tsx
 import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@paseo/plugin";
-import { Text } from "react-native";
+import { useMemo } from "react";
+import { Text, View } from "react-native";
 
-export function ReviewPanel({ workspaceId, agentId }: PluginAgentPanelProps) {
+export function ReviewPanel({ theme, layout, workspaceId, agentId }: PluginAgentPanelProps) {
   const workspaceName = useWorkspace(workspaceId, (workspace) => workspace.name);
   const agent = useAgent(agentId, ({ id, title }) => ({ id, title }));
-  return <Text>{`${workspaceName} · ${agent?.title ?? agent?.id}`}</Text>;
+  const styles = useMemo(
+    () => ({
+      screen: {
+        flex: 1,
+        padding: layout.compact ? 16 : 24,
+        backgroundColor: theme.colors.surface0,
+      },
+      title: { color: theme.colors.foreground },
+      detail: { color: theme.colors.foregroundMuted },
+    }),
+    [theme, layout.compact],
+  );
+  return (
+    <View style={styles.screen}>
+      <Text style={styles.title}>{workspaceName}</Text>
+      <Text style={styles.detail}>{agent?.title ?? agent?.id}</Text>
+    </View>
+  );
 }
 ```
 
@@ -215,10 +276,12 @@ Paseo는 탭 포커스, 분할, 닫기, 지속성, 쿼리 상태, API/RPC 공급
 
 ## 명령 센터 항목
 
+macOS에서는 **⌘K**, Windows와 Linux에서는 **Ctrl+K**로 Command Center를 연 다음 항목 제목을 검색하세요.
+
 작업을 등록하고 콜백에서 패널을 엽니다.
 
 ```tsx
-import { defineRpc } from "@paseo/plugin";
+import { defineRpc } from "@paseo/plugin/server";
 import { z } from "zod";
 
 const refreshReview = defineRpc({
@@ -314,7 +377,7 @@ Zod와 하나의 계약을 정의하고, 하위 프로세스에서 처리하고,
 `greeting.shared.ts`:
 
 ```ts
-import { defineRpc } from "@paseo/plugin";
+import { defineRpc } from "@paseo/plugin/server";
 import { z } from "zod";
 
 export const greeting = defineRpc({
@@ -399,7 +462,7 @@ Paseo는 메모리에 플러그인당 최대 500개 항목과 256KiB를 유지�
 `issues.shared.ts`:
 
 ```ts
-import { defineAttachmentSource, defineRpc } from "@paseo/plugin";
+import { defineAttachmentSource, defineRpc } from "@paseo/plugin/server";
 import { z } from "zod";
 
 export const searchIssues = defineRpc({

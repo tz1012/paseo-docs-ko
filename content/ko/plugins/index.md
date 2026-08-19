@@ -34,29 +34,43 @@ npm install
 
 `init`은 엄격한 TypeScript 프로젝트를 생성하지만 패키지 관리자는 실행하지 않습니다. `index.ts`는 기여를 등록하고, 클라이언트 UI는 `*.client.tsx` 파일에 둡니다.
 
+플러그인은 데스크톱, 브라우저, iOS, Android에서 실행되며 Paseo는 여러 테마를 제공합니다. 모든 `Text` 색상은 `theme.colors.foreground` 또는 `theme.colors.foregroundMuted`에서 가져오고, 레이아웃 크기는 `layout.compact`에 맞추세요. 텍스트 색상을 검은색으로 하드코딩하면 어두운 테마에서 제대로 표시되지 않습니다.
+
 `main.client.tsx`를 다음으로 바꾸세요.
 
 ```tsx
 import { type PluginWorkspacePanelProps, useWorkspace } from "@paseo/plugin";
-import { StyleSheet, Text, View } from "react-native";
+import { useMemo } from "react";
+import { Text, View } from "react-native";
 
-export function WorkspaceOverview({ workspaceId }: PluginWorkspacePanelProps) {
+export function WorkspaceOverview({ theme, layout, workspaceId }: PluginWorkspacePanelProps) {
   const workspace = useWorkspace(workspaceId, ({ name, directory }) => ({
     name,
     directory,
   }));
+  const styles = useMemo(
+    () => ({
+      screen: {
+        flex: 1,
+        padding: layout.compact ? 16 : 24,
+        gap: layout.compact ? 8 : 12,
+        backgroundColor: theme.colors.surface0,
+      },
+      title: { color: theme.colors.foreground, fontSize: layout.compact ? 20 : 24 },
+      label: { color: theme.colors.foregroundMuted },
+      detail: { color: theme.colors.foreground },
+    }),
+    [theme, layout.compact],
+  );
+
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>{workspace?.name}</Text>
-      <Text>{workspace?.directory}</Text>
+      <Text style={styles.label}>Directory</Text>
+      <Text style={styles.detail}>{workspace?.directory}</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 24, gap: 8 },
-  title: { fontSize: 24 },
-});
 ```
 
 `index.ts`를 다음으로 바꾸세요.
@@ -86,7 +100,7 @@ export default function contribute(plugin: PluginContext) {
 }
 ```
 
-아이콘에는 [Lucide](https://lucide.dev/icons/) 아이콘 이름을 사용합니다. `*.client.tsx` 파일에서는 `StyleSheet.create` 같은 React Native 런타임 API를 사용할 수 있으며, Paseo는 이를 데몬 번들에서 제외합니다. 패널은 데스크톱, 브라우저, iOS, Android 클라이언트에서 작동합니다. 패널 props에는 안정적인 ID가 포함됩니다. `useWorkspace`는 RPC로 다시 가져오거나 관련 없는 작업공간 변경에 다시 렌더링하지 않고 구성 요소에 필요한 캐시 필드만 선택합니다.
+아이콘에는 [Lucide](https://lucide.dev/icons/) 아이콘 이름을 사용합니다. `*.client.tsx` 파일에서는 React Native 런타임 API를 사용할 수 있으며, Paseo는 이를 데몬 번들에서 제외합니다. 패널 props에는 안정적인 ID가 포함됩니다. `useWorkspace`는 RPC로 다시 가져오거나 관련 없는 작업공간 변경에 다시 렌더링하지 않고 구성 요소에 필요한 캐시 필드만 선택합니다. 필수 토큰은 [테마 및 레이아웃](/docs/plugins/reference#theme-and-layout)을 참조하세요.
 
 ## 확인 및 설치
 
@@ -96,7 +110,7 @@ paseo plugin install /absolute/path/to/workspace-plugin
 paseo plugin ls
 ```
 
-작업공간을 열고 Command Center에서 **작업공간 개요 열기**를 선택하세요. 일반 작업공간 탭으로 열립니다. 항목이 표시되지 않으면 **플러그인 활성화**가 켜져 있는지, `paseo plugin ls`에서 플러그인 상태가 `running`인지, 클라이언트가 플러그인을 설치한 호스트를 보고 있는지 확인하세요.
+작업공간을 열고 macOS에서는 **⌘K**, Windows와 Linux에서는 **Ctrl+K**를 누른 다음 **작업공간 개요 열기**를 선택하세요. 일반 작업공간 탭으로 열립니다. 항목이 표시되지 않으면 **플러그인 활성화**가 켜져 있는지, `paseo plugin ls`에서 플러그인 상태가 `running`인지, 클라이언트가 플러그인을 설치한 호스트를 보고 있는지 확인하세요.
 
 ## 편집하고 다시 로드
 
