@@ -41,7 +41,7 @@ my-plugin/
 
 플러그인, 표면, 사이드바 항목, 작업 공간 패널, 명령 센터 항목 및 첨부 파일 소스 ID는 소문자로 시작하고 소문자, 숫자 또는 하이픈을 포함합니다.
 
-생성된 선언 파일은 로컬 유형 검사를 위한 `@paseo/plugin` 및 `@paseo/plugin/server` 유형을 제공합니다. Paseo는 런타임 모듈을 제공합니다. 플러그인 계약이 변경되면 일치하는 CLI를 사용하여 새 프로젝트를 다시 생성합니다.
+생성된 선언 파일은 로컬 유형 검사를 위한 `@getpaseo/plugin` 및 `@getpaseo/plugin/server` 유형을 제공합니다. Paseo는 런타임 모듈을 제공합니다. 플러그인 계약이 변경되면 일치하는 CLI를 사용하여 새 프로젝트를 다시 생성합니다.
 
 플러그인이 성장함에 따라 런타임별 파일을 추가합니다.
 
@@ -62,8 +62,8 @@ my-plugin/
 
 | 모듈 | 용도 |
 | ---------------------- | -------------------------------------------------------- |
-| `@paseo/plugin` | 후크 및 UI 유형 |
-| `@paseo/plugin/server` | `defineRpc`, `defineAttachmentSource` 및 처리기 유형 |
+| `@getpaseo/plugin` | 후크 및 UI 유형 |
+| `@getpaseo/plugin/server` | `defineRpc`, `defineAttachmentSource` 및 처리기 유형 |
 
 Paseo는 `*.server` 파일에서 클라이언트 모듈로 가져오기를 거부하고 `*.client` 파일에서 서버 모듈로 가져오기를 거부합니다. Node 및 React Native 런타임 코드가 없는 공유 모듈을 유지하세요.
 
@@ -72,7 +72,7 @@ Paseo는 `*.server` 파일에서 클라이언트 모듈로 가져오기를 거�
 `index.ts`는 기여를 연결하고 하나의 기여 함수를 기본으로 내보냅니다. 정리할 것이 없어도 정리 함수를 반환해야 합니다.
 
 ```ts
-import type { PluginContext } from "@paseo/plugin";
+import type { PluginContext } from "@getpaseo/plugin";
 import { Main } from "./main.client";
 
 export default function contribute(plugin: PluginContext) {
@@ -90,7 +90,7 @@ export default function contribute(plugin: PluginContext) {
 `main.client.tsx`:
 
 ```tsx
-import type { PluginSurfaceProps } from "@paseo/plugin";
+import type { PluginSurfaceProps } from "@getpaseo/plugin";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -119,7 +119,7 @@ export function Main({ theme, host, layout }: PluginSurfaceProps) {
 `index.ts`:
 
 ```ts
-import type { PluginContext } from "@paseo/plugin";
+import type { PluginContext } from "@getpaseo/plugin";
 import { Main } from "./main.client";
 
 export default function contribute(plugin: PluginContext) {
@@ -162,7 +162,7 @@ Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 �
 
 작업공간 및 에이전트 패널도 동일한 `theme` 및 `layout` 필드를 받습니다.
 
-클라이언트 코드는 `react`, `react-native`, `@tanstack/react-query`, `zod`, `@paseo/plugin` 및 `@paseo/plugin/server`를 가져올 수 있습니다. 유형 검사를 위해 로컬로 설치하십시오. Paseo는 클라이언트 런타임 인스턴스를 제공합니다.
+클라이언트 코드는 `react`, `react-native`, `@tanstack/react-query`, `zod`, `@getpaseo/plugin` 및 `@getpaseo/plugin/server`를 가져올 수 있습니다. 유형 검사를 위해 로컬로 설치하십시오. Paseo는 클라이언트 런타임 인스턴스를 제공합니다.
 
 ## 작업공간 패널
 
@@ -171,7 +171,7 @@ Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 �
 `review.client.tsx`:
 
 ```tsx
-import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@paseo/plugin";
+import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@getpaseo/plugin";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -202,7 +202,7 @@ export function ReviewPanel({ theme, layout, workspaceId, agentId }: PluginAgent
 `index.ts`:
 
 ```ts
-import type { PluginContext } from "@paseo/plugin";
+import type { PluginContext } from "@getpaseo/plugin";
 import { ReviewPanel } from "./review.client";
 
 export default function contribute(plugin: PluginContext) {
@@ -281,7 +281,7 @@ macOS에서는 **⌘K**, Windows와 Linux에서는 **Ctrl+K**로 Command Center�
 작업을 등록하고 콜백에서 패널을 엽니다.
 
 ```tsx
-import { defineRpc } from "@paseo/plugin/server";
+import { defineRpc } from "@getpaseo/plugin/server";
 import { z } from "zod";
 
 const refreshReview = defineRpc({
@@ -336,7 +336,7 @@ plugin.addCommandCenterItem({
 표면에서 일반 Paseo 작업을 수행할 때는 `usePaseo()`를 사용하세요. 선택한 호스트의 기존 연결을 빌려오며, 별도 클라이언트를 만들면 안 됩니다.
 
 ```tsx
-import { usePaseo } from "@paseo/plugin";
+import { usePaseo } from "@getpaseo/plugin";
 import { Pressable, Text } from "react-native";
 
 function PullRequestAction() {
@@ -377,7 +377,7 @@ Zod와 하나의 계약을 정의하고, 하위 프로세스에서 처리하고,
 `greeting.shared.ts`:
 
 ```ts
-import { defineRpc } from "@paseo/plugin/server";
+import { defineRpc } from "@getpaseo/plugin/server";
 import { z } from "zod";
 
 export const greeting = defineRpc({
@@ -390,7 +390,7 @@ export const greeting = defineRpc({
 `greeting.client.tsx`:
 
 ```tsx
-import { useRpc } from "@paseo/plugin";
+import { useRpc } from "@getpaseo/plugin";
 import { greeting } from "./greeting.shared";
 
 export function GreetingButton() {
@@ -414,7 +414,7 @@ export function createGreeting({ name }: ZodOutput<typeof greeting.input>) {
 `index.ts`:
 
 ```ts
-import type { PluginContext } from "@paseo/plugin";
+import type { PluginContext } from "@getpaseo/plugin";
 import { GreetingButton } from "./greeting.client";
 import { createGreeting } from "./greeting.server";
 import { greeting } from "./greeting.shared";
@@ -462,7 +462,7 @@ Paseo는 메모리에 플러그인당 최대 500개 항목과 256KiB를 유지�
 `issues.shared.ts`:
 
 ```ts
-import { defineAttachmentSource, defineRpc } from "@paseo/plugin/server";
+import { defineAttachmentSource, defineRpc } from "@getpaseo/plugin/server";
 import { z } from "zod";
 
 export const searchIssues = defineRpc({
@@ -507,7 +507,7 @@ export function search({ query }: ZodOutput<typeof searchIssues.input>) {
 `index.ts`:
 
 ```ts
-import type { PluginContext } from "@paseo/plugin";
+import type { PluginContext } from "@getpaseo/plugin";
 import { search } from "./issues.server";
 import { issues, searchIssues } from "./issues.shared";
 
