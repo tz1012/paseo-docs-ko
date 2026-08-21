@@ -6,9 +6,9 @@ order: 60
 category: Hub
 ---
 
-# 허브
+# Hub
 
-데몬은 사용자를 위해 한 시스템에서 에이전트를 실행합니다. Paseo Hub는 데몬 위의 레이어입니다. 여기에 데몬을 등록하면 자체적으로는 갖고 있지 않은 기능을 제공합니다.
+데몬은 한 머신에서 사용자를 위해 에이전트를 실행합니다. Paseo Hub는 데몬 위의 계층입니다. 데몬을 Hub에 등록하면 데몬만으로는 제공할 수 없는 기능을 사용할 수 있습니다.
 
 ```text
              Hub
@@ -17,18 +17,18 @@ category: Hub
  laptop    devbox    build server
 ```
 
-오늘 당신에게 주는 것:
+현재 제공되는 기능은 다음과 같습니다.
 
-- GitHub, Slack 및 Discord의 활동을 통해 자체적으로 시작되는 에이전트입니다.
-- 저장소에 상주하며 푸시할 때 배포되는 구성입니다.
-- 도착한 모든 것, 일치한 것, 실행된 것에 대한 기록입니다.
-- 팀이 모든 것을 한 곳에서 볼 수 있습니다.
+- GitHub, Slack, Discord의 활동을 계기로 자동 시작되는 에이전트
+- 저장소에 보관되고 푸시할 때 배포되는 구성
+- 도착한 모든 요청과 일치 결과, 실행 내역을 담은 기록
+- 팀이 모든 정보를 한곳에서 볼 수 있는 공간
 
-데몬은 항상 그랬던 것처럼 에이전트를 계속 실행합니다. 허브는 언제 요청할지 결정합니다.
+데몬은 늘 실행되던 곳에서 계속 에이전트를 실행합니다. Hub는 언제 데몬에 작업을 요청할지 결정합니다.
 
-## 당신이 쓰는 것
+## 저장소에 포함되는 항목
 
-하나의 프로젝트 리소스 파일 이름 환경 및 전체 에이전트 구성. 검색된 각 워크플로 파일은 순서가 지정된 단계 옆에 하나의 트리거를 유지합니다.
+`paseo hub init`은 환경과 에이전트를 정의하는 프로젝트 리소스 파일과 안전한 시작용 워크플로를 만듭니다.
 
 ```text
 .paseo/
@@ -39,22 +39,23 @@ category: Hub
         └── answer.md
 ```
 
-번들을 푸시하고 봇을 언급하면 에이전트가 컴퓨터에서 시작됩니다. [빠른 시작](/docs/hub/quickstart)은 첫 번째 번들을 빌드합니다. [워크플로](/docs/hub/workflows)에서는 라우팅 및 제공업체별 응답을 다룹니다.
+번들을 배포한 뒤 봇을 멘션하면 사용자의 머신에서 에이전트가 시작됩니다. [빠른 시작](/docs/hub/quickstart)은 안내형 설정 과정을 진행하고, [워크플로](/docs/hub/workflows)는 라우팅과 제공업체별 응답을 설명합니다.
 
 ## 읽는 순서
 
-1. [작동 방식](/docs/hub/concepts)
-2. [데몬](/docs/hub/daemons)
-3. [트리거](/docs/hub/triggers)
-4. [워크플로](/docs/hub/workflows)
-5. [GitHub 접속](/docs/hub/github)
-6. [설정](/docs/hub/configuration)
-7. [보안](/docs/hub/security)
+1. [빠른 시작](/docs/hub/quickstart)
+2. [작동 방식](/docs/hub/concepts)
+3. [데몬](/docs/hub/daemons)
+4. [트리거](/docs/hub/triggers)
+5. [워크플로](/docs/hub/workflows)
+6. [GitHub 액세스](/docs/hub/github)
+7. [구성](/docs/hub/configuration)
+8. [보안](/docs/hub/security)
 
-[빠른 시작](/docs/hub/quickstart)은 수행으로 시작하려는 경우 끝까지 진행됩니다.
+워크플로가 GitHub, Slack, Discord 또는 API의 요청을 받는다면 에이전트에 작업 디렉터리나 출력 기능에 대한 액세스 권한을 부여하기 전에 [Hub 보안](/docs/hub/security)을 읽으세요.
 
-워크플로가 GitHub, Slack, Discord 또는 API의 요청을 수락하는 경우 에이전트에게 작업 디렉터리 또는 출력 기능에 대한 액세스 권한을 부여하기 전에 [허브 보안](/docs/hub/security)을 읽어보세요.
+## Hub 직접 실행하기
 
-## 실행되는 곳
+먼저 임베디드 데이터베이스를 사용해 로컬 머신에서 시작하고, 필요할 때만 PostgreSQL이나 공개 배포를 추가하세요. [자체 호스팅](/docs/hub/self-hosting)에서 각 단계를 설명합니다.
 
-이 페이지와 이 페이지에 링크된 페이지의 모든 내용은 [호스팅된 허브](/docs/hub/hosted)와 [자체 호스팅](/docs/hub/self-hosting)에서 직접 실행하는 허브에서 동일한 방식으로 작동합니다.
+[호스팅 Hub](/docs/hub/hosted)도 같은 프로젝트, 워크플로, 데몬, 활동 모델을 사용합니다. 현재 신규 계정 등록은 닫혀 있습니다.

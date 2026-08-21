@@ -1,82 +1,63 @@
 ---
 title: GitHub for Hub
-description: Create the GitHub App your Hub uses, install it, and connect it to an organization.
+description: Create the GitHub App your Hub uses for repository access and event triggers.
 nav: GitHub App
 order: 75
 category: Hub
 ---
 
-# 허브용 GitHub
+# Hub용 GitHub
 
-Hub는 귀하가 소유한 GitHub 앱을 통해 GitHub와 통신합니다. 하나의 앱이 전체 허브에 서비스를 제공합니다. 이를 설치하는 각 계정이나 조직은 연결이 됩니다.
+Hub는 사용자가 만들고 소유하는 GitHub App을 통해 GitHub와 통신합니다. 하나의 App이 Hub 전체를 지원하며, App을 설치한 각 계정이나 조직이 하나의 연결이 됩니다.
 
-## 앱 만들기
+**Apps → GitHub**를 여세요. Hub는 현재 콜백 URL, 필요한 저장소 권한, 구독 이벤트, GitHub에서 복사해 올 필드를 제공합니다. 저장하기 전에 App을 검증합니다.
 
-해당 앱을 소유해야 하는 계정에서 **설정 → 개발자 설정 → GitHub 앱 → 새 GitHub 앱**으로 이동하세요.
+## 공개 URL 요구 사항
 
-`hub.example.com`을 `PASEO_HUB_APP_URL`으로 바꾸세요.
+저장소 액세스와 설치는 GitHub 웹훅 없이도 작동합니다. 하지만 GitHub 이벤트 트리거와 구성 동기화는 웹훅 없이는 작동하지 않습니다. GitHub가 공개 HTTPS URL로 이벤트를 전송할 수 있어야 합니다.
 
-웹훅 URL은 GitHub에서 연결할 수 있어야 합니다. GitHub의 기본 SSL 확인을 활성화된 상태로 유지하세요. [공급자 URL](/docs/hub/self-hosting#provider-urls)을 참조하세요.
+로컬 HTTP Hub에서는 Apps 안내에 따라 저장소 액세스를 구성할 수 있으며, 이벤트 설정을 사용할 수 없다는 안내가 표시됩니다. 웹훅 비밀과 이벤트를 추가하려면 `PASEO_HUB_APP_URL`을 설정한 뒤 Hub를 공개 주소에서 다시 여세요.
 
-| 설정 | 가치 |
-| ------------------ | -------------------------------- |
-| 홈페이지 URL | `https://hub.example.com` |
-| 콜백 URL | `https://hub.example.com/api/integrations/github/callback` |
-| 설정 URL | `https://hub.example.com/api/integrations/github/setup` |
-| 업데이트 시 리디렉션 | 에 |
-| 웹훅 URL | `https://hub.example.com/webhook` |
-| 웹훅 비밀 | 귀하가 생성하는 가치 |
+GitHub는 다음 Hub URL을 사용합니다.
 
-저장소 권한:
+| 설정         | Hub URL                                                |
+| ------------ | ------------------------------------------------------ |
+| 홈페이지 URL | `<PASEO_HUB_APP_URL>`                                  |
+| 콜백 URL     | `<PASEO_HUB_APP_URL>/api/integrations/github/callback` |
+| 설정 URL     | `<PASEO_HUB_APP_URL>/api/integrations/github/setup`    |
+| 웹훅 URL     | `<PASEO_HUB_APP_URL>/webhook`                          |
 
-| 허가 | 액세스 | 왜 |
-| ------------- | ------------ | ---------------------------- |
-| 내용 | 읽기 및 쓰기 | `.paseo` 번들을 읽고 에이전트가 푸시하도록 허용 |
-| 이슈 | 읽기 및 쓰기 | 댓글 읽기, 반응 추가 |
-| 풀 요청 | 읽기 및 쓰기 | 리뷰 댓글을 읽고 에이전트가 PR을 열 수 있도록 허용 |
-| 메타데이터 | 읽기 | GitHub에서 필요 |
+GitHub의 SSL 검증을 활성화된 상태로 유지하세요.
 
-이벤트를 구독하세요:
+## 저장소 연결
 
-- 이슈 코멘트
-- 이슈
-- 풀 리퀘스트 검토
-- Pull request 리뷰 코멘트
-- 푸시
+Hub가 App을 검증한 뒤 **Install on GitHub**를 선택하세요. App이 액세스할 수 있는 계정 또는 조직과 저장소를 선택합니다.
 
-푸시는 구성 동기화를 작동시키는 것입니다. 이것이 없으면 Hub는 `.paseo` 번들이 변경되었음을 결코 알 수 없습니다.
+GitHub 자체 설치 버튼이 아니라 Hub에서 시작하세요. 왕복 설치 과정에서 설치 항목이 활성 Hub 조직에 연결됩니다.
 
-## 허브 구성
+연결은 계정에서 파생된 슬러그와 함께 표시됩니다. 예를 들어 `getpaseo`에 설치하면 `getpaseo-github`이 됩니다. Hub 조직에 필요한 만큼 설치를 연결할 수 있습니다.
 
-앱 설정 페이지에서 다음을 수집합니다.
+## 연결이 제공하는 기능
 
-| 가치 | 환경 변수 |
-| ------------ | ------------- |
-| 앱 ID | `GITHUB_APP_ID` |
-| 앱 URL의 슬러그 | `GITHUB_APP_SLUG` |
-| 클라이언트 ID | `GITHUB_APP_CLIENT_ID` |
-| 생성된 클라이언트 비밀번호 | `GITHUB_APP_CLIENT_SECRET` |
-| 생성된 개인 키 | `GITHUB_APP_PRIVATE_KEY` |
-| 웹훅 비밀 | `GITHUB_WEBHOOK_SECRET` |
+- **이벤트:** 설치에서 볼 수 있는 저장소의 이슈, 댓글, 리뷰, 푸시입니다. [GitHub 트리거](/docs/hub/triggers/github)를 참조하세요.
+- **구성 동기화:** 저장소에 정식 `.paseo` 번들을 보관할 수 있습니다. [구성](/docs/hub/configuration)을 참조하세요.
+- **실행 자격 증명:** Hub는 GitHub 권한을 명시적으로 요청하는 워크플로 단계에 범위가 지정된 GitHub App 토큰을 발급합니다.
 
-개인 키는 PEM 파일로 다운로드됩니다. `GITHUB_APP_PRIVATE_KEY`에 해당 콘텐츠를 전달하거나 `GITHUB_APP_PRIVATE_KEY_PATH`에 해당 경로를 전달합니다.
+데몬에서 인증된 `gh` CLI는 Hub의 GitHub 통합을 구성하지 않습니다. 다만 데몬과 제공업체 자체의 환경 및 권한 정책에 따라, Hub에서 범위를 지정한 GitHub 권한 밖에서 에이전트에 서비스를 제공할 수는 있습니다.
 
-허브를 다시 시작하세요. 이제 GitHub는 Connections에서 **Ready**로 표시됩니다.
+## 환경에서 구성
 
-## 연결
+앱 비밀을 Hub 외부에 보관하는 배포에서는 다음을 설정할 수 있습니다.
 
-**연결 → GitHub → 연결**을 엽니다. Hub는 앱을 설치하기 위해 GitHub로 보낸 다음 설치를 조직에 바인딩합니다.
+```dotenv
+GITHUB_APP_ID=
+GITHUB_APP_SLUG=
+GITHUB_APP_CLIENT_ID=
+GITHUB_APP_CLIENT_SECRET=
+GITHUB_APP_PRIVATE_KEY=
+GITHUB_WEBHOOK_SECRET=
+```
 
-GitHub의 자체 설치 버튼이 아닌 Hub에서 시작하세요. GitHub는 설치가 생성되거나 변경될 때만 설정 URL을 호출하므로 직접 설치하면 아무것도 바인딩되지 않은 설정 페이지로 이동하게 됩니다.
+개인 키는 GitHub에서 다운로드한 PEM 파일의 내용입니다. 배포에서 해당 파일을 마운트하는 경우에는 `GITHUB_APP_PRIVATE_KEY_PATH`를 사용하세요.
 
-계정에서 파생된 슬러그와 함께 연결이 나타납니다. `getpaseo`에 설치하면 `getpaseo-github`이 됩니다. 해당 슬러그는 구성이 이 연결의 이름을 지정하는 방법입니다.
-
-필요한 만큼 많은 설치를 연결하세요. 개인 계정과 여러 조직이 하나의 허브 조직에 공존할 수 있습니다.
-
-## 연결이 제공하는 것
-
-- **이벤트.** 설치 시 볼 수 있는 모든 저장소의 의견, 문제 및 리뷰입니다. [GitHub 트리거](/docs/hub/triggers/github)를 참조하세요.
-- **구성 동기화.** 설치의 모든 저장소는 정식 `.paseo` 번들을 보유할 수 있습니다. [구성](/docs/hub/configuration)을 참조하세요.
-- **토큰.** 범위가 지정된 실행별 GitHub 자격 증명입니다.
-
-설치에 포함되는 리포지토리는 GitHub 설정입니다. Paseo가 아닌 GitHub에서 변경하세요.
+환경 구성은 저장된 GitHub App보다 우선하며 **Apps**에 **Managed by environment**로 표시됩니다. 완전한 환경 구성에는 웹훅 비밀이 포함되므로 공개 웹훅 원본이 필요합니다.
