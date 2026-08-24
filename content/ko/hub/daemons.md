@@ -18,7 +18,11 @@ category: Hub
 paseo hub login https://hub.example.com
 ```
 
-CLI는 URL과 확인 코드를 인쇄하고 브라우저를 엽니다. 승인된 로그인은 `PASEO_HOME` 아래에 저장됩니다. 그런 다음 데몬을 등록합니다.
+CLI는 URL과 확인 코드를 인쇄하고 브라우저를 엽니다. 승인된 로그인은 `PASEO_HOME` 아래에 저장됩니다.
+
+대화형 터미널에서는 이어서 설정을 마칠지 묻습니다. 이 데몬을 연결할지, 시작용 워크플로를 초기화해 배포할지 선택하며 둘 다 기본값은 예입니다. 연결을 거부하면 연결만으로는 프로젝트에 워크플로가 생기지 않으므로 `paseo hub connect <origin>; then paseo hub init`을 출력합니다. 시작용 워크플로만 거부하면 `paseo hub init`을 출력합니다. `--json` 또는 비 TTY 로그인은 로그인만 수행합니다. [빠른 시작](/docs/hub/quickstart)에서 각 질문을 설명합니다.
+
+거부했거나 머신에 이미 로그인한 경우 데몬을 별도로 등록합니다.
 
 ```sh
 paseo hub connect

@@ -137,6 +137,39 @@ steps:
 | `values` | 아니 | 명명된 표현식.                                        |
 | `steps` | 예 | 하나 이상의 정렬된 인라인 단계입니다.                         |
 
+### GitHub 이벤트 및 필터
+
+새 GitHub 워크플로에는 다음 의미 기반 이벤트 이름 중 하나를 사용하세요.
+
+| `on`                                  | 일치 대상                                                                         |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `github.issue_created`                | 동작이 `opened`인 `issues` 전달입니다.                                             |
+| `github.pull_request_created`         | 동작이 `opened`인 `pull_request` 전달입니다.                                       |
+| `github.issue_comment_created`        | 이슈에서 동작이 `created`인 `issue_comment` 전달입니다.                            |
+| `github.pull_request_comment_created` | 끌어오기 요청에서 동작이 `created`인 `issue_comment` 전달입니다.                   |
+| `github.issue_label_added`            | 동작이 `labeled`인 `issues` 전달입니다.                                            |
+| `github.pull_request_label_added`     | 동작이 `labeled`인 `pull_request` 전달입니다.                                      |
+
+기존 구성에서는 `github.issues`, `github.issue_comment`, `github.pull_request_review`, `github.pull_request_review_comment`, `github.push`를 계속 사용할 수 있습니다. 이러한 레거시 이벤트는 기존 동작을 유지합니다.
+
+`filters`는 다음 GitHub 필드를 지원합니다. 외부 소스의 모든 워크플로에서 `from_users`는 비어 있지 않아야 합니다. 제공된 모든 필터는 AND로 결합됩니다.
+
+| 필드         | 유형                                | 적용 대상                                                    | 의미                                                                                          |
+| ------------ | ----------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `from_users` | 비어 있지 않은 문자열 목록          | 모든 GitHub 이벤트                                           | 워크플로를 시작하도록 허용된 GitHub 로그인입니다.                                             |
+| `repo`       | 비어 있지 않은 문자열               | 모든 GitHub 이벤트                                           | `owner/name` 형식의 저장소입니다.                                                              |
+| `connection` | 문자열                              | 모든 GitHub 이벤트                                           | GitHub 연결 슬러그입니다.                                                                      |
+| `contains`   | 문자열                              | 이슈, 끌어오기 요청, 댓글 이벤트                             | 이슈 또는 끌어오기 요청의 제목과 본문, 혹은 댓글 본문에 포함된 부분 문자열입니다.              |
+| `pattern`    | 문자열                              | 이슈, 끌어오기 요청, 댓글 이벤트                             | 같은 텍스트의 시작 부분입니다.                                                                 |
+| `label`      | 비어 있지 않은 문자열               | `github.issue_label_added`, `github.pull_request_label_added` | 전달에서 추가된 레이블입니다.                                                                  |
+| `labels`     | 비어 있지 않은 문자열의 비어 있지 않은 목록 | 이슈, 끌어오기 요청, 댓글 이벤트                    | 나열한 모든 레이블이 현재 이슈 또는 끌어오기 요청에 있어야 합니다.                             |
+
+`label`과 `labels`는 GitHub 레이블의 대소문자를 구분하지 않습니다. `label`은 변경된 레이블 하나를 확인하고, `labels`는 현재 전체 레이블 집합을 확인해 모든 항목을 요구합니다. 예를 들어 `labels: [bug, backend]`에는 `bug`와 `backend`가 모두 필요합니다.
+
+`label`은 레이블 추가 이벤트에서만 사용하세요. 다른 이벤트에서는 일치하지 않습니다. 댓글로 워크플로를 시작하는 경우를 포함해 항목의 현재 상태를 요구하려면 `labels`를 사용하세요.
+
+전체 분류, 끌어오기 요청 검토, 에이전트 실행 준비 워크플로는 [GitHub 트리거](/docs/hub/triggers/github)를 참조하세요.
+
 ### 입력 및 값
 
 입력에는 `type: string | number | boolean`과 선택적 `required`, `default` 및 `choices`이 있습니다. `required`과 `default`은 결합될 수 없습니다. 유한한 `choices`은 입력이 환경이나 명명된 에이전트와 같은 권한을 선택할 수 있는 경우 필요합니다.

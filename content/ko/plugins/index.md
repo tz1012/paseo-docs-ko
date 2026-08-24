@@ -14,7 +14,7 @@ category: Plugins
 
 예정된 기여 영역과 현재 상태는 [플러그인 로드맵](https://github.com/getpaseo/paseo/labels/plugins)을 참조하세요.
 
-Paseo 플러그인은 기본 작업 공간 패널, Command Center 항목, 전역 표면, 데몬 동작 및 작성기 첨부 소스를 추가합니다. 모바일을 포함하여 호스트에 연결된 모든 Paseo 클라이언트에서 실행됩니다.
+Paseo 플러그인은 기본 작업공간 패널, Command Center 항목, 전역 표면, 앱 테마, 데몬 동작, 작성기 첨부 소스를 추가합니다. 모바일을 포함해 호스트에 연결된 모든 Paseo 클라이언트에서 실행됩니다.
 
 플러그인은 신뢰할 수 있는 로컬 코드입니다. 신뢰할 수 있는 코드만 설치하세요. 백엔드 코드는 데몬 머신에 액세스하여 샌드박스 처리되지 않은 상태로 실행되며, 클라이언트 기여는 Paseo 앱 내에서 실행됩니다.
 
@@ -149,5 +149,5 @@ paseo plugin logs workspace-plugin --json
 
 ## 다음
 
-- [플러그인 참조](/docs/plugins/reference), 데몬 동작 추가, Paseo SDK 사용, 첨부 파일 제공, 수명 주기 관리.
+- [플러그인 참조](/docs/plugins/reference), 데몬 동작 추가, Paseo SDK 사용, 테마와 첨부 파일 제공, 수명 주기 관리.
 - [TypeScript SDK](/docs/sdk), 플러그인 내부에 노출되는 작업공간, 에이전트, 공급자, 구성 API.

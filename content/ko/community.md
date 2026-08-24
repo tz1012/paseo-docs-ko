@@ -1,6 +1,6 @@
 ---
 title: Related projects
-description: The official Paseo relay and community-built tools and integrations.
+description: Projects related to Paseo and built by the community.
 nav: Related projects
 order: 7
 category: Getting started
@@ -8,20 +8,22 @@ category: Getting started
 
 # 관련 프로젝트
 
-## 공식 중계
+다음은 Paseo와 관련해 커뮤니티에서 만든 프로젝트입니다.
 
-**[getpaseo/paseo-relay](https://github.com/getpaseo/paseo-relay)**는 Elixir로 작성된 Paseo의 공식 분산 릴레이 서버입니다. 호스팅된 원격 액세스를 지원하며 자체 호스팅도 가능합니다. 릴레이가 Paseo의 연결 모델에 어떻게 적용되는지는 [보안](/docs/security)을 참조하세요.
+## 도구 및 통합
 
-## 커뮤니티 프로젝트
+| 프로젝트                                                                                     | 기능                                                                                                                                    |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| [Paseo for VS Code](https://marketplace.visualstudio.com/items?itemName=hinnes.paseo-vscode) | 일치하는 Paseo 프로젝트 또는 작업 트리를 VS Code에서 열고 에이전트 채팅, 파일 멘션, 편집기 링크를 추가합니다.                           |
+| [VS Code Web plugin](https://github.com/itsjustanks/paseo-plugin-vscode-web)                 | 헤드리스 호스트의 작업공간을 포함해 VS Code 터널을 통해 활성 Paseo 작업 트리를 `vscode.dev`에서 엽니다.                                 |
+| [Paseo Icon](https://github.com/gpambrozio/paseo-menubar)                                    | macOS 메뉴 막대에서 여러 Paseo 호스트의 작업공간 상태를 보여주고 한 번의 클릭으로 작업공간을 엽니다.                                   |
+| [Paseo Cross-Daemon Comms](https://github.com/xpufx/paseo-cross-daemon-comms)                | MCP 서버를 통해 다른 Paseo 데몬의 에이전트와 통신할 수 있게 합니다.                                                                    |
+| [Paseo Antigravity ACP](https://github.com/tiezbro/paseo-agy-acp)                            | Paseo 전용 컨텍스트, 권한, 동시성 처리를 포함해 Google Antigravity CLI를 ACP로 Paseo에 연결합니다.                                      |
+| [Desvio](https://github.com/cleiter/desvio)                                                  | 여러 브랜치 집합에서 개인 포크를 재구축하며, 새 충돌은 에이전트로 해결하고 알려진 해결책은 Git rerere로 재적용합니다.                    |
 
-아래 프로젝트는 Paseo 커뮤니티에 의해 구축되었습니다. **공식 Paseo 프로젝트**는 아니며 Paseo의 지원이 적용되지 않지만 특히 자체 호스팅의 경우 유용한 시작점이 됩니다. 시스템이나 에이전트에 영향을 미치는 항목을 실행하기 전에 코드를 검토하세요.
+## 호스팅 및 인프라
 
-## 자체 호스팅
-
-- **[blockfeed/paseo-selfhosted](https://github.com/blockfeed/paseo-selfhosted)**, 자체 호스팅 로컬 데몬에 연결된 Paseo 웹 UI를 실행하는 Docker 빌드입니다. 컨테이너화된 설정을 원하는 경우 좋은 참고 자료입니다. 데몬에서 UI를 제공하는 기본 제공 방법은 [웹 UI 자체 호스팅](/docs/web-ui)을 참조하세요.
-
-- **[paseo-vscode](https://marketplace.visualstudio.com/items?itemName=hinnes.paseo-vscode)**, VS Code 확장입니다.
-
-## 프로젝트 추가
-
-Paseo, 릴레이, 배포 레시피, 통합, 클라이언트를 위한 무언가를 구축하셨나요? [GitHub](https://github.com/getpaseo/paseo)에서 끌어오기 요청이나 이슈를 열어 여기에 나열하세요.
+| 프로젝트                                                           | 기능                                                                                                      |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| [Paseo Self-hosted](https://github.com/blockfeed/paseo-selfhosted) | Paseo 웹 UI와 로컬 데몬을 Docker 배포로 패키징합니다.                                                     |
+| [Devbox Fleet](https://github.com/omrihaviv/devbox-fleet)          | Paseo, 코딩 에이전트, Tailscale 액세스를 갖춘 개발자별 GCP devbox를 프로비저닝하고 유지 관리합니다.       |

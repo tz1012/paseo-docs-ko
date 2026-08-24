@@ -10,7 +10,7 @@ category: Getting started
 
 Paseo CLI를 사용하면 터미널에서 에이전트를 관리할 수 있습니다. 이는 데몬의 API에 의해 노출되는 것과 동일한 인터페이스이므로 앱에서 수행할 수 있는 모든 작업을 명령줄에서 수행할 수 있습니다.
 
-> **에이전트 오케스트레이션:** 코딩 에이전트에 Paseo CLI를 사용하여 다른 에이전트를 생성하고 관리하도록 지시할 수 있습니다. Paseo는 호출 에이전트를 인식하므로 CLI에서 생성된 작업자는 MCP에서 생성된 작업자와 동일한 작업 영역 및 상위 기본값을 얻습니다.
+> **에이전트 오케스트레이션:** 코딩 에이전트에 Paseo CLI를 사용하여 다른 에이전트를 생성하고 관리하도록 지시할 수 있습니다. Paseo는 호출 에이전트를 인식하므로 CLI에서 생성된 에이전트는 MCP에서 생성된 에이전트와 동일한 작업 영역 및 상위 기본값을 얻습니다.
 
 ## 빠른 참조
 
@@ -260,6 +260,7 @@ paseo daemon stop              # Stop the daemon
 
 ```bash
 paseo hub login [url]          # Approve and store organization-scoped CLI access
+paseo hub init                 # Guided setup: scaffold and deploy a starter bundle here
 paseo hub connect [url]        # Enroll this daemon using CLI access
 paseo hub projects             # List projects in the authenticated organization
 paseo hub status               # Show the current Hub relationship
@@ -273,7 +274,13 @@ paseo hub logout               # Remove the active stored CLI login
 
 `-p, --project <slug>`을 전달하여 대상 프로젝트를 선택하세요. `--dry-run`은 개정판을 기록하거나 활성화하지 않고 동일한 검색 및 서버 유효성 검사를 수행합니다. 두 출력 모두 해결된 허브, 프로젝트 및 검색된 워크플로 개수를 포함합니다.
 
-`login`은 허브 승인 페이지를 열고 `PASEO_HOME` 아래에 내구성 있는 조직 범위의 CLI 자격 증명을 저장합니다. 저장된 로그인은 `connect`이 생성한 데몬 관계와 별개입니다. 대화형 로그아웃은 동일 출처 데몬 관계를 확인하고 로그인을 삭제하기 전에 연결을 끊을지 여부를 묻습니다. 거부하면 로그인만 제거됩니다. JSON 및 비대화형 로그아웃은 암시적으로 메시지를 표시하거나 연결을 끊지 않습니다. `--disconnect-daemon`은 명시적 자동화 경로이고 `--force`은 해당 데몬 연결 해제에 적용됩니다. 요청된 연결 해제가 실패하면 로그인이 유지됩니다.
+`login`은 허브 승인 페이지를 열고 `PASEO_HOME` 아래에 지속적인 조직 범위 CLI 자격 증명을 저장합니다. 대화형 터미널에서는 이어서 이 데몬을 연결할지, 시작용 워크플로를 초기화해 배포할지 묻고 두 항목 모두 기본값은 예입니다. 연결을 거부하면 연결만으로는 번들이 만들어지지 않으므로 `paseo hub connect <origin>; then paseo hub init`을 출력합니다. 시작용 워크플로만 거부하면 `paseo hub init`을 출력합니다. `--json` 및 비 TTY 로그인은 로그인만 수행하고 메시지를 표시하지 않습니다. 저장된 로그인은 `connect`이 생성한 데몬 관계와 별개입니다.
+
+`init`은 같은 안내형 설정을 단독으로 실행하며 TTY가 필요합니다. 데몬을 연결하고, 조직에 프로젝트가 하나뿐이면 이를 사용하고 그렇지 않으면 프로젝트를 묻고, 시작용 워크플로의 기반으로 사용할 수 있는 Hub 앱 연결을 나열합니다. 사용할 수 있는 연결이 하나면 자동으로 선택하고, 여러 개면 **트리거 연결**을 선택합니다. 준비된 연결이 없으면 **Hub → Apps**로 안내하고 에이전트를 선택하거나 파일을 쓰기 전에 중지합니다.
+
+그런 다음 설정은 연결된 데몬이 보고한 항목 중 시작용 워크플로에서 실행할 에이전트 공급자, 모델, 모드를 묻습니다. 데몬에서 선택 가능한 모델과 함께 활성화된 공급자만 제시됩니다. 제안되는 모델과 모드 항목은 데몬의 기본값이며, 목록의 첫 번째라는 이유만으로 공급자를 제안하지 않습니다. 모드를 제공하지 않는 공급자에서는 모드 질문을 건너뛰고, 데몬에 모드는 있지만 기본값이 없으면 명시적으로 묻습니다. 마지막으로 선택한 연결을 제한할 ID, 즉 GitHub 사용자 이름, Slack 멤버 ID 또는 Discord 사용자 ID를 묻습니다. `.paseo/hub.yml`과 `.paseo/workflows/<provider>-help.yml`을 쓰고 Hub에서 검증한 뒤 배포합니다. 기존 `.paseo/` 디렉터리는 확인한 뒤에만 교체합니다. [생성된 시작용 번들](/docs/hub/configuration#generated-starter-bundle)을 참조하세요.
+
+대화형 로그아웃은 동일 출처 데몬 관계를 확인하고 로그인을 삭제하기 전에 연결을 끊을지 묻습니다. 거부하면 로그인만 제거됩니다. JSON 및 비대화형 로그아웃은 암시적으로 메시지를 표시하거나 연결을 끊지 않습니다. `--disconnect-daemon`은 명시적 자동화 경로이고 `--force`은 해당 데몬 연결 해제에 적용됩니다. 요청된 연결 해제가 실패하면 로그인이 유지됩니다.
 
 모든 명령은 허브 또는 데몬이 작동하기 전에 대상을 확인하고 정규화합니다. 오리진 우선순위는 명시적 명령 오리진 또는 `--hub`, `PASEO_HUB_URL`, 활성 저장된 로그인 오리진, 호스팅된 기본 `https://hub.paseo.sh` 순입니다. 호스팅된 기본값은 활성 로그인을 재정의하지 않습니다. 자격 증명 우선 순위는 `--api-key <secret>`, `PASEO_HUB_API_KEY`, 정확한 확인 원본에 대한 저장된 로그인 순입니다. 저장된 자격 증명은 다른 원본으로 전송되지 않습니다. 플래그나 환경을 통해 전달된 API 키는 저장되지 않습니다.
 

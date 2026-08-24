@@ -28,18 +28,16 @@ category: Hub
 
 ## 저장소에 포함되는 항목
 
-`paseo hub init`은 환경과 에이전트를 정의하는 프로젝트 리소스 파일과 안전한 시작용 워크플로를 만듭니다.
+안내형 설정은 환경과 에이전트를 정의하는 프로젝트 리소스 파일과 안전한 시작용 워크플로 하나를 만듭니다.
 
 ```text
 .paseo/
 ├── hub.yml
 └── workflows/
-    ├── slack-help.yml
-    └── partials/
-        └── answer.md
+    └── slack-help.yml
 ```
 
-번들을 배포한 뒤 봇을 멘션하면 사용자의 머신에서 에이전트가 시작됩니다. [빠른 시작](/docs/hub/quickstart)은 안내형 설정 과정을 진행하고, [워크플로](/docs/hub/workflows)는 라우팅과 제공업체별 응답을 설명합니다.
+안내형 설정이 번들을 배포하고, 봇을 멘션하면 사용자의 머신에서 에이전트가 시작됩니다. [빠른 시작](/docs/hub/quickstart)은 전체 과정을 안내하고, [생성된 시작용 번들](/docs/hub/configuration#generated-starter-bundle)은 작성된 내용을 보여주며, [워크플로](/docs/hub/workflows)는 라우팅, 프롬프트 부분, 공급자별 응답을 설명합니다.
 
 ## 읽는 순서
 

@@ -13,6 +13,7 @@ category: Plugins
 - Paseo 클라이언트의 React Native 표면과 사이드바 항목
 - 작업공간 탭으로 열리는 작업공간 및 에이전트 패널
 - Command Center의 전역, 작업공간 및 에이전트 작업
+- Settings → Appearance의 어두운 테마
 - 데몬 옆에서 실행되는 스키마 검증 RPC 핸들러
 - TypeScript SDK를 통한 일반 Paseo 작업
 - 메시지 작성기에서 검색할 수 있는 외부 리소스
@@ -150,19 +151,68 @@ Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 �
 
 `theme` 또는 `layout.compact`가 변경되면 스타일을 다시 생성하세요.
 
-| 키 | 필수 적용 대상 | 용도 |
-| ------------------------------ | -------------------------- | ----------------------------------- |
-| `theme.colors.foreground` | 모든 기본 `Text` | 제목 및 본문 |
-| `theme.colors.foregroundMuted` | 보조 `Text` | 레이블 및 보조 문구 |
-| `theme.colors.surface0` | 루트 뷰 | 패널 배경 |
-| `layout.compact` | 패딩 및 쌓기 | 모바일 및 좁은 창에서 `true` |
-| `layout.platform` | 플랫폼별 동작 | `ios`, `android` 또는 `web` |
+| 키                               | 필수 적용 대상             | 용도                              |
+| -------------------------------- | -------------------------- | --------------------------------- |
+| `theme.colors.foreground`        | 모든 기본 `Text`           | 제목 및 본문                      |
+| `theme.colors.foregroundMuted`   | 보조 `Text`                | 레이블 및 보조 문구               |
+| `theme.colors.surface0`          | 루트 뷰                    | 패널 배경                         |
+| `theme.colors.accent`            | 기본 작업 채우기           | 버튼과 선택 상태                  |
+| `theme.colors.accentForeground`  | 강조 채우기 위의 텍스트    | 버튼 레이블                       |
+| `theme.colors.statusDanger`      | 실패 문구                  | 오류 메시지와 파괴적 작업 텍스트  |
+| `layout.compact`                 | 패딩 및 쌓기               | 모바일 및 좁은 창에서 `true`      |
+| `layout.platform`                | 플랫폼별 동작              | `ios`, `android` 또는 `web`        |
 
 `#000`, `#fff` 또는 React Native의 기본 텍스트 색상을 하드코딩하지 마세요. 기본 문구에는 `foreground`를, 레이블에는 `foregroundMuted`를 사용하세요. `layout.compact`가 true이면 패딩을 줄이세요.
 
 작업공간 및 에이전트 패널도 동일한 `theme` 및 `layout` 필드를 받습니다.
 
 클라이언트 코드는 `react`, `react-native`, `@tanstack/react-query`, `zod`, `@getpaseo/plugin` 및 `@getpaseo/plugin/server`를 가져올 수 있습니다. 유형 검사를 위해 로컬로 설치하십시오. Paseo는 클라이언트 런타임 인스턴스를 제공합니다.
+
+## 테마 제공
+
+`addTheme`은 Settings → Appearance에 밝은 테마 또는 어두운 테마를 추가하며, 기본 제공 테마 아래에 `name`으로 표시됩니다. 테마는 데이터이므로 클라이언트 파일이 필요하지 않습니다.
+
+```ts
+import type { PluginContext } from "@getpaseo/plugin";
+
+export default function contribute(plugin: PluginContext) {
+  plugin.addTheme({
+    id: "mocha",
+    name: "Catppuccin Mocha",
+    appearance: "dark",
+    colors: {
+      background: "#1e1e2e",
+      foreground: "#cdd6f4",
+      raised: "#313244",
+      control: "#45475a",
+      border: "#45475a",
+      accent: "#cba6f7",
+      mutedForeground: "#a6adc8",
+      ring: "#6c7086",
+    },
+  });
+  return () => {};
+}
+```
+
+모든 색상은 16진수 문자열이어야 하며 다른 형식은 로드에 실패합니다. Paseo는 팔레트를 기본 제공 어두운 테마가 사용하는 전체 토큰 집합으로 확장하므로, 제공된 테마는 패널, 메뉴, diff, 상태 색상, 터미널을 모두 별도 나열 없이 처리합니다.
+
+| 색상              | 적용 대상                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| `background`      | 앱, 작업공간, 터미널 배경                                                                 |
+| `foreground`      | 기본 텍스트, 터미널 전경과 커서                                                          |
+| `raised`          | 카드, 팝오버, 마우스를 올린 행                                                           |
+| `control`         | 입력, 보조 채우기, 밝은 테마 사이드바                                                    |
+| `border`          | 테두리와 가장 높은 돌출 표면 색조                                                        |
+| `accent`          | 버튼, 선택, 포커스. 선택 사항이며 생략하면 `foreground`를 사용합니다.                    |
+| `mutedForeground` | 보조 텍스트                                                                               |
+| `ring`            | 포커스 링, 스크롤바, 터미널의 밝은 검정                                                   |
+
+`appearance`는 `"light"` 또는 `"dark"`입니다. Paseo는 이를 사용해 일치하는 표면, 상태, diff, 구문, 터미널, 그림자 파생을 선택합니다.
+
+제공된 테마는 한 번에 하나만 활성화됩니다. 하나를 선택하면 선택이 유지됩니다. 이후 플러그인이 비활성화되거나 제거되면 앱을 표시할 수 없는 상태로 두지 않고 기본 테마로 돌아갑니다.
+
+테마를 사용하려면 이를 지원하는 호스트가 필요합니다. `addTheme` 이전에 출시된 데몬에서는 호출이 플러그인의 백엔드 번들로 컴파일되지만 해당 함수가 없으므로 플러그인이 `plugin.addTheme is not a function` 오류와 함께 시작되지 않습니다. 호스트를 업데이트하세요.
 
 ## 작업공간 패널
 

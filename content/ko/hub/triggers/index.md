@@ -10,14 +10,13 @@ category: Hub
 
 트리거는 워크플로를 시작할 수 있는 공급자 이벤트를 알려줍니다. [허브 워크플로](/docs/hub/workflows) 페이지에서는 일치 후 실행되는 단계, 입력, 라우팅, 프롬프트 및 기한을 다룹니다.
 
-`.paseo/workflows/github-mention.yml`:
+`.paseo/workflows/github-issue.yml`:
 
 ```yaml
-name: mention
-on: github.issue_comment
+name: triage-issue
+on: github.issue_created
 filters:
   repo: acme/api
-  contains: "@paseo"
   from_users: [alice]
 max_runtime: 2h
 steps:
@@ -35,15 +34,19 @@ steps:
 
 ## 이벤트
 
-| `on` | 다음과 같은 경우에 발생 |
-| ----------------------- | ------------------------ |
-| `github.issue_comment` | 문제 또는 끌어오기 요청에 대한 의견 |
-| `github.issues` | 이슈가 열리거나 편집되었습니다 |
-| `github.pull_request_review` | 리뷰가 제출되었습니다 |
-| `github.pull_request_review_comment` | 차이점에 대한 의견 |
-| `slack.mention` | 봇이 채널에서 언급됨 |
-| `discord.mention` | 봇이 길드에서 언급됨 |
-| `manual.run` | API에서 시작된 실행 |
+| `on`                                  | 다음 경우에 발생                                      |
+| ------------------------------------- | ----------------------------------------------------- |
+| `github.issue_created`                | 이슈가 열릴 때.                                       |
+| `github.pull_request_created`         | 끌어오기 요청이 열릴 때.                              |
+| `github.issue_comment_created`        | 이슈에 댓글이 작성될 때.                              |
+| `github.pull_request_comment_created` | 끌어오기 요청의 대화 댓글이 작성될 때.                |
+| `github.issue_label_added`            | 이슈에 레이블이 추가될 때.                            |
+| `github.pull_request_label_added`     | 끌어오기 요청에 레이블이 추가될 때.                   |
+| `slack.mention`                       | 채널에서 봇이 멘션될 때.                              |
+| `discord.mention`                     | 길드에서 봇이 멘션될 때.                              |
+| `manual.run`                          | API에서 실행을 시작할 때.                             |
+
+새 GitHub 워크플로에는 의미 기반 이벤트를 사용하세요. 다섯 가지 레거시 이벤트 `github.issues`, `github.issue_comment`, `github.pull_request_review`, `github.pull_request_review_comment`, `github.push`도 계속 호환됩니다. 전체 워크플로와 이벤트 선택 방법은 [GitHub 트리거](/docs/hub/triggers/github)를 참조하세요.
 
 각 공급자 페이지는 해당 이벤트와 노출되는 데이터를 문서화합니다.
 
@@ -59,16 +62,18 @@ steps:
 
 허용 목록은 하나의 방어 계층입니다. 침해 후 허용된 계정을 신뢰할 수 있게 만들거나 즉각적인 주입을 무해하게 만들지는 않습니다. 외부 트리거에 대한 데몬, 작업 디렉터리, 공급자 정책 및 출력을 선택하기 전에 [허브 보안](/docs/hub/security)을 참조하세요.
 
-| 필터 | 적용 대상 | 경기 |
-| ------------ | -------------- | -------------------------------------------------- |
-| `from_users` | 모두 | GitHub: 로그인. Slack 및 Discord: **사용자 ID**, 표시 이름 아님 |
-| `repo` | GitHub | `owner/name` |
-| `workspace` | 슬랙 | 팀 ID, `T01234567` |
-| `guild` | 불화 | 길드 아이디 |
-| `channels` | 슬랙, 디스코드 | 채널 ID |
-| `contains` | 모두 | GitHub 하위 문자열; Slack 및 Discord 호출 접두사 |
-| `pattern` | 모두 | 호출 접두사 |
-| `connection` | 모두 | 조직에 여러 개의 연결 슬러그가 있는 경우 |
+| 필터         | 적용 대상                 | 일치 대상                                                                  |
+| ------------ | ------------------------- | -------------------------------------------------------------------------- |
+| `from_users` | 모두                      | GitHub: 로그인. Slack 및 Discord: 표시 이름이 아닌 **사용자 ID**           |
+| `repo`       | GitHub                    | `owner/name`                                                               |
+| `workspace`  | Slack                     | 팀 ID, `T01234567`                                                         |
+| `guild`      | Discord                   | 길드 ID                                                                    |
+| `channels`   | Slack, Discord            | 채널 ID                                                                    |
+| `contains`   | 모두                      | GitHub 부분 문자열, Slack 및 Discord 호출 접두사                           |
+| `pattern`    | 모두                      | 호출 접두사                                                                |
+| `connection` | 모두                      | 조직에 여러 개의 연결이 있을 때 사용하는 연결 슬러그                      |
+| `label`      | GitHub 레이블 추가 이벤트 | 이 전달에서 추가된 레이블(대소문자 구분 없음)                              |
+| `labels`     | GitHub                    | 현재 이슈 또는 끌어오기 요청에 나열한 모든 레이블(대소문자 구분 없음)      |
 
 모든 조건이 통과되어야 합니다. `any` 모드가 없습니다.
 
@@ -97,6 +102,6 @@ filters:
 - 단계에 둘 이상의 업데이트가 필요한 경우 `max`을 설정합니다.
 - 단계가 완료되기 전에 적어도 하나의 응답을 내보내야 하는 경우 `required: true`을 설정합니다. 필수 유형이 등록되어 실행 컨텍스트에 사용 가능해야 합니다.
 
-GitHub에는 응답 기능이 없습니다. 대신 [`github` 블록](/docs/hub/github)이 있는 단계에서는 `gh`을 통해 주석을 달았습니다. [출력 기능 참조](/docs/hub/configuration/hub-yml#output-capability)에 계약이 있습니다.
+GitHub에는 응답 기능이 없습니다. 대신 [`github` 블록](/docs/hub/github)이 있는 단계에서는 `gh`을 통해 주석을 달았습니다. [출력 기능 참조](/docs/hub/configuration/hub-yml#output-capabilities)에 계약이 있습니다.
 
 선언은 `hub.reply` 도구를 부여합니다. 프롬프트는 에이전트에게 호출하라고 알려야 합니다. [에이전트에게 호출할 도구 알려주기](/docs/hub/workflows#tell-the-agent-which-tool-to-call)를 참조하세요.

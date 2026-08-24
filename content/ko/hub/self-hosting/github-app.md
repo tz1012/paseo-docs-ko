@@ -29,6 +29,10 @@ GitHub는 다음 Hub URL을 사용합니다.
 
 GitHub의 SSL 검증을 활성화된 상태로 유지하세요.
 
+## GitHub 이벤트 구독
+
+**Subscribe to events**에서 **Issue comment**, **Issues**, **Pull requests**, **Pull request review**, **Pull request review comment**, **Push**를 선택하세요. `github.pull_request_created`와 `github.pull_request_label_added`에는 **Pull requests**가 필요합니다.
+
 ## 저장소 연결
 
 Hub가 App을 검증한 뒤 **Install on GitHub**를 선택하세요. App이 액세스할 수 있는 계정 또는 조직과 저장소를 선택합니다.

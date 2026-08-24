@@ -21,7 +21,61 @@ category: Hub
 
 `hub.yml`은 명명된 환경과 에이전트를 소유합니다. 각 직계 하위 워크플로 파일은 하나의 트리거와 정렬된 인라인 단계를 소유합니다. 해당 워크플로에서 참조하는 프롬프트 부분은 `workflows/partials/` 아래에 있습니다. 워크플로 검색은 규칙에 따라 수정됩니다. 매니페스트나 포함 목록이 없습니다.
 
-[single-repo-team-bot](https://github.com/getpaseo/hub/tree/main/examples/single-repo-team-bot)은 공유 부분에 대한 분류자와 작업자를 실행하는 Discord, Slack 및 GitHub 워크플로와 같은 형태의 완전한 번들입니다. `.paseo/`을 저장소에 복사하고 README 목록의 자리 표시자를 바꿉니다.
+[single-repo-team-bot](https://github.com/getpaseo/hub/tree/main/examples/single-repo-team-bot)은 공유 부분을 사용하는 분류 에이전트와 작업 에이전트를 실행하는 Discord, Slack, GitHub 워크플로를 포함한 완전한 번들입니다. `.paseo/`을 저장소에 복사하고 README에 나열된 자리 표시자를 바꾸세요.
+
+## 생성된 시작용 번들
+
+`paseo hub init`과 대화형 `paseo hub login`이 제안하는 안내형 설정은 실행한 디렉터리에 두 파일을 작성합니다.
+
+```yaml
+# .paseo/hub.yml
+environments:
+  my-macbook:
+    kind: daemon
+    daemon: my-macbook
+    cwd: /Users/you/code/your-repo
+agents:
+  starter:
+    provider: codex
+    model: gpt-5
+    mode: full-access
+```
+
+환경 이름은 연결된 데몬에서 가져오고 설정을 실행한 디렉터리를 가리킵니다. `provider`, `model`, `mode`는 해당 데몬이 보고한 항목 중 사용자가 선택한 런타임이므로, 시작용 에이전트는 처음 실행하기 전부터 완전히 선택되어 있습니다. 모드를 제공하지 않는 공급자에서는 `mode`를 생략합니다.
+
+```yaml
+# .paseo/workflows/slack-help.yml
+name: slack-help
+on: slack.mention
+max_runtime: 2h
+filters:
+  workspace: T01234567
+  from_users:
+    - U01234567
+steps:
+  - id: work
+    environment: my-macbook
+    max_runtime: 90m
+    idle_timeout: 10m
+    agent: starter
+    prompt:
+      - text: |
+          Answer with hub.reply, then complete this request and call hub.finish_execution when done.
+
+          <user-prompt>
+          ${{ paseo.prompt }}
+          </user-prompt>
+    allow_outputs:
+      - type: slack.reply
+        max: 1
+        required: true
+```
+
+`filters`에는 각 공급자가 일치시키는 ID가 들어갑니다. 위 예에서는 Slack 팀과 멤버 ID, Discord 시작용 워크플로에서는 Discord 길드와 사용자 ID, GitHub에서는 `owner/name`과 사용자 로그인을 사용합니다.
+
+Discord 시작용 파일은 `discord-help.yml`이며 위의 `slack.reply`에 대응하는 `discord.reply`를 포함합니다. GitHub 시작용 파일은 `github-help.yml`이며 응답 출력을 선언하지 않습니다. GitHub에는 응답 기능이 없으므로 댓글을 남겨야 하는 단계에는 [`github` 블록](/docs/hub/github)이 필요합니다.
+
+생성된 워크플로는 한 워크스페이스의 한 사용자만 허용합니다. 범위를 넓히기 전에 [Hub 보안](/docs/hub/security)을 읽으세요.
 
 ## 소스
 
