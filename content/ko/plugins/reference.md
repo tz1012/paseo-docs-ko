@@ -261,6 +261,7 @@ export default function contribute(plugin: PluginContext) {
     title: "Review",
     icon: "Scan",
     context: "agent",
+    locations: ["workspace", "explorer"],
     Component: ReviewPanel,
   });
   return () => {};
@@ -275,6 +276,7 @@ export default function contribute(plugin: PluginContext) {
 | `title` | 예 | 작업공간 탭 제목.                                          |
 | `icon` | 예 | Lucide 아이콘 이름입니다.                                             |
 | `context` | 예 | `workspace` 또는 `agent`.                                       |
+| `locations` | 아니요 | `workspace` 및/또는 `explorer`. 기본값은 `workspace`입니다. |
 | `Component` | 예 | 선택한 컨텍스트의 소품과 일치하는 React Native 구성 요소입니다. |
 
 작업 공간 패널은 `PluginWorkspacePanelProps`을 수신합니다: `context: "workspace"`, `theme`, `host`, `layout` 및 `workspaceId`. 에이전트 패널은 `PluginAgentPanelProps`: `context: "agent"`, 동일한 공통 필드, `workspaceId` 및 `agentId`을 수신합니다.
@@ -377,7 +379,7 @@ plugin.addCommandCenterItem({
 | `openSurface(id)` | 모두 | 이 플러그인에 등록된 전역 표면 중 하나를 엽니다.        |
 | `workspace` | 작업공간 및 에이전트 | 동기식 작업공간 스냅샷.                               |
 | `agent` | 에이전트 | 동기식 일치 에이전트 스냅샷.                          |
-| `openPanel(id)` | 작업공간 및 에이전트 | 콜백의 현재 컨텍스트에서 등록된 패널을 엽니다.   |
+| `openPanel(id, options?)` | 작업공간 및 에이전트 | 콜백의 현재 컨텍스트에서 등록된 패널을 엽니다. 탐색기를 대상으로 하려면 `{ location: "explorer" }`를 전달합니다. |
 
 에이전트 콜백은 에이전트 패널이나 작업공간 패널을 열 수 있습니다. 작업공간 콜백은 작업공간 패널만 열 수 있습니다. 알 수 없는 표면 및 패널 ID는 명확한 오류를 냅니다. 일반 작업공간, 에이전트, 공급자 및 데몬 구성 작업에는 `paseo`를 사용하세요. 플러그인별 파일 시스템, 자격 증명, 공급업체 또는 데몬 로컬 작업에는 `rpc`를 사용하세요.
 

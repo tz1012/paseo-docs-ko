@@ -91,6 +91,7 @@ export default function contribute(plugin: PluginContext) {
     title: "Workspace overview",
     icon: "PanelsTopLeft",
     context: "workspace",
+    locations: ["workspace", "explorer"],
     Component: WorkspaceOverview,
   });
   plugin.addCommandCenterItem({
