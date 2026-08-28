@@ -1,6 +1,6 @@
 ---
 title: Plugin quickstart
-description: Build, install, and reload a trusted local Paseo plugin with a workspace panel.
+description: Build, install, share, and update a trusted Paseo plugin.
 nav: Quickstart
 order: 45
 category: Plugins
@@ -8,8 +8,7 @@ category: Plugins
 
 # 플러그인 빠른 시작
 
-> **실험적 기능:** 플러그인은 개인적인 로컬 사용을 위한 기능이며 아직 배포용으로 설계되지 않았습니다.
-> 플러그인 API는 계속 발전 중이므로 Paseo가 발전함에 따라 호환성을 깨는 변경 사항이 생기고
+> **실험적 기능:** 플러그인 API는 계속 발전 중이므로 Paseo가 발전함에 따라 호환성을 깨는 변경 사항이 생기고
 > 플러그인을 업데이트해야 할 수 있습니다.
 
 예정된 기여 영역과 현재 상태는 [플러그인 로드맵](https://github.com/getpaseo/paseo/labels/plugins)을 참조하세요.
@@ -118,6 +117,25 @@ paseo plugin ls
 ```
 
 작업공간을 열고 macOS에서는 **⌘K**, Windows와 Linux에서는 **Ctrl+K**를 누른 다음 **작업공간 개요 열기**를 선택하세요. 일반 작업공간 탭으로 열립니다. 항목이 표시되지 않으면 **플러그인 활성화**가 켜져 있는지, `paseo plugin ls`에서 플러그인 상태가 `running`인지, 클라이언트가 플러그인을 설치한 호스트를 보고 있는지 확인하세요.
+
+GitHub 또는 다른 Git 호스트를 통해 게시된 플러그인을 설치하려면 다음을 실행하세요.
+
+```bash
+paseo plugin add owner/repository
+paseo plugin add https://git.example.com/owner/repository.git
+paseo plugin add owner/monorepo --path plugins/workspace
+paseo plugin add owner/repository --ref main
+```
+
+`--ref`를 생략하면 기본 브랜치를 추적합니다. 명시한 브랜치는 업데이트를 추적하고, 태그와 커밋은 고정됩니다. 다음 명령으로 업데이트를 확인하고 적용하세요.
+
+```bash
+paseo plugin status
+paseo plugin update workspace-plugin
+paseo plugin update --all
+```
+
+Paseo는 실행 중인 버전을 교체하기 전에 새 커밋을 검증하고 컴파일합니다. 시작에 실패하면 이전 버전을 복원합니다. Git 설치는 패키지 관리자나 설치 스크립트를 실행하지 않으므로, 게시된 플러그인은 Paseo가 호스트에서 제공하는 모듈을 사용하거나 번들에 포함할 소스를 함께 제공해야 합니다.
 
 ## 편집하고 다시 로드
 

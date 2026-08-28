@@ -95,6 +95,12 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 
 `agent.timeline.subscribe(handler)`은 에이전트에 속한 스트림 이벤트를 수신하고 로컬 구독 취소 기능을 반환합니다.
 
+## `client.projects`
+
+| 메서드 | 결과 | 동작 |
+| ---------------- | ------------------------ | ----------------------------------------------------------------------------- |
+| `list(options?)` | `PaseoProjectListResult` | 활성 작업공간이 없는 프로젝트를 포함해 등록된 모든 프로젝트를 나열합니다. |
+
 ## `client.workspaces`
 
 | 방법 | 결과 | 행동 |

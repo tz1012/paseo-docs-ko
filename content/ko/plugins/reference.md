@@ -1,6 +1,6 @@
 ---
 title: Plugin reference
-description: Local plugin files, contributions, Paseo SDK access, RPCs, attachments, logs, lifecycle, hosts, and CLI commands.
+description: Local plugin files, client and server runtimes, platform limits, contributions, RPCs, lifecycle, hosts, and CLI commands.
 nav: Reference
 order: 46
 category: Plugins
@@ -34,13 +34,13 @@ my-plugin/
   tsconfig.json
 ```
 
-매니페스트에는 기본 플러그인 ID가 포함되어 있습니다.
+필수 루트 매니페스트는 `paseo-plugin.json`입니다. 여기에는 기본 플러그인 ID가 포함되어 있습니다.
 
 ```json
 { "id": "my-plugin" }
 ```
 
-플러그인, 표면, 사이드바 항목, 작업 공간 패널, 명령 센터 항목 및 첨부 파일 소스 ID는 소문자로 시작하고 소문자, 숫자 또는 하이픈을 포함합니다.
+진입점은 플러그인 루트의 `index.ts`입니다. 플러그인, 표면, 사이드바 항목, 작업공간 패널, Command Center 항목 및 첨부 소스 ID는 소문자로 시작하고 소문자, 숫자 또는 하이픈을 포함합니다.
 
 생성된 선언 파일은 로컬 유형 검사를 위한 `@getpaseo/plugin` 및 `@getpaseo/plugin/server` 유형을 제공합니다. Paseo는 런타임 모듈을 제공합니다. 플러그인 계약이 변경되면 일치하는 CLI를 사용하여 새 프로젝트를 다시 생성합니다.
 
@@ -59,14 +59,35 @@ my-plugin/
 | `*.server.ts` | 노드 API, 로컬 리소스, 자격 증명 및 RPC 처리기.           |
 | `*.shared.ts` | 두 런타임 모두에서 가져온 Zod RPC 계약 및 일반 값입니다.        |
 
-## SDK 모듈
+## 런타임 모듈
+
+Paseo는 `index.ts`에서 클라이언트 번들과 서버 번들을 별도로 빌드합니다. `*.server` 파일에서 클라이언트 모듈로 가져오기와 `*.client` 파일에서 서버 모듈로 가져오기를 거부합니다. 공유 모듈에는 Node 및 React Native 런타임 코드를 넣지 마세요.
+
+### 클라이언트 런타임
+
+Paseo는 클라이언트 코드에 다음 모듈을 제공합니다.
 
 | 모듈 | 용도 |
-| ---------------------- | -------------------------------------------------------- |
-| `@getpaseo/plugin` | 후크 및 UI 유형 |
-| `@getpaseo/plugin/server` | `defineRpc`, `defineAttachmentSource` 및 처리기 유형 |
+| ------------------------- | --------------------------------------- |
+| `@getpaseo/plugin` | 호스트 UI 구성 요소, 후크 및 UI 유형 |
+| `@getpaseo/plugin/server` | 공유 RPC 및 첨부 계약 |
+| `@tanstack/react-query` | 요청 상태 및 캐싱 |
+| `react` | 구성 요소 및 후크 |
+| `react/jsx-runtime` | 컴파일된 JSX |
+| `react-native` | 크로스 플랫폼 UI |
+| `zod` | 공유 스키마 |
 
-Paseo는 `*.server` 파일에서 클라이언트 모듈로 가져오기를 거부하고 `*.client` 파일에서 서버 모듈로 가져오기를 거부합니다. Node 및 React Native 런타임 코드가 없는 공유 모듈을 유지하세요.
+이 정확한 모듈 지정자는 호스트의 런타임 인스턴스를 사용합니다. 다른 호스트 모듈을 요청하는 클라이언트 번들은 `Module "<name>" is not available in plugin client code` 오류와 함께 실패합니다.
+
+`lucide-react-native`, `react-native-svg` 또는 DOM 라이브러리를 가져오지 마세요. 기여의 `icon` 필드에는 [Lucide 아이콘 이름](https://lucide.dev/icons/)을 설정하세요. Paseo가 이름을 검증하고 아이콘을 렌더링합니다.
+
+클라이언트 구성 요소는 Paseo가 렌더링하는 React Native 구성 요소입니다. 웹 클라이언트는 React Native Web을 통해 렌더링합니다. `localStorage` 및 `location` 같은 브라우저 전역은 `layout.platform === "web"`일 때만 존재하며 iOS와 Android에는 이에 대응하는 항목이 없습니다. 해당 필드를 기준으로 사용 여부를 제한하세요.
+
+플러그인 스토리지 API는 없습니다. 브라우저 스토리지는 Paseo 클라이언트 간에 설정을 유지하지 않습니다. 범용 호스트 탐색 API도 없으므로 플러그인 코드에서 Paseo 네이티브 경로를 열 수 없습니다. Command Center 콜백은 같은 플러그인이 등록한 표면과 패널만 열 수 있습니다.
+
+### 서버 런타임
+
+Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `zod`를 제공합니다. 백엔드 기여는 데몬 하위 프로세스에서 실행되며 호스트 머신에 대한 Node 액세스 권한이 있습니다. 파일 시스템, 프로세스, 자격 증명 및 기타 머신 로컬 작업은 `*.server.ts` 파일에 두세요.
 
 ## 진입점 및 정리
 
@@ -143,11 +164,68 @@ export default function contribute(plugin: PluginContext) {
 | `host` | 선택한 호스트의 `id`와 표시용 `label`. |
 | `layout` | `compact` 및 `ios`, `android` 또는 `web` 플랫폼. |
 
-Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 쿼리 클라이언트를 소유합니다. 플러그인은 표면 본체를 소유합니다. 아이콘은 [Lucide](https://lucide.dev/icons/) 이름을 사용합니다.
+Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 쿼리 클라이언트를 소유합니다. 플러그인은 표면 본체를 소유합니다.
+
+클라이언트 표면 내부의 Lucide 아이콘에는 호스트가 제공하는 `Icon` 구성 요소를 사용하세요. Paseo에 설치된 Lucide 버전의 아이콘을 렌더링하므로 플러그인 번들에서 `lucide-react-native` 또는 `react-native-svg`를 가져오지 않습니다. 알 수 없는 이름은 플러그인 표면을 실패시키는 대신 아무것도 렌더링하지 않습니다.
+
+```tsx
+import { Icon } from "@getpaseo/plugin";
+
+<Icon name="Settings" size={18} color={theme.colors.foreground} />;
+```
+
+`Icon`은 `*.client.tsx` 모듈에 두세요.
+
+## 타임라인 항목
+
+플러그인은 투영된 타임라인 항목을 자체 데이터와 React Native 렌더러로 교체할 수 있습니다. 두 등록 모두 클라이언트 기여입니다. 일치하는 라이브 이벤트는 교체 전에 투영된 꼬리를 새로 고치므로 공급자 수명 주기 델타가 플러그인 항목으로 노출되지 않습니다.
+
+```tsx
+import type { PluginContext, PluginTimelineItemProps } from "@getpaseo/plugin";
+import { Text } from "react-native";
+import { z } from "zod";
+
+const schema = z.object({ label: z.string() });
+
+function Card({ item, theme }: PluginTimelineItemProps<z.output<typeof schema>>) {
+  return <Text style={{ color: theme.colors.foreground }}>{item.data.label}</Text>;
+}
+
+export default function contribute(plugin: PluginContext) {
+  plugin.addTimelineTransformer({
+    id: "command-card",
+    query: { itemType: "tool_call" },
+    transform({ item }) {
+      if (item.status === "running") return;
+      return {
+        items: [
+          {
+            type: "plugin",
+            kind: "command-card",
+            version: 1,
+            data: { label: item.name },
+          },
+        ],
+      };
+    },
+  });
+  plugin.addTimelineRenderer({
+    kind: "command-card",
+    version: 1,
+    schema,
+    Component: Card,
+  });
+  return () => {};
+}
+```
+
+`query.itemType`은 안정적이고 거친 선택자입니다. 공급자나 도구별 항목을 인식하려면 `transform` 안에서 선택된 항목을 검사하세요. `undefined`를 반환하면 원래 항목을 유지합니다. `items`를 반환하면 항목을 교체하고, 빈 배열을 반환하면 제거합니다. 항목의 `data`는 JSON과 호환되어야 합니다.
+
+렌더러는 `agentId`, `item`, `timestamp`, `theme`, `host`, `layout`을 받습니다. Paseo는 렌더링 전에 등록된 스키마로 `item.data`를 검증합니다. Paseo가 투영된 기록을 조정하는 동안 변환기를 다시 실행하므로 변환기는 동기적이고 결정적으로 유지하세요.
 
 ## 테마 및 레이아웃
 
-플러그인 UI는 모든 Paseo 테마에서 데스크톱, 브라우저, iOS, Android에서 실행됩니다. `theme`은 형식화된 `PluginTheme`입니다. 색상과 간격은 반드시 이 props에서 가져와야 합니다. 스타일이 지정되지 않은 `Text`는 검은색이므로 어두운 테마에서 제대로 표시되지 않습니다.
+플러그인 UI는 모든 Paseo 테마에서 데스크톱, 브라우저, iOS, Android에서 실행됩니다. `theme`은 활성 호스트 테마에서 매핑된 형식화된 `PluginTheme`입니다. 색상과 간격은 반드시 이 props에서 가져와야 합니다. 하드코딩한 색상과 스타일이 지정되지 않은 `Text`는 호스트 테마가 변경될 때 제대로 표시되지 않습니다.
 
 `theme` 또는 `layout.compact`가 변경되면 스타일을 다시 생성하세요.
 
@@ -156,8 +234,13 @@ Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 �
 | `theme.colors.foreground`        | 모든 기본 `Text`           | 제목 및 본문                      |
 | `theme.colors.foregroundMuted`   | 보조 `Text`                | 레이블 및 보조 문구               |
 | `theme.colors.surface0`          | 루트 뷰                    | 패널 배경                         |
+| `theme.colors.surface1`          | 돌출 표면                  | 카드와 패널                       |
+| `theme.colors.surface2`          | 컨트롤 표면                | 입력 및 보조 컨트롤               |
+| `theme.colors.border`            | 표면 경계                  | 테두리와 구분선                   |
 | `theme.colors.accent`            | 기본 작업 채우기           | 버튼과 선택 상태                  |
 | `theme.colors.accentForeground`  | 강조 채우기 위의 텍스트    | 버튼 레이블                       |
+| `theme.colors.statusSuccess`     | 성공 피드백                | 성공 메시지와 표시기              |
+| `theme.colors.statusWarning`     | 경고 피드백                | 경고 메시지와 표시기              |
 | `theme.colors.statusDanger`      | 실패 문구                  | 오류 메시지와 파괴적 작업 텍스트  |
 | `layout.compact`                 | 패딩 및 쌓기               | 모바일 및 좁은 창에서 `true`      |
 | `layout.platform`                | 플랫폼별 동작              | `ios`, `android` 또는 `web`        |
@@ -165,8 +248,6 @@ Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 �
 `#000`, `#fff` 또는 React Native의 기본 텍스트 색상을 하드코딩하지 마세요. 기본 문구에는 `foreground`를, 레이블에는 `foregroundMuted`를 사용하세요. `layout.compact`가 true이면 패딩을 줄이세요.
 
 작업공간 및 에이전트 패널도 동일한 `theme` 및 `layout` 필드를 받습니다.
-
-클라이언트 코드는 `react`, `react-native`, `@tanstack/react-query`, `zod`, `@getpaseo/plugin` 및 `@getpaseo/plugin/server`를 가져올 수 있습니다. 유형 검사를 위해 로컬로 설치하십시오. Paseo는 클라이언트 런타임 인스턴스를 제공합니다.
 
 ## 테마 제공
 
@@ -418,7 +499,7 @@ function PullRequestAction() {
 }
 ```
 
-반환된 API에는 작업공간, 에이전트, 공급자, 데몬 구성이 포함됩니다. 각 메서드는 [SDK API 참조](/docs/sdk/reference)를 확인하세요. Paseo가 연결을 관리하므로 연결 수명 주기 메서드는 의도적으로 제공하지 않습니다.
+반환된 API에는 프로젝트, 작업공간, 에이전트, 공급자, 데몬 구성이 포함됩니다. 각 메서드는 [SDK API 참조](/docs/sdk/reference)를 확인하세요. Paseo가 연결을 관리하므로 연결 수명 주기 메서드는 의도적으로 제공하지 않습니다.
 
 ## 플러그인별 백엔드 동작 추가
 
@@ -586,6 +667,12 @@ Paseo는 작성기 메뉴, 검색 선택기, 선택한 알약, 초안 상태 및
 paseo plugin init /absolute/path/to/plugin
 paseo plugin install /absolute/path/to/plugin
 paseo plugin install /absolute/path/to/plugin --id another-runtime-id
+paseo plugin add owner/repository
+paseo plugin add https://git.example.com/owner/repository.git --ref main
+paseo plugin add owner/monorepo --path plugins/review
+paseo plugin status [id]
+paseo plugin update <id>
+paseo plugin update --all
 paseo plugin ls
 paseo plugin reload my-plugin
 paseo plugin logs my-plugin
@@ -594,7 +681,9 @@ paseo plugin enable my-plugin
 paseo plugin remove my-plugin
 ```
 
-대상이 CLI의 기본 데몬이 아니면 관리 명령에 `--host <url>`을 전달하세요. `remove`는 데몬 구성만 삭제하며 소스 디렉터리는 삭제하지 않습니다. 설치 시 지정하는 `--id`는 런타임 ID로, 같은 디렉터리를 두 번 이상 설치할 수 있게 합니다.
+대상이 CLI의 기본 데몬이 아니면 관리 명령에 `--host <url>`을 전달하세요. `remove`는 디렉터리 소스를 삭제하지 않으며 Git 소스의 관리형 체크아웃은 삭제합니다. 설치 시 지정하는 `--id`는 런타임 ID로, 같은 디렉터리나 저장소를 두 번 이상 설치할 수 있게 합니다.
+
+기존 디렉터리는 `owner/repository` GitHub 단축 표기보다 우선합니다. 기본 브랜치를 추적하려면 `--ref`를 생략하세요. 명시한 브랜치는 업데이트를 추적하고, 태그와 커밋은 고정된 상태로 유지됩니다. Git 설치는 패키지 관리자나 설치 스크립트를 실행하지 않습니다. `update`는 활성화 전에 후보를 검증하고 컴파일하며, 시작에 실패하면 설치된 커밋을 복원합니다.
 
 설치하거나 다시 로드하기 전에 `npm run typecheck`을 실행하세요. 데몬 구성을 직접 편집하지 마십시오.
 
