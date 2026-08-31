@@ -140,6 +140,43 @@ const assessment = JSON.parse(result.lastMessage) as {
 
 신뢰할 수 있는 입력으로 사용하기 전에 애플리케이션에서 구문 분석된 값을 검증하십시오.
 
+## 에이전트의 현재 상태 읽기
+
+```ts
+const agent = client.agents.ref("agent_01H8X...");
+await agent.refresh();
+
+if (agent.pendingPermissions?.length) {
+  console.log(`Waiting on ${agent.pendingPermissions.length} permission request(s)`);
+}
+console.log(agent.lastUsage?.totalCostUsd, agent.runtimeInfo?.sessionId);
+```
+
+핸들은 `status`, `capabilities`, `availableModes`, `pendingPermissions`, `activeTurn`, `lastUsage`, `lastError`, `features`, `runtimeInfo`, `archivedAt`, `workspaceId`, `cwd`를 속성으로 노출합니다. 이 속성은 모두 핸들이 마지막으로 관찰한 스냅샷을 읽으며 가져오기를 수행하지 않습니다.
+
+`ref()`에서 생성한 핸들은 아직 아무것도 관찰하지 않았으므로 `refresh()`, `run()`, `waitForFinish()`, 타임라인 다시 가져오기 또는 `subscribe()`가 스냅샷을 전달할 때까지 모든 속성이 `null`입니다. 관찰한 스냅샷의 선택적 값도 `null`로 읽힙니다. 전체 스냅샷이 필요하거나 이러한 상태를 구분해야 할 때는 `current()`를 사용하세요.
+
+`subscribe()`는 속성을 최신 상태로 유지하므로, 수명이 긴 핸들은 다른 RPC 없이도 속성을 폴링할 수 있습니다.
+
+```ts
+const unsubscribe = agent.subscribe(() => {
+  if (agent.status === "error") console.error(agent.lastError);
+});
+```
+
+## 세션이 로드한 명령 나열하기
+
+```ts
+const { commands, error } = await agent.commands();
+if (error) throw new Error(error);
+
+const skills = commands.filter((command) => command.kind === "skill");
+```
+
+응답은 디렉터리 스캔이 아니라 실행 중인 세션에서 오므로, 디스크에 나타나지 않는 공급자 내장 명령과 스킬도 포함됩니다. `kind`는 공급자 자체 분류이며 선택 사항입니다. `kind`가 없을 때는 `"command"`로 간주하지 말고 분류되지 않은 것으로 처리하세요.
+
+목록을 생성할 수 없는 공급자는 `error`에 이를 보고하고 빈 `commands` 배열을 반환합니다. 호출은 거부되지 않습니다.
+
 ## 보관 또는 분리
 
 ```ts

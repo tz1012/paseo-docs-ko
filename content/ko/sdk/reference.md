@@ -78,16 +78,30 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `workspaceId` | `string \| null` | 현재 작업공간 배치.                                                                      |
 | `cwd` | `string \| null` | 현재 작업 디렉토리.                                                                        |
 | `status` | 에이전트 상태 또는 `null` | 현재 수명주기 상태.                                                                         |
+| `capabilities` | 기능 플래그 또는 `null` | 공급자 세션이 지원하는 기능. |
+| `availableModes` | 에이전트 모드 또는 `null` | 세션이 전환할 수 있는 모드. |
+| `pendingPermissions` | 권한 요청 또는 `null` | 응답을 기다리는 요청. |
+| `activeTurn` | 활성 턴 또는 `null` | 진행 중인 턴과 해당 `turnId`, `startedAt`. |
+| `lastUsage` | 사용량 또는 `null` | 마지막 턴의 토큰 수, 비용, 컨텍스트 창 사용량. |
+| `lastError` | `string \| null` | 데몬이 에이전트에 대해 기록한 마지막 오류. |
+| `features` | 에이전트 기능 또는 `null` | 공급자 기능 토글 및 선택 항목과 현재 값. |
+| `runtimeInfo` | 런타임 정보 또는 `null` | 실시간 공급자, 세션 ID, 모델, 추론 옵션 및 모드. |
+| `archivedAt` | `string \| null` | 보관 타임스탬프. 에이전트가 활성 상태이면 `null`. |
 | `current()` | `PaseoAgent \| null` | 이 핸들에서 관찰된 현재 세부 값입니다. 절대 가져오지 않습니다.                                    |
 | `refresh(requestId?)` | `PaseoAgentRefetchResult \| null` | 현재 에이전트 및 프로젝트 배치를 가져옵니다.                                                  |
 | `send(text, options?)` | `Promise<void>` | 데몬이 프롬프트를 수락하면 해결됩니다.                                                      |
 | `run(text, options?)` | `PaseoAgentRunResult` | 프롬프트를 보내고 해당 차례를 기다립니다. `timeoutMs`은 대기 시간을 제어합니다. 기본값은 10분입니다. |
 | `waitForFinish(timeoutMs?)` | `PaseoAgentRunResult` | 초기 프롬프트를 포함하여 활성 차례를 기다립니다. 기본 시간 초과: 10분.              |
+| `commands(options?)` | `PaseoAgentCommandsResult` | 실시간 세션에 슬래시 명령과 내장 스킬을 요청합니다. 옵션은 `requestId`입니다. |
 | `subscribe(handler)` | 구독 취소 기능 | 이 ID에 대한 에이전트 디렉터리 업데이트를 필터링하고 핸들 속성을 새로 고칩니다.                   |
 | `archive()` | `{ archivedAt }` | 에이전트를 일시 삭제하고 해당 런타임을 닫습니다.                                                    |
 | `detach()` | `Promise<void>` | 에이전트를 중지하지 않고 상위 관계를 제거합니다.                                       |
 
+`workspaceId`부터 `archivedAt`까지는 핸들이 마지막으로 관찰한 스냅샷을 반영합니다. `ref()`에서 생성한 핸들은 `refresh()`, `run()`, `waitForFinish()`, 타임라인 다시 가져오기 또는 `subscribe()`가 스냅샷을 전달할 때까지 이 속성을 모두 `null`로 읽습니다. 관찰한 스냅샷의 선택적 값도 `null`로 읽힙니다. 전체 스냅샷이 필요하거나 이러한 상태를 구분해야 할 때는 `current()`를 호출하세요.
+
 `PaseoAgentRunResult`에는 `status`, `final`, `error` 및 `lastMessage`이 포함됩니다. `final`은 핸들이 있는 경우 핸들을 새로 고칩니다.
+
+`PaseoAgentCommandsResult`에는 `agentId`, `commands`, `error`가 포함됩니다. 각 명령에는 `name`, `description`, `argumentHint`와 선택적 `kind`인 `"command"` 또는 `"skill"`이 있습니다. 응답할 수 없는 공급자는 호출을 거부하지 않고 `error`에 이를 보고하며, 명령 목록을 전혀 노출하지 않는 공급자는 빈 배열을 반환합니다.
 
 ### 타임라인 핸들
 

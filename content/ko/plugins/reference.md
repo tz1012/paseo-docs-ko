@@ -42,7 +42,7 @@ my-plugin/
 
 진입점은 플러그인 루트의 `index.ts`입니다. 플러그인, 표면, 사이드바 항목, 작업공간 패널, Command Center 항목 및 첨부 소스 ID는 소문자로 시작하고 소문자, 숫자 또는 하이픈을 포함합니다.
 
-생성된 선언 파일은 로컬 유형 검사를 위한 `@getpaseo/plugin` 및 `@getpaseo/plugin/server` 유형을 제공합니다. Paseo는 런타임 모듈을 제공합니다. 플러그인 계약이 변경되면 일치하는 CLI를 사용하여 새 프로젝트를 다시 생성합니다.
+생성된 선언 파일은 로컬 유형 검사를 위한 `@getpaseo/plugin`, `@getpaseo/plugin/react-native`, `@getpaseo/plugin/server` 유형을 제공합니다. Paseo는 런타임 모듈을 제공합니다. 플러그인 계약이 변경되면 일치하는 CLI를 사용하여 새 프로젝트를 다시 생성합니다.
 
 플러그인이 성장함에 따라 런타임별 파일을 추가합니다.
 
@@ -69,7 +69,8 @@ Paseo는 클라이언트 코드에 다음 모듈을 제공합니다.
 
 | 모듈 | 용도 |
 | ------------------------- | --------------------------------------- |
-| `@getpaseo/plugin` | 호스트 UI 구성 요소, 후크 및 UI 유형 |
+| `@getpaseo/plugin` | 기여 계약 및 데이터 후크 |
+| `@getpaseo/plugin/react-native` | Paseo UI 구성 요소 및 UI 후크 |
 | `@getpaseo/plugin/server` | 공유 RPC 및 첨부 계약 |
 | `@tanstack/react-query` | 요청 상태 및 캐싱 |
 | `react` | 구성 요소 및 후크 |
@@ -163,18 +164,104 @@ export default function contribute(plugin: PluginContext) {
 | `theme` | 활성 Paseo 테마를 위한 형식화된 `PluginTheme` 색상 토큰. |
 | `host` | 선택한 호스트의 `id`와 표시용 `label`. |
 | `layout` | `compact` 및 `ios`, `android` 또는 `web` 플랫폼. |
+| `navigation` | 선택적 클라이언트 탐색. `openAgent({ agentId })`와 `openWorkspace({ workspaceId })`는 선택한 호스트의 대상을 엽니다. |
 
 Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계 및 쿼리 클라이언트를 소유합니다. 플러그인은 표면 본체를 소유합니다.
 
-클라이언트 표면 내부의 Lucide 아이콘에는 호스트가 제공하는 `Icon` 구성 요소를 사용하세요. Paseo에 설치된 Lucide 버전의 아이콘을 렌더링하므로 플러그인 번들에서 `lucide-react-native` 또는 `react-native-svg`를 가져오지 않습니다. 알 수 없는 이름은 플러그인 표면을 실패시키는 대신 아무것도 렌더링하지 않습니다.
+## 호스트 UI
+
+`*.client.tsx` 파일에서는 `@getpaseo/plugin/react-native`에서 Paseo 소유 UI를 가져옵니다. 다음 예제는 제어형 모달을 열고 호스트 아이콘을 렌더링한 다음 토스트로 작업을 확인합니다.
 
 ```tsx
-import { Icon } from "@getpaseo/plugin";
+import type { PluginSurfaceProps } from "@getpaseo/plugin";
+import { Icon, Modal, useToast } from "@getpaseo/plugin/react-native";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
 
-<Icon name="Settings" size={18} color={theme.colors.foreground} />;
+export function IssueActions({ theme }: PluginSurfaceProps) {
+  const [open, setOpen] = useState(false);
+  const toast = useToast();
+
+  function saveIssue() {
+    toast.show("Issue saved", { variant: "success" });
+    setOpen(false);
+  }
+
+  return (
+    <View>
+      <Pressable accessibilityRole="button" onPress={() => setOpen(true)}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Icon name="Pencil" size={18} color={theme.colors.foreground} />
+          <Text style={{ color: theme.colors.foreground }}>Edit issue</Text>
+        </View>
+      </Pressable>
+
+      <Modal
+        title="Edit issue"
+        icon={<Icon name="Pencil" size={18} color={theme.colors.foreground} />}
+        open={open}
+        onOpenChange={setOpen}
+      >
+        <Modal.Content>
+          <Pressable accessibilityRole="button" onPress={saveIssue}>
+            <Text style={{ color: theme.colors.foreground }}>Save</Text>
+          </Pressable>
+        </Modal.Content>
+      </Modal>
+    </View>
+  );
+}
 ```
 
-`Icon`은 `*.client.tsx` 모듈에 두세요.
+### 모달
+
+`Modal`은 좁은 레이아웃에서는 하단 시트를, 그 외에는 가운데 정렬된 대화상자를 사용합니다. 플러그인이 `open` 상태를 소유합니다.
+
+| Prop | 유형 | 필수 | 동작 |
+| -------------- | ------------------------- | ---- | -------------------------------------------- |
+| `title` | `string` | 예 | 모달과 표시되는 헤더의 레이블을 지정합니다. |
+| `icon` | `ReactNode` | 아니요 | 헤더의 제목 앞에 렌더링됩니다. |
+| `open` | `boolean` | 예 | `true`이면 모달 콘텐츠를 표시합니다. |
+| `onOpenChange` | `(open: boolean) => void` | 예 | 사용자가 닫으면 `false`를 받습니다. |
+| `children` | `ReactNode` | 예 | `Modal.Content`를 포함합니다. |
+
+`Modal.Content`는 호스트가 렌더링한 헤더 아래의 본문을 소유합니다.
+
+| Prop | 유형 | 필수 | 동작 |
+| ---------- | ----------- | ---- | --------------------------------------------- |
+| `children` | `ReactNode` | 예 | 플러그인의 React Native UI 콘텐츠를 렌더링합니다. |
+
+닫기 버튼, 배경, 플랫폼 뒤로 가기 동작, 웹 Escape 키, 좁은 시트 제스처로 모달을 닫을 수 있습니다. 닫으면 `onOpenChange(false)`가 호출되며, 플러그인은 `open`을 업데이트해야 모달이 닫힙니다.
+
+모달 자식은 플러그인 런타임 컨텍스트를 유지합니다. 그 안에서도 `usePaseo`, `useRpc`, `useWorkspace`, `useAgent`가 작동합니다.
+
+### 토스트
+
+`useToast()`는 두 메서드를 반환합니다.
+
+| 메서드 | 동작 |
+| ------------------------- | ----------------------------------------------------------- |
+| `show(message, options?)` | `durationMs`를 지정하지 않으면 2,200ms 동안 토스트를 표시합니다. |
+| `error(message)` | 3,200ms 동안 오류 토스트를 표시합니다. |
+
+`show`는 다음 옵션을 받습니다.
+
+| 옵션 | 유형 | 기본값 |
+| ------------ | ---------------------------------------------------------- | ----------- |
+| `variant` | `"default" \| "info" \| "success" \| "warning" \| "error"` | `"default"` |
+| `durationMs` | `number` | `2200` |
+
+다른 토스트를 표시하면 현재 보이는 토스트를 대체합니다. 빈 메시지는 무시됩니다.
+
+### 아이콘
+
+`Icon`은 Paseo에 설치된 아이콘 집합의 [Lucide 아이콘](https://lucide.dev/icons/)을 렌더링합니다. 플러그인 번들은 `lucide-react-native` 또는 `react-native-svg`를 가져오지 않습니다.
+
+| Prop | 유형 | 필수 | 동작 |
+| ------- | -------- | ---- | ----------------------------------------------- |
+| `name` | `string` | 예 | Lucide 아이콘 이름. 알 수 없는 이름은 아무것도 렌더링하지 않습니다. |
+| `size` | `number` | 아니요 | 아이콘 너비와 높이. |
+| `color` | `string` | 아니요 | 아이콘 색상. 플러그인 테마 토큰을 사용하세요. |
 
 ## 타임라인 항목
 
@@ -223,6 +310,8 @@ export default function contribute(plugin: PluginContext) {
 
 렌더러는 `agentId`, `item`, `timestamp`, `theme`, `host`, `layout`을 받습니다. Paseo는 렌더링 전에 등록된 스키마로 `item.data`를 검증합니다. Paseo가 투영된 기록을 조정하는 동안 변환기를 다시 실행하므로 변환기는 동기적이고 결정적으로 유지하세요.
 
+탐색에 의존하는 작업을 표시하기 전에 `navigation`을 확인하세요. 이전 Paseo 클라이언트에서는 이 기능이 정의되지 않습니다. Paseo가 경로 구성을 소유하도록 하면 데스크톱, 브라우저, iOS, Android에서 다시 로드하지 않고도 작업이 작동합니다.
+
 ## 테마 및 레이아웃
 
 플러그인 UI는 모든 Paseo 테마에서 데스크톱, 브라우저, iOS, Android에서 실행됩니다. `theme`은 활성 호스트 테마에서 매핑된 형식화된 `PluginTheme`입니다. 색상과 간격은 반드시 이 props에서 가져와야 합니다. 하드코딩한 색상과 스타일이 지정되지 않은 `Text`는 호스트 테마가 변경될 때 제대로 표시되지 않습니다.
@@ -247,7 +336,7 @@ export default function contribute(plugin: PluginContext) {
 
 `#000`, `#fff` 또는 React Native의 기본 텍스트 색상을 하드코딩하지 마세요. 기본 문구에는 `foreground`를, 레이블에는 `foregroundMuted`를 사용하세요. `layout.compact`가 true이면 패딩을 줄이세요.
 
-작업공간 및 에이전트 패널도 동일한 `theme` 및 `layout` 필드를 받습니다.
+작업공간 및 에이전트 패널도 동일한 `theme`, `layout`, 선택적 `navigation` 필드를 받습니다.
 
 ## 테마 제공
 
@@ -463,6 +552,85 @@ plugin.addCommandCenterItem({
 | `openPanel(id, options?)` | 작업공간 및 에이전트 | 콜백의 현재 컨텍스트에서 등록된 패널을 엽니다. 탐색기를 대상으로 하려면 `{ location: "explorer" }`를 전달합니다. |
 
 에이전트 콜백은 에이전트 패널이나 작업공간 패널을 열 수 있습니다. 작업공간 콜백은 작업공간 패널만 열 수 있습니다. 알 수 없는 표면 및 패널 ID는 명확한 오류를 냅니다. 일반 작업공간, 에이전트, 공급자 및 데몬 구성 작업에는 `paseo`를 사용하세요. 플러그인별 파일 시스템, 자격 증명, 공급업체 또는 데몬 로컬 작업에는 `rpc`를 사용하세요.
+
+## 작성기 필
+
+`index.ts`에서 헤드리스 클라이언트 진입점을 등록합니다.
+
+```ts
+import { contributeClient } from "./review.client";
+
+export default function contribute(plugin: PluginContext) {
+  plugin.addClientSide(contributeClient);
+  return () => {};
+}
+```
+
+클라이언트 진입점은 필 생성과 제거를 담당합니다.
+
+```tsx
+import {
+  Icon,
+  type PluginClientContext,
+  type PluginComposerPillProps,
+  useAgent,
+} from "@getpaseo/plugin";
+import { Text } from "react-native";
+
+function ReviewPill({ theme, agentId }: PluginComposerPillProps) {
+  const agent = useAgent(agentId, ({ title }) => ({ title }));
+  return (
+    <>
+      <Icon name="Scan" size={14} color={theme.colors.foregroundMuted} />
+      <Text numberOfLines={1} style={{ color: theme.colors.foregroundMuted, flexShrink: 1 }}>
+        {agent?.title ?? "Review"}
+      </Text>
+    </>
+  );
+}
+
+export function contributeClient(client: PluginClientContext) {
+  const pills = new Map<string, () => void>();
+  const unsubscribe = client.paseo.agents.subscribe((update) => {
+    if (update.kind !== "upsert" || !update.agent.workspaceId) return;
+    const { id: agentId, workspaceId } = update.agent;
+    pills.get(agentId)?.();
+    pills.set(
+      agentId,
+      client.addComposerPill({
+        id: "review",
+        title: "Open review",
+        workspaceId,
+        agentId,
+        Component: ReviewPill,
+        async onPress() {
+          await client.rpc(refreshReview, { agentId });
+          client.openPanel("review", { workspaceId, agentId });
+        },
+      }),
+    );
+  });
+  return () => {
+    unsubscribe();
+    for (const remove of pills.values()) remove();
+  };
+}
+```
+
+`addComposerPill` 필드:
+
+| 필드 | 필수 | 의미 |
+| ------------- | ---- | ---------------------------------------------------------- |
+| `id` | 예 | 대상 에이전트 내의 플러그인 로컬 ID. |
+| `title` | 예 | 접근성 버튼 레이블. |
+| `workspaceId` | 예 | 필을 소유하는 작성기 트랙의 작업공간. |
+| `agentId` | 예 | 필을 소유하는 작성기 트랙의 에이전트. |
+| `Component` | 예 | 필의 아이콘과 텍스트를 렌더링하는 React Native 구성 요소. |
+| `onPress` | 예 | 클라이언트 측 콜백. |
+
+`addClientSide`는 연결된 각 앱에서 플러그인 설치마다 한 번 실행됩니다. 이 컨텍스트는 `paseo`, 형식화된 `rpc`, `openSurface`, 명시적 컨텍스트의 `openPanel`, `addComposerPill`을 노출합니다. `addComposerPill`은 여러 번 호출해도 안전한 제거 함수를 반환합니다. Paseo는 클라이언트 진입점, 플러그인 설치 또는 호스트 연결이 종료될 때 남아 있는 모든 필도 제거합니다.
+
+Paseo는 pressable, 공유 필 외형, 대기 상태, 오류 보고, 트랙 바 배치를 담당합니다. 구성 요소는 `theme`, `host`, `layout`, `workspaceId`, `agentId`를 받습니다. 현재 값은 `useWorkspace`와 `useAgent`로 읽으세요. 플러그인은 필이 존재하는 시점, 아이콘과 텍스트, 콜백을 담당합니다. `openPanel(id, { workspaceId, agentId? })`는 같은 플러그인이 등록한 패널을 열거나 포커스합니다.
 
 ## Paseo SDK 사용
 

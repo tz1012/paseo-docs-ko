@@ -1,6 +1,6 @@
 ---
 title: Connectivity
-description: Connect a Paseo client to your daemon through the relay or Tailscale.
+description: Connect a Paseo client to your daemon through SSH, the relay, or Tailscale.
 nav: Connectivity
 order: 4
 category: Getting started
@@ -8,12 +8,44 @@ category: Getting started
 
 # 연결
 
-Paseo 앱은 컴퓨터나 서버에서 실행되는 데몬에 연결됩니다. Paseo 릴레이를 통해 연결하거나 Tailscale을 통해 직접 연결할 수 있습니다.
+Paseo 앱은 컴퓨터나 서버에서 실행되는 데몬에 연결됩니다. Paseo Desktop과 CLI는 SSH를 통해 터널링할 수 있습니다. 모바일 클라이언트는 Paseo 릴레이를 통하거나 Tailscale로 직접 연결할 수 있습니다.
 
 이는 클라이언트에서 데몬으로의 전송입니다. GitHub, Slack, Discord 이벤트에서 에이전트를 시작하는 서비스를 찾고 있다면 바로 [Hub](/docs/hub)입니다.
 
+- [SSH](#ssh)
 - [Paseo 릴레이](#paseo-relay)
 - [테일스케일](#tailscale)
+
+## SSH
+
+SSH 전송은 로컬 OpenSSH 클라이언트를 통해 기존 데몬에 연결합니다. 원격 호스트에 Paseo를 설치하거나 시작하거나 구성하지 않습니다.
+
+연결하기 전에:
+
+1. 원격 호스트에서 Paseo 데몬을 시작합니다.
+2. 키 또는 SSH 에이전트로 `ssh user@host`가 작동하는지 확인합니다. Paseo는 비대화형 SSH를 사용하며 OpenSSH 구성을 따릅니다.
+
+CLI는 SSH URI를 호스트로 받습니다.
+
+```bash
+paseo ls -a --host ssh://user@host
+```
+
+원격 호스트의 데몬은 `127.0.0.1:6767`에 있어야 합니다. SSH URL의 포트는 SSH 서버 포트입니다.
+
+```bash
+paseo ls -a --host ssh://user@host:2222
+```
+
+다른 원격 데몬 포트를 설정하려면 `daemonPort`를 사용합니다.
+
+```bash
+paseo ls -a --host 'ssh://user@host?daemonPort=7777'
+```
+
+`--host`는 명령 뒤에 둬야 합니다. `paseo daemon status`는 로컬 데몬만 확인하므로, 원격 연결을 확인하려면 `paseo ls --host ...`를 사용하세요. `paseo run --host ...`에는 원격 호스트에 존재하는 경로를 지정한 `--cwd`도 필요합니다.
+
+Paseo Desktop에서는 **설정 → 호스트 추가 → 원격 SSH**를 열고 같은 `ssh://` 대상을 입력합니다.
 
 ## Paseo 릴레이
 
@@ -89,6 +121,8 @@ Paseo Desktop이 데몬을 관리하는 경우 **설정 → 호스트 → 개요
 
 ## 문제 해결
 
+- **SSH 인증 실패:** 터미널에서 `ssh user@host`를 실행하고 키, SSH 에이전트, 호스트 키 또는 `~/.ssh/config` 항목을 수정하세요. Paseo는 SSH 비밀번호를 묻지 않습니다.
+- **SSH는 연결되지만 Paseo 연결이 거부됨:** 원격 호스트에서 `paseo daemon status`를 실행하세요. SSH 전송은 데몬을 시작하지 않습니다.
 - **연결 시간 초과:** Tailscale이 두 장치 모두에 연결되어 있고 데몬 머신의 Tailscale IP를 사용했는지 확인하세요.
 - **연결 거부됨:** `paseo daemon status`을 실행하고 구성된 IP 및 포트에서 데몬이 실행되고 있는지 확인합니다.
 - **구성 변경이 적용되지 않습니다.** `paseo reload`를 실행하세요. `daemon.listen`은 시작 설정이므로 명령에서 재시작이 필요하다고 보고할 때 데몬을 다시 시작하세요.
