@@ -29,7 +29,6 @@ my-plugin/
   paseo-plugin.json
   index.ts
   main.client.tsx
-  paseo-plugin.d.ts
   package.json
   tsconfig.json
 ```
@@ -42,7 +41,7 @@ my-plugin/
 
 진입점은 플러그인 루트의 `index.ts`입니다. 플러그인, 표면, 사이드바 항목, 작업공간 패널, Command Center 항목 및 첨부 소스 ID는 소문자로 시작하고 소문자, 숫자 또는 하이픈을 포함합니다.
 
-생성된 선언 파일은 로컬 유형 검사를 위한 `@getpaseo/plugin`, `@getpaseo/plugin/react-native`, `@getpaseo/plugin/server` 유형을 제공합니다. Paseo는 런타임 모듈을 제공합니다. 플러그인 계약이 변경되면 일치하는 CLI를 사용하여 새 프로젝트를 다시 생성합니다.
+생성된 `package.json`은 로컬 유형 검사와 테스트를 위해 `@getpaseo/plugin` 및 기타 호스트 모듈을 개발 종속성으로 설치합니다. Paseo는 해당 런타임 인스턴스를 제공합니다. 사용자가 플러그인을 추가할 때는 이러한 모듈을 설치하지 않습니다.
 
 플러그인이 성장함에 따라 런타임별 파일을 추가합니다.
 
@@ -837,7 +836,7 @@ paseo plugin install /absolute/path/to/plugin
 paseo plugin install /absolute/path/to/plugin --id another-runtime-id
 paseo plugin add owner/repository
 paseo plugin add https://git.example.com/owner/repository.git --ref main
-paseo plugin add owner/monorepo --path plugins/review
+paseo plugin add owner/monorepo:plugins/review
 paseo plugin status [id]
 paseo plugin update <id>
 paseo plugin update --all
@@ -851,7 +850,23 @@ paseo plugin remove my-plugin
 
 대상이 CLI의 기본 데몬이 아니면 관리 명령에 `--host <url>`을 전달하세요. `remove`는 디렉터리 소스를 삭제하지 않으며 Git 소스의 관리형 체크아웃은 삭제합니다. 설치 시 지정하는 `--id`는 런타임 ID로, 같은 디렉터리나 저장소를 두 번 이상 설치할 수 있게 합니다.
 
-기존 디렉터리는 `owner/repository` GitHub 단축 표기보다 우선합니다. 기본 브랜치를 추적하려면 `--ref`를 생략하세요. 명시한 브랜치는 업데이트를 추적하고, 태그와 커밋은 고정된 상태로 유지됩니다. Git 설치는 패키지 관리자나 설치 스크립트를 실행하지 않습니다. `update`는 활성화 전에 후보를 검증하고 컴파일하며, 시작에 실패하면 설치된 커밋을 복원합니다.
+> **추가하는 모든 플러그인을 신뢰하세요.** `paseo plugin add`와 `paseo plugin install`은 “이 코드베이스를 신뢰합니다.”라는 의미입니다. 서버 코드와 Git 준비 명령은 데몬 호스트에서 데몬 사용자의 권한으로 샌드박스 없이 실행되며, 클라이언트 기여는 Paseo 내부에서 실행됩니다. 종속성과 향후 업데이트도 이 결정에 포함됩니다. `--host`를 사용하면 명령은 원격 데몬 호스트에서 실행됩니다.
+
+기존 디렉터리는 `owner/repository` GitHub 단축 표기보다 우선합니다. 플러그인이 저장소 루트 아래에 있으면 `:relative/path`를 덧붙이세요. 기본 브랜치를 추적하려면 `--ref`를 생략하세요. 명시한 브랜치는 업데이트를 추적하고, 태그와 커밋은 고정된 상태로 유지됩니다.
+
+대부분의 플러그인은 `build`를 생략해야 합니다. 스테이징된 체크아웃에서 Paseo가 제공하지 않는 종속성을 설치하거나 소스 또는 자산을 생성하거나 그 밖의 필수 준비 단계를 수행해야 할 때만 사용하세요.
+
+```json
+{
+  "id": "review",
+  "build": [
+    ["npm", "ci"],
+    ["npm", "run", "build"]
+  ]
+}
+```
+
+`build`는 비어 있지 않은 argv 배열의 목록입니다. Paseo는 정확한 커밋과 매니페스트를 확인한 후 스테이징된 플러그인 디렉터리에서 각 실행 파일을 셸 없이 직접 실행합니다. 잠금 파일에서 패키지 관리자나 명령을 추론하지 않습니다. 설치와 업데이트 모두 검증, 컴파일, 활성화 또는 교체 전에 `build`를 실행합니다. 명령이 실패하면 출력을 보고하고 후보를 폐기하며 설치되어 실행 중인 버전을 그대로 둡니다. 데몬 로그에는 각 명령과 출력이 기록됩니다. `--host`를 사용하면 해당 데몬 호스트에서 실행됩니다.
 
 설치하거나 다시 로드하기 전에 `npm run typecheck`을 실행하세요. 데몬 구성을 직접 편집하지 마십시오.
 

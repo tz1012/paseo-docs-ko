@@ -15,7 +15,7 @@ category: Plugins
 
 Paseo 플러그인은 기본 작업공간 패널, 작성기 필, Command Center 항목, 전역 표면, 앱 테마, 데몬 동작, 작성기 첨부 소스를 추가합니다. 모바일을 포함해 호스트에 연결된 모든 Paseo 클라이언트에서 실행됩니다.
 
-플러그인은 신뢰할 수 있는 로컬 코드입니다. 신뢰할 수 있는 코드만 설치하세요. 백엔드 코드는 데몬 머신에 액세스하여 샌드박스 처리되지 않은 상태로 실행되며, 클라이언트 기여는 Paseo 앱 내에서 실행됩니다.
+> **추가하는 모든 플러그인을 신뢰하세요.** `paseo plugin add`와 `paseo plugin install`은 “이 코드베이스를 신뢰합니다.”라는 의미입니다. 서버 코드와 Git 준비 명령은 데몬 호스트에서 데몬 사용자의 권한으로 샌드박스 없이 실행되며, 클라이언트 기여는 Paseo 내부에서 실행됩니다. 종속성과 향후 업데이트도 이 결정에 포함됩니다. `--host`를 사용하면 명령은 원격 데몬 호스트에서 실행됩니다.
 
 대상 호스트에서 **설정 → 플러그인**을 열고 **플러그인 활성화**를 켭니다. 이는 해당 데몬에 구성된 모든 플러그인에 대한 전역 스위치입니다.
 
@@ -37,7 +37,7 @@ cd /absolute/path/to/workspace-plugin
 npm install
 ```
 
-`init`은 엄격한 TypeScript 프로젝트를 생성하지만 패키지 관리자는 실행하지 않습니다. `index.ts`는 기여를 등록하고, 클라이언트 UI는 `*.client.tsx` 파일에 둡니다.
+`init`은 엄격한 TypeScript 프로젝트를 생성하지만 패키지 관리자는 실행하지 않습니다. `npm install`은 로컬 유형 검사와 테스트에 필요한 개발 종속성을 설치합니다. Paseo는 플러그인 SDK, React, React Native, TanStack Query, Zod를 런타임에 제공합니다. 이러한 모듈을 위해 플러그인에 `build` 후크를 둘 필요는 없습니다. `index.ts`는 기여를 등록하고, 클라이언트 UI는 `*.client.tsx` 파일에 둡니다.
 
 플러그인은 데스크톱, 브라우저, iOS, Android에서 실행되며 Paseo는 여러 테마를 제공합니다. 모든 `Text` 색상은 `theme.colors.foreground` 또는 `theme.colors.foregroundMuted`에서 가져오고, 레이아웃 크기는 `layout.compact`에 맞추세요. 텍스트 색상을 검은색으로 하드코딩하면 어두운 테마에서 제대로 표시되지 않습니다.
 
@@ -122,10 +122,13 @@ GitHub 또는 다른 Git 호스트를 통해 게시된 플러그인을 설치하
 
 ```bash
 paseo plugin add owner/repository
+paseo plugin add https://gitlab.com/group/repository.git
 paseo plugin add https://git.example.com/owner/repository.git
-paseo plugin add owner/monorepo --path plugins/workspace
+paseo plugin add owner/monorepo:plugins/workspace
 paseo plugin add owner/repository --ref main
 ```
+
+플러그인이 저장소 루트 아래에 있으면 소스에 `:relative/path`를 덧붙이세요.
 
 `--ref`를 생략하면 기본 브랜치를 추적합니다. 명시한 브랜치는 업데이트를 추적하고, 태그와 커밋은 고정됩니다. 다음 명령으로 업데이트를 확인하고 적용하세요.
 
@@ -135,7 +138,19 @@ paseo plugin update workspace-plugin
 paseo plugin update --all
 ```
 
-Paseo는 실행 중인 버전을 교체하기 전에 새 커밋을 검증하고 컴파일합니다. 시작에 실패하면 이전 버전을 복원합니다. Git 설치는 패키지 관리자나 설치 스크립트를 실행하지 않으므로, 게시된 플러그인은 Paseo가 호스트에서 제공하는 모듈을 사용하거나 번들에 포함할 소스를 함께 제공해야 합니다.
+대부분의 플러그인은 `build`를 생략해야 합니다. Paseo는 TypeScript와 TSX를 컴파일하고 자체 런타임 모듈을 제공합니다. 스테이징된 체크아웃에서 다른 종속성을 설치하거나 소스를 생성하거나 그 밖의 필수 빌드 단계를 수행해야 할 때만 준비 작업을 선언하세요.
+
+```json
+{
+  "id": "workspace-plugin",
+  "build": [
+    ["npm", "ci"],
+    ["npm", "run", "build"]
+  ]
+}
+```
+
+각 `build` 항목은 비어 있지 않은 argv 배열이며 스테이징된 플러그인 디렉터리에서 셸 없이 직접 실행됩니다. Paseo는 패키지 관리자를 선택하거나 잠금 파일에서 명령을 추론하지 않습니다. 설치 및 업데이트 시 정확한 커밋을 확인하고 이 명령을 실행한 다음 후보를 검증하고 컴파일하고 활성화합니다. 명령이 실패하면 후보를 폐기하고 설치되어 실행 중인 버전을 유지합니다. 데몬 로그에는 정확한 argv와 출력이 기록됩니다. `--host`를 사용하면 원격 데몬 호스트에서 실행됩니다.
 
 ## 편집하고 다시 로드
 
