@@ -28,22 +28,22 @@ SSH 전송은 로컬 OpenSSH 클라이언트를 통해 기존 데몬에 연결�
 CLI는 SSH URI를 호스트로 받습니다.
 
 ```bash
-paseo ls -a --host ssh://user@host
+paseo --host ssh://user@host ls -a
 ```
 
 원격 호스트의 데몬은 `127.0.0.1:6767`에 있어야 합니다. SSH URL의 포트는 SSH 서버 포트입니다.
 
 ```bash
-paseo ls -a --host ssh://user@host:2222
+paseo --host ssh://user@host:2222 ls -a
 ```
 
 다른 원격 데몬 포트를 설정하려면 `daemonPort`를 사용합니다.
 
 ```bash
-paseo ls -a --host 'ssh://user@host?daemonPort=7777'
+paseo --host 'ssh://user@host?daemonPort=7777' ls -a
 ```
 
-`--host`는 명령 뒤에 둬야 합니다. `paseo daemon status`는 로컬 데몬만 확인하므로, 원격 연결을 확인하려면 `paseo ls --host ...`를 사용하세요. `paseo run --host ...`에는 원격 호스트에 존재하는 경로를 지정한 `--cwd`도 필요합니다.
+`--host`는 명령 앞에 두세요. `paseo daemon status`는 로컬 데몬만 확인하므로, 원격 연결을 확인하려면 `paseo --host ssh://user@host ls`를 사용하세요. `paseo --host ssh://user@host run --cwd /path/on/remote ...`에는 원격 호스트에 존재하는 작업 디렉터리가 필요합니다.
 
 Paseo Desktop에서는 **설정 → 호스트 추가 → 원격 SSH**를 열고 같은 `ssh://` 대상을 입력합니다.
 

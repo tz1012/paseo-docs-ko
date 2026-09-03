@@ -8,11 +8,15 @@ category: Plugins
 
 # 플러그인 참조
 
+> **Paseo v0.7.x용입니다.** [v0.7 빠른 시작](/docs/plugins/v0.7)으로 돌아가세요.
+
 로컬 플러그인은 하나의 Paseo 데몬에 설치된 디렉토리 소스입니다. 플러그인은 다음 사항에 기여할 수 있습니다.
 
 - Paseo 클라이언트의 React Native 표면과 사이드바 항목
 - 작업공간 탭으로 열리는 작업공간 및 에이전트 패널
 - Command Center의 전역, 작업공간 및 에이전트 작업
+- 메시지 작성기의 클라이언트 슬래시 명령
+- 변환된 에이전트 타임라인 행과 데몬이 푸시한 에이전트 타임라인 행
 - Settings → Appearance의 어두운 테마
 - 데몬 옆에서 실행되는 스키마 검증 RPC 핸들러
 - TypeScript SDK를 통한 일반 Paseo 작업
@@ -39,7 +43,7 @@ my-plugin/
 { "id": "my-plugin" }
 ```
 
-진입점은 플러그인 루트의 `index.ts`입니다. 플러그인, 표면, 사이드바 항목, 작업공간 패널, Command Center 항목 및 첨부 소스 ID는 소문자로 시작하고 소문자, 숫자 또는 하이픈을 포함합니다.
+진입점은 플러그인 루트의 `index.ts`입니다. 플러그인, 표면, 사이드바 항목, 작업공간 패널, Command Center 항목 및 첨부 소스 ID는 소문자로 시작하고 소문자, 숫자 또는 하이픈을 포함합니다. 클라이언트 슬래시 명령 이름에도 같은 규칙이 적용됩니다.
 
 생성된 `package.json`은 로컬 유형 검사와 테스트를 위해 `@getpaseo/plugin` 및 기타 호스트 모듈을 개발 종속성으로 설치합니다. Paseo는 해당 런타임 인스턴스를 제공합니다. 사용자가 플러그인을 추가할 때는 이러한 모듈을 설치하지 않습니다.
 
@@ -264,7 +268,7 @@ export function IssueActions({ theme }: PluginSurfaceProps) {
 
 ## 타임라인 항목
 
-플러그인은 투영된 타임라인 항목을 자체 데이터와 React Native 렌더러로 교체할 수 있습니다. 두 등록 모두 클라이언트 기여입니다. 일치하는 라이브 이벤트는 교체 전에 투영된 꼬리를 새로 고치므로 공급자 수명 주기 델타가 플러그인 항목으로 노출되지 않습니다.
+플러그인은 에이전트 타임라인 항목을 자체 데이터와 React Native 렌더러로 교체할 수 있습니다. 두 등록 모두 클라이언트 기여입니다. Paseo는 모든 실시간 스트리밍 업데이트를 포함해 렌더 모델을 구성할 때 변환기를 적용합니다.
 
 ```tsx
 import type { PluginContext, PluginTimelineItemProps } from "@getpaseo/plugin";
@@ -281,15 +285,14 @@ export default function contribute(plugin: PluginContext) {
   plugin.addTimelineTransformer({
     id: "command-card",
     query: { itemType: "tool_call" },
-    transform({ item }) {
-      if (item.status === "running") return;
+    transform({ item, phase }) {
       return {
         items: [
           {
             type: "plugin",
             kind: "command-card",
             version: 1,
-            data: { label: item.name },
+            data: { label: item.name, phase },
           },
         ],
       };
@@ -305,11 +308,37 @@ export default function contribute(plugin: PluginContext) {
 }
 ```
 
-`query.itemType`은 안정적이고 거친 선택자입니다. 공급자나 도구별 항목을 인식하려면 `transform` 안에서 선택된 항목을 검사하세요. `undefined`를 반환하면 원래 항목을 유지합니다. `items`를 반환하면 항목을 교체하고, 빈 배열을 반환하면 제거합니다. 항목의 `data`는 JSON과 호환되어야 합니다.
+`query.itemType`은 안정적이고 거친 선택자입니다. 공급자나 도구별 항목을 인식하려면 `transform` 안에서 선택된 항목을 검사하세요. `undefined`를 반환하면 원래 항목을 유지합니다. `items`를 반환하면 항목을 교체하고, 빈 배열을 반환하면 제거합니다. 항목의 `data`는 JSON과 호환되어야 합니다. 입력 `phase`는 실행 중인 도구 호출과 로딩 중인 추론에서는 `"streaming"`이고, 그 외에는 `"complete"`입니다. 각 교체 항목에는 선택적으로 플러그인 로컬 `id`를 지정할 수 있습니다. 생략하면 Paseo는 해당 원본 항목의 출력 내 인덱스를 사용합니다.
 
-렌더러는 `agentId`, `item`, `timestamp`, `theme`, `host`, `layout`을 받습니다. Paseo는 렌더링 전에 등록된 스키마로 `item.data`를 검증합니다. Paseo가 투영된 기록을 조정하는 동안 변환기를 다시 실행하므로 변환기는 동기적이고 결정적으로 유지하세요.
+렌더러는 `agentId`, `item`, `timestamp`, `theme`, `host`, `layout`을 받습니다. Paseo는 렌더링 전에 등록된 스키마로 `item.data`를 검증합니다. 변환기는 동기적이고 결정적으로 유지하세요. Paseo는 원본 항목 참조별로 결과를 메모이제이션하고 원본 행에서 교체 항목의 식별자를 도출하므로, 스트리밍 항목 하나를 업데이트해도 해당 렌더러가 다시 마운트되지 않습니다. 렌더러가 Paseo의 기본 제공 어시스턴트 행처럼 스트리밍 텍스트의 표시 속도를 조절해야 한다면 내보낸 `useRevealedText(text, phase)` 후크를 사용하세요.
 
-탐색에 의존하는 작업을 표시하기 전에 `navigation`을 확인하세요. 이전 Paseo 클라이언트에서는 이 기능이 정의되지 않습니다. Paseo가 경로 구성을 소유하도록 하면 데스크톱, 브라우저, iOS, Android에서 다시 로드하지 않고도 작업이 작동합니다.
+### 데몬에서 타임라인 행 추가
+
+서버 핸들러는 플러그인이 소유한 행을 정식 기록에 추가할 수 있습니다.
+
+```ts
+import type { PluginHandlerContext } from "@getpaseo/plugin";
+
+async function publishReview(agentId: string, { paseo }: PluginHandlerContext) {
+  await paseo.agents.ref(agentId).timeline.append({
+    type: "plugin",
+    id: "review",
+    kind: "review-result",
+    version: 1,
+    data: { verdict: "ready" },
+  });
+}
+```
+
+| 필드 | 유형 | 필수 | 동작 |
+| --------- | ---------------- | -------- | -------------------------------------------------------------- |
+| `type` | `"plugin"` | 예 | 플러그인 타임라인 변형을 선택합니다. |
+| `id` | `string` | 예 | 안정적인 플러그인 로컬 식별자입니다. 재사용하면 이전 행을 교체합니다. |
+| `kind` | `string` | 예 | 등록된 렌더러를 선택합니다. |
+| `version` | 양의 정수 | 예 | 렌더러 계약 버전을 선택합니다. |
+| `data` | JSON 호환 | 예 | 렌더러 페이로드이며 JSON 직렬화 후 최대 64 KiB입니다. |
+
+데몬은 호출한 플러그인 세션에서 `pluginId`를 부여하며, 플러그인 세션이 아닌 세션에서 이 RPC를 호출하면 거부합니다. 행은 실시간으로 나타나고 타임라인을 다시 가져와도 유지되며, 같은 플러그인과 `id`에 대해서는 최신 값만 유지합니다. 해당 렌더러가 없으면 Paseo는 기존의 사용 불가 행을 표시합니다. 데몬은 제한을 초과한 `data`를 잘라내지 않고 거부합니다. 이 작업을 지원하는 데몬은 `server_info.features.pluginTimelineItems`를 알립니다.
 
 ## 테마 및 레이아웃
 
@@ -551,6 +580,35 @@ plugin.addCommandCenterItem({
 | `openPanel(id, options?)` | 작업공간 및 에이전트 | 콜백의 현재 컨텍스트에서 등록된 패널을 엽니다. 탐색기를 대상으로 하려면 `{ location: "explorer" }`를 전달합니다. |
 
 에이전트 콜백은 에이전트 패널이나 작업공간 패널을 열 수 있습니다. 작업공간 콜백은 작업공간 패널만 열 수 있습니다. 알 수 없는 표면 및 패널 ID는 명확한 오류를 냅니다. 일반 작업공간, 에이전트, 공급자 및 데몬 구성 작업에는 `paseo`를 사용하세요. 플러그인별 파일 시스템, 자격 증명, 공급업체 또는 데몬 로컬 작업에는 `rpc`를 사용하세요.
+
+## 클라이언트 슬래시 명령
+
+사용자가 메시지 작성기에서 제출하면 Paseo 클라이언트 안에서만 실행되는 명령을 등록합니다.
+
+```ts
+plugin.addClientSlashCommand({
+  name: "review",
+  description: "Run the review bot",
+  argumentHint: "[scope]",
+  context: "agent",
+  async onSubmit({ args, agent, rpc, openPanel }) {
+    await rpc(refreshReview, { agentId: agent.id, scope: args });
+    openPanel("review");
+  },
+});
+```
+
+| 필드 | 필수 | 의미 |
+| -------------- | -------- | ---------------------------------------------- |
+| `name` | 예 | 앞의 슬래시를 제외한 명령 이름입니다. |
+| `description` | 예 | 작성기 자동 완성 설명입니다. |
+| `argumentHint` | 예 | 명령 이름 뒤에 표시되는 짧은 사용법 힌트입니다. |
+| `context` | 예 | `"workspace"` 또는 `"agent"`. |
+| `onSubmit` | 예 | 일치하는 컨텍스트의 클라이언트 콜백입니다. |
+
+`onSubmit`은 일치하는 Command Center 콜백 컨텍스트와 `args`를 받습니다. `/review src`의 `args`는 `"src"`입니다. Paseo는 명령 뒤에 남은 문자열의 앞뒤 공백만 제거합니다. Paseo는 자동 완성 행, 입력 지우기, 오류 토스트를 담당합니다. 처리된 명령은 에이전트에게 전송되지 않습니다. 컴파일러는 플러그인의 서버 번들에서 이 등록을 제거합니다.
+
+우선순위는 기본 제공 클라이언트 명령, 플러그인 명령, 공급자 명령 순입니다. 충돌하면 우선순위가 낮은 명령을 제외합니다. 기본 제공 별칭도 해당 이름을 예약합니다. 플러그인끼리 충돌하면 안정적인 카탈로그 순서에서 첫 번째 플러그인이 우선합니다. 작성기에 첨부 파일이 있으면 명령은 실행되지 않습니다.
 
 ## 작성기 필
 

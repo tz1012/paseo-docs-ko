@@ -39,6 +39,7 @@ category: Providers
 - [Dirac](https://dirac.run), 해시 앵커 병렬 편집 기능을 갖춘 오픈 소스 에이전트입니다.
 - [Factory Droid](https://factory.ai/product/cli), Factory AI의 코딩 에이전트입니다.
 - [fast-agent](https://fast-agent.ai/acp/), 다중 공급자 코딩 에이전트.
+- [Gajae Code](https://gajae-code.com), 변경 전에 계획을 세우는 워크플로를 사용하는 구독 기반 코딩 에이전트.
 - [Gemini CLI](https://geminicli.com), Google의 공식 Gemini CLI입니다.
 - [GitHub Copilot](https://github.com/features/copilot/cli/), ACP를 통한 GitHub의 AI 쌍 프로그래머.
 - [GLM 에이전트](https://github.com/stefandevo/glm-acp-agent), Zhipu AI의 GLM 코딩 에이전트.

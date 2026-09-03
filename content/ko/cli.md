@@ -30,10 +30,10 @@ paseo stop <id>                      # Stop an agent
 ```bash
 paseo provider diagnostic claude
 paseo provider diagnostic codex --json
-paseo provider diagnostic opencode --host devbox:6767
+paseo --host devbox:6767 provider diagnostic opencode
 ```
 
-진단에는 구성된 명령, 데몬 `PATH` 및 셸, 일치하는 바이너리, 확인된 경로, 버전, 모델 수, 공급자 상태가 포함됩니다. 원격 데몬에는 `--host`를 사용하세요. 이는 **설정 → 호스트 → 공급자 → 해당 공급자 → 진단**에 표시되는 것과 같은 진단입니다.
+진단에는 구성된 명령, 데몬 `PATH` 및 셸, 일치하는 바이너리, 확인된 경로, 버전, 모델 수, 공급자 상태가 포함됩니다. 원격 데몬에는 전역 `--host` 옵션을 사용하세요. 이는 **설정 → 호스트 → 공급자 → 해당 공급자 → 진단**에 표시되는 것과 같은 진단입니다.
 
 ## 에이전트 실행 중
 
@@ -79,10 +79,10 @@ paseo project delete <project-id>
 
 `--reset`은 프로젝트 디렉터리에서 파생한 이름으로 복원합니다. 프로젝트를 삭제하면 활성 작업공간을 보관하고 Paseo에서 프로젝트를 제거하지만, 프로젝트 디렉터리는 삭제하지 않습니다.
 
-로컬 데몬에서 `paseo project create [path]`은 기본적으로 현재 디렉터리를 사용하며 CLI 머신을 기준으로 상대 경로를 해석합니다. `--host` 또는 `PASEO_HOST`를 사용할 때는 대상 데몬이 접근할 수 있는 경로를 지정하세요.
+로컬 데몬에서 `paseo project create [path]`은 기본적으로 현재 디렉터리를 사용하며 CLI 머신을 기준으로 상대 경로를 해석합니다. 전역 `--host` 옵션 또는 `PASEO_HOST`를 사용할 때는 대상 데몬이 접근할 수 있는 경로를 지정하세요.
 
 ```bash
-paseo project create /srv/repos/api --host devbox:6767
+paseo --host devbox:6767 project create /srv/repos/api
 ```
 
 원격 데몬은 자체 머신을 기준으로 이 경로를 해석합니다. 프로젝트가 작업 디렉터리와 세션을 그룹화하는 방식은 [작업공간](/docs/workspaces)을 참조하세요.
@@ -138,13 +138,13 @@ paseo script start web
 paseo script stop web
 ```
 
-기본적으로 Paseo는 현재 디렉토리가 있는 작업공간을 선택합니다. `--cwd <path>`을 전달하여 다른 디렉터리를 선택하거나, 디렉터리에 여러 작업 공간이 있는 경우 `--workspace <workspace-id>`을 전달합니다. 이러한 명령은 `--host` 및 `--json`과 같은 표준 출력 옵션도 허용합니다.
+기본적으로 Paseo는 현재 디렉토리가 있는 작업공간을 선택합니다. `--cwd <path>`을 전달하여 다른 디렉터리를 선택하거나, 디렉터리에 여러 작업 공간이 있는 경우 `--workspace <workspace-id>`을 전달합니다. 다른 데몬을 대상으로 하려면 전역 `--host` 옵션을 사용하세요. 이러한 명령은 `--json`과 같은 표준 출력 옵션도 허용합니다.
 
 출력에는 각 스크립트의 수명 주기와 감독되는 터미널 ID가 포함됩니다. 서비스에는 할당된 포트, 프록시 URL 및 상태도 포함됩니다. `paseo.json` 구성은 [Git 작업 트리](/docs/worktrees#scripts-and-services)를 참조하세요.
 
 ## 플러그인
 
-> **추가하는 모든 플러그인을 신뢰하세요.** `paseo plugin add`와 `paseo plugin install`은 “이 코드베이스를 신뢰합니다.”라는 의미입니다. 플러그인 서버 코드와 Git 준비 명령은 데몬 호스트에서 데몬 사용자의 권한으로 샌드박스 없이 실행되며, 클라이언트 기여는 Paseo 내부에서 실행됩니다. 종속성과 향후 업데이트도 이 결정에 포함됩니다. `--host`를 사용하면 명령은 원격 데몬 호스트에서 실행됩니다.
+> **추가하는 모든 플러그인을 신뢰하세요.** `paseo plugin add`와 `paseo plugin install`은 “이 코드베이스를 신뢰합니다.”라는 의미입니다. 플러그인 서버 코드와 Git 준비 명령은 데몬 호스트에서 데몬 사용자의 권한으로 샌드박스 없이 실행되며, 클라이언트 기여는 Paseo 내부에서 실행됩니다. 종속성과 향후 업데이트도 이 결정에 포함됩니다. 전역 `--host` 옵션을 사용하면 명령은 원격 데몬 호스트에서 실행됩니다.
 
 데몬에서 신뢰할 수 있는 플러그인을 만들고 관리합니다.
 
@@ -165,7 +165,7 @@ paseo plugin enable my-plugin
 paseo plugin remove my-plugin
 ```
 
-GitHub 단축 표기는 먼저 기존 호스트 디렉터리를 확인합니다. 모노레포의 플러그인에는 `:<directory>`를 덧붙이세요. `paseo plugin logs <id>`는 플러그인의 최근 데몬 측 stdout과 stderr을 반환합니다. 구조화된 항목을 받으려면 `--json`을, 다른 데몬을 대상으로 하려면 `--host <target>`을 추가하세요. 설치, 신뢰, 수명 주기, 로그 보존 동작은 [플러그인 참조](/docs/plugins/reference)를 확인하세요.
+GitHub 단축 표기는 먼저 기존 호스트 디렉터리를 확인합니다. 모노레포의 플러그인에는 `:<directory>`를 덧붙이세요. `paseo plugin logs <id>`는 플러그인의 최근 데몬 측 stdout과 stderr을 반환합니다. 구조화된 항목을 받으려면 `--json`을 추가하고, 다른 데몬을 대상으로 하려면 `paseo --host <target> plugin logs <id>`를 실행하세요. 설치, 신뢰, 수명 주기, 로그 보존 동작은 [플러그인 참조](/docs/plugins/v0.7/reference)를 확인하세요.
 
 ## 리스팅 에이전트
 
@@ -260,7 +260,7 @@ paseo daemon reload             # Reload config.json
 paseo daemon stop              # Stop the daemon
 ```
 
-다시 로드는 파일 전체를 검증하고, 런타임에 안전한 변경을 적용한 다음 `appliedPaths`, `restartRequiredPaths`, `overrideControlledPaths`를 보고합니다. 사람이 읽는 출력에는 변경된 설정에 재시작이 필요할 때만 `paseo daemon restart`가 표시됩니다. 구조화된 결과에는 `--json` 또는 `--format yaml`을 사용하고, 원격 데몬의 구성 파일을 다시 로드하려면 `--host`를 사용하세요. 다시 로드를 지원하지 않는 이전 호스트는 호스트 업데이트 오류를 반환합니다.
+다시 로드는 파일 전체를 검증하고, 런타임에 안전한 변경을 적용한 다음 `appliedPaths`, `restartRequiredPaths`, `overrideControlledPaths`를 보고합니다. 사람이 읽는 출력에는 변경된 설정에 재시작이 필요할 때만 `paseo daemon restart`가 표시됩니다. 구조화된 결과에는 `--json` 또는 `--format yaml`을 사용하세요. 원격 데몬의 구성 파일을 다시 로드하려면 `paseo --host <target> reload`를 실행하세요. 다시 로드를 지원하지 않는 이전 호스트는 호스트 업데이트 오류를 반환합니다.
 
 여러 개의 격리된 데몬 인스턴스를 실행하려면 `PASEO_HOME`을 사용하세요.
 
@@ -298,7 +298,7 @@ paseo hub logout               # Remove the active stored CLI login
 
 ## 원격 데몬에 연결
 
-`--host`은 로컬 대상(`host:port`, Unix 소켓 또는 Windows 파이프) 또는 페어링 제안 URL(모바일 앱이 QR 페어링에 사용하는 것과 동일한 `https://app.paseo.sh/#offer=...` 링크)을 허용합니다. 제안 URL을 사용하면 CLI가 종단 간 암호화를 사용하는 Paseo 릴레이를 통해 연결되므로 네트워크에 노출하지 않고도 다른 시스템에서 데몬을 구동할 수 있습니다.
+전역 `--host` 옵션은 로컬 대상(`host:port`, Unix 소켓 또는 Windows 파이프) 또는 페어링 제안 URL(모바일 앱이 QR 페어링에 사용하는 것과 동일한 `https://app.paseo.sh/#offer=...` 링크)을 허용합니다. 제안 URL을 사용하면 CLI가 종단 간 암호화를 사용하는 Paseo 릴레이를 통해 연결되므로 네트워크에 노출하지 않고도 다른 시스템에서 데몬을 구동할 수 있습니다.
 
 제어하려는 데몬으로부터 제안 URL을 얻으세요:
 
@@ -313,11 +313,11 @@ paseo daemon pair --json   # structured output; never prompts
 어디서나 사용하세요:
 
 ```bash
-paseo ls --host 'https://app.paseo.sh/#offer=eyJ2IjoyLC...'
-paseo run --host "$OFFER_URL" "fix the failing tests"
+paseo --host 'https://app.paseo.sh/#offer=eyJ2IjoyLC...' ls
+paseo --host "$OFFER_URL" run "fix the failing tests"
 ```
 
-모든 명령에 `--host`을 전달하는 대신 `PASEO_HOST`을 통해 한 번 설정할 수도 있습니다.
+모든 명령에 `--host`을 전달하는 대신 `PASEO_HOST`을 통해 한 번 설정할 수도 있습니다. 명시적으로 지정한 플래그가 환경 변수보다 우선합니다.
 
 ## 다중 에이전트 워크플로
 

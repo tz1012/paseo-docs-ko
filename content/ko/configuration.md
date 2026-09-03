@@ -194,13 +194,13 @@ CLI는 다음 순서로 비밀번호를 선택합니다.
 
 1. `tcp://` 호스트 URI의 `password` 쿼리 매개변수:
 
-```bash
+   ```bash
    paseo --host "tcp://192.168.1.10:6767?password=my-secret" ls
    ```
 
 2. 호스트에 내장된 비밀번호가 없을 때 대체 수단으로 사용되는 `PASEO_PASSWORD` 환경 변수(`localhost:6767`, 베어 `host:port` 또는 `password=` 쿼리가 없는 `tcp://` 호스트에서 작동):
 
-```bash
+   ```bash
    PASEO_PASSWORD=my-secret paseo ls
    PASEO_PASSWORD=my-secret paseo --host 192.168.1.10:6767 ls
    ```
@@ -230,6 +230,7 @@ URI의 `password=`은 항상 env var보다 우선하므로 `PASEO_PASSWORD`을 �
 ## 공통 환경 변수
 
 - `PASEO_HOME`, Paseo 홈 디렉토리 설정
+- `PASEO_HOST`, CLI 명령의 대상 데몬 설정
 - `PASEO_PASSWORD`, 데몬에서 요구할 비밀번호(일반 텍스트, 시작 시 해시됨) CLI에서 호스트 URI에 비밀번호가 포함되어 있지 않을 때 연결하는 데 사용되는 비밀번호
 - `PASEO_LISTEN`, `daemon.listen` 재정의
 - `PASEO_RELAY_ENABLED`, 이 데몬 실행에 대한 아웃바운드 릴레이를 활성화 또는 비활성화합니다.

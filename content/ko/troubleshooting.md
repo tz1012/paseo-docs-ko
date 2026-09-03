@@ -28,10 +28,10 @@ Paseo는 이미 설치한 에이전트 CLI를 실행하지만 이를 번들로 �
 
 ```bash
 paseo provider diagnostic <provider>
-paseo provider diagnostic <provider> --host <host:port> --json
+paseo --host <host:port> provider diagnostic <provider> --json
 ```
 
-문제가 발생한 데몬이 CLI의 기본 로컬 데몬이 아니면 `--host`를 사용하세요.
+문제가 발생한 데몬이 CLI의 기본 로컬 데몬이 아니면 전역 `--host` 옵션을 사용하세요.
 
 `not found`과 바이너리 디렉터리가 누락된 **데몬 경로**가 일반적인 경우입니다. 해당 디렉터리는 터미널의 `PATH`에 있지만 Paseo의 디렉터리에는 없습니다.
 
