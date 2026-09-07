@@ -16,6 +16,53 @@ Paseo는 출시되는 모든 새 에이전트에 이러한 도구를 주입할 �
 
 MCP 서버 자체는 `daemon.mcp.enabled`에 의해 제어됩니다. 기존 에이전트를 다시 로드해야 할 수도 있습니다.
 
+## 공급자별 Paseo 도구 제한
+
+에이전트 프로필마다 서로 다른 Paseo 도구를 제공해야 할 때는 공급자 정책을 사용하세요. 도구 주입을 전역으로 활성화한 다음 실제로 실행하는 정확한 공급자 ID에 `paseoTools`를 추가합니다.
+
+```json
+{
+  "$schema": "https://paseo.sh/schemas/paseo.config.v1.json",
+  "version": 1,
+  "daemon": {
+    "mcp": {
+      "enabled": true,
+      "injectIntoAgents": true
+    }
+  },
+  "agents": {
+    "providers": {
+      "codex-lead": {
+        "extends": "codex",
+        "label": "Codex Lead"
+      },
+      "codex-worker": {
+        "extends": "codex",
+        "label": "Codex Worker",
+        "paseoTools": {
+          "disabledTools": ["create_agent", "send_agent_prompt", "kill_agent"]
+        }
+      },
+      "codex-isolated": {
+        "extends": "codex",
+        "label": "Codex Isolated",
+        "paseoTools": {
+          "enabled": false
+        }
+      }
+    }
+  }
+}
+```
+
+`~/.paseo/config.json`을 편집한 뒤 `paseo reload`를 실행하고 새 에이전트를 시작하거나 기존 에이전트를 다시 로드하세요. 실행 중인 세션은 시작할 때 받은 카탈로그를 유지합니다.
+
+`paseoTools`를 생략하면 전체 카탈로그가 활성화됩니다. 카탈로그를 제거하려면 `enabled`를 `false`로 설정하고, 선택한 도구를 제거하려면 정확한 도구 ID를 `disabledTools`에 나열하세요. 사용자 지정 프로필은 이 정책을 `extends`에서 상속하지 않으므로 각 사용자 지정 공급자 ID를 별도로 구성해야 합니다.
+
+브라우저 도구를 사용하려면 여전히 브라우저 도구가 활성화되어 있고 브라우저 호스트가 연결되어 있어야 합니다. 음성 전용 `speak` 도구는 이 정책과 별개입니다.
+
+이 설정은 에이전트에 제공되는 카탈로그를 제한합니다. 셸을 통해 호스트에 접근할 수 있는 에이전트에 대한 보안 경계는 아닙니다.
+
 ## 정신 모델
 
 작업 공간은 작업이 수행되는 위치를 결정합니다. 대리인의 친족이 작품의 소유자를 결정합니다.

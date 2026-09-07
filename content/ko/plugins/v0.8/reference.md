@@ -2,7 +2,7 @@
 title: Plugin reference
 description: Local plugin files, client and server runtimes, platform limits, contributions, RPCs, lifecycle, hosts, and CLI commands.
 nav: Reference
-order: 47
+order: 48
 category: Plugins
 ---
 
@@ -78,6 +78,7 @@ Paseo는 클라이언트 코드에 다음 모듈을 제공합니다.
 | 모듈 | 용도 |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `@getpaseo/plugin` | 기여 계약, `defineRpc`, `defineAttachmentSource`, `RpcInput`, `RpcOutput`, 데이터 훅 |
+| `@getpaseo/plugin/ui` | 이름이 지정된 조합 가능한 설정 구성 요소 |
 | `@getpaseo/plugin/react-native` | Paseo UI 구성 요소와 UI 훅 |
 | `@getpaseo/plugin/server` | `PluginHandlerContext` 같은 핸들러 전용 타입 |
 | `@tanstack/react-query` | 요청 상태와 캐싱 |
@@ -122,11 +123,27 @@ export async function openExternal(url: string): Promise<void> {
 
 `/// <reference lib="dom" />`를 추가하거나 `lib`에 `"DOM"`을 추가하지 마세요. 어느 쪽이든 프로젝트 전체에서 DOM 타입을 다시 활성화해 다음 실수를 놓치게 만듭니다. 구성 요소는 `openExternal`을 가져오며 직접 `window`에 접근하지 않습니다. 표면과 패널 props의 `layout.platform`은 렌더링 결정에 사용할 수 있도록 `Platform.OS`와 같은 값을 전달합니다.
 
-플러그인 스토리지 API는 없습니다. 브라우저 스토리지는 Paseo 클라이언트 간에 설정을 유지하지 않습니다. 범용 호스트 탐색 API도 없으므로 플러그인 코드에서 Paseo 네이티브 경로를 열 수 없습니다. Command Center 콜백은 같은 플러그인이 등록한 표면과 패널만 열 수 있습니다.
+[설정 API](#settings-screens)를 사용하면 클라이언트 간에 타입이 지정된 호스트 범위 값을 유지할 수 있습니다. 직접 등록한 기여를 열 때는 `openSettings`, `openSurface`, `openPanel`을 사용하세요.
 
 ### 서버 런타임
 
-Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `zod`를 제공합니다. 백엔드 기여는 데몬 하위 프로세스에서 실행되며 Node를 통해 호스트 머신에 접근할 수 있습니다. 파일 시스템, 프로세스, 자격 증명 및 기타 머신 로컬 작업은 `server/` 아래에 두세요. `index.server.ts`가 없는 플러그인은 하위 프로세스를 시작하지 않습니다.
+Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpaseo/plugin/provider`, `@getpaseo/plugin/acp`, `zod`를 제공합니다. 백엔드 기여는 데몬 하위 프로세스에서 실행되며 Node를 통해 호스트 머신에 접근할 수 있습니다. 파일 시스템, 프로세스, 자격 증명 및 기타 머신 로컬 작업은 `server/` 아래에 두세요. `index.server.ts`가 없는 플러그인은 하위 프로세스를 시작하지 않습니다.
+
+### 공급자
+
+직접 구현과 ACP 구현, 세션 수명 주기, 작성기 설정, 타임라인 렌더러, 테스트, 배포는 [공급자 플러그인 만들기](/docs/plugins/v0.8/providers)를 따르세요.
+
+`@getpaseo/plugin/provider`의 `ProviderRegistration`을 `server.registerProvider()`에 전달하세요. 연결은 `send()`로 입력을 받고 `onEvent()`를 통해 완전한 상태 스냅샷을 내보냅니다. `send()`는 수락 여부만 보고합니다. 프롬프트 처리 결과, 턴, 구성, 지속성, 권한, 실패는 이벤트로 전달됩니다.
+
+메시지, 구조화된 명령, 방향 조정, 명령 부수 효과에는 하나의 `session.prompt` 입력을 사용하세요. 실시간 사용자 타임라인 항목에 `clientMessageId`를 반복하고 정확히 하나의 일치하는 `session.prompt_result`를 게시합니다. 공급자가 만든 하위 항목은 `parentSessionId`가 있는 세션으로 게시하세요.
+
+공급자 설정은 Paseo가 작성기에 렌더링하는 토글/선택 설명자입니다. 공급자 전용 JSON은 `providerOptions`에 두세요. 호스트 도구는 전체 세션 구성의 MCP 서버로 전달됩니다.
+
+Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용해 다시 여는 방식으로 에이전트를 새로 고칩니다. 공급자는 `session.open` 중에 외부 상태를 다시 읽습니다.
+
+명령 기반 ACP를 연동하려면 `@getpaseo/plugin/acp`의 `runAcpProvider()`를 사용하세요. 공급업체별 검색, 구성, 알림 또는 도구 호출 차이에만 변환기 훅을 추가합니다.
+
+`ProviderRegistration.icon`은 `icon.svg`처럼 플러그인 디렉터리를 기준으로 한 파일 경로입니다. 해당 디렉터리 안에 있는 64KiB 이하의 일반 SVG 파일이어야 합니다. SVG는 자체 완결형이어야 하며 스크립트, 스타일, `foreignObject`, 이벤트 핸들러 속성, JavaScript URL, 외부 `href` 또는 `xlink:href` 참조는 거부됩니다. `#mark` 같은 프래그먼트 참조는 허용됩니다. Paseo는 플러그인을 시작할 때 파일을 읽고 정제합니다. 문자열 자체를 인라인 SVG나 URL로 사용하지 않습니다.
 
 ## 진입점과 정리
 
@@ -265,13 +282,72 @@ export function IssueActions({ theme }: PluginSurfaceProps) {
 
 `Modal.Content`는 호스트가 렌더링한 헤더 아래의 본문을 관리합니다.
 
-| Prop | 타입 | 필수 | 동작 |
-| ---------- | ----------- | -------- | --------------------------------------------- |
-| `children` | `ReactNode` | 예 | 플러그인의 React Native UI 내용을 렌더링합니다. |
+| Prop | 타입 | 기본값 | 동작 |
+| ----------------------- | ---------------------- | ------------------ | --------------------------------------------------------------------------------- |
+| `children` | `ReactNode` | 필수 | 헤더 아래의 본문 콘텐츠입니다. |
+| `style` | `StyleProp<ViewStyle>` | — | 빈 공간을 포함한 전체 본문 뷰포트의 스타일입니다. 배경에 사용하세요. |
+| `contentContainerStyle` | `StyleProp<ViewStyle>` | 패딩 24, 간격 16 | 콘텐츠 레이아웃을 재정의합니다. 가장자리까지 이어지는 행에는 `padding: 0, gap: 0`을 설정하세요. |
+| `scrollable` | `boolean` | `true` | 호스트가 본문을 스크롤합니다. 자체 스크롤러가 있는 제한된 본문에는 `false`를 설정하세요. |
+
+일반 `Modal.Content`에는 이미 패딩과 스크롤 기능이 있습니다. 추가 여백을 원하지 않으면 패딩 래퍼를 하나 더 추가하지 마세요. 본문 스타일은 호스트 헤더, 드래그 핸들, 닫기 제어 항목을 그대로 유지합니다. 호스트는 좁은 네이티브 레이아웃에서 하단 안전 영역을 확보합니다. 콘텐츠 패딩을 0으로 설정해도 이 공간은 사라지지 않고 장식용 여백만 제거됩니다. 키보드 여유 공간은 별도로 처리됩니다.
+
+`scrollable={false}`이면 본문이 사용 가능한 시트 높이를 채우고 가운데 대화상자는 사용 가능한 높이의 85%를 사용합니다. 목록에는 `flex: 1, minHeight: 0`을 사용하세요. 이 모드에서 본문은 모든 시트 높이에서 스크롤됩니다. 핸들을 드래그해 시트 크기를 조절하거나 닫을 수 있습니다. 기본 스크롤 대화상자는 넓은 레이아웃에서 콘텐츠 크기에 맞춰집니다. 표시 방식은 좁은 데스크톱 창과 넓은 태블릿을 포함해 창 크기를 따릅니다.
 
 닫기 버튼, 배경 영역, 플랫폼의 뒤로 가기 동작, 웹의 Escape 키, 좁은 레이아웃의 시트 제스처로 모달을 닫을 수 있습니다. 닫기 동작은 `onOpenChange(false)`를 호출합니다. 플러그인이 `open`을 갱신해야 모달이 닫힙니다.
 
 모달의 자식 요소는 플러그인 런타임 컨텍스트를 유지합니다. 그 안에서도 `usePaseo`, `useRpc`, `useWorkspace`, `useAgent`가 작동합니다.
+
+### 스크롤
+
+Paseo 모달에 표시될 수 있는 콘텐츠에는 `@getpaseo/plugin/react-native`의 `ScrollView`와 `FlatList`를 가져오세요. React Native props와 ref를 받으며 시트 제스처와 연동됩니다. 시트 밖에서는 일반 React Native 스크롤을 사용합니다. 하단 시트 라이브러리를 직접 가져오지 마세요.
+
+세로 스크롤 소유자는 기본 모달 본문 또는 `scrollable={false}`로 설정한 자체 목록 중 하나만 사용하세요. 기본 스크롤 본문 안에 고정 높이 세로 목록을 중첩하면 Android에서 시트와 제스처를 두고 충돌할 수 있습니다. 가로 스크롤은 호스트의 세로 본문과 함께 사용할 수 있습니다.
+
+```tsx
+import { FlatList, Modal } from "@getpaseo/plugin/react-native";
+import { Text } from "react-native";
+
+// Inside your controlled Modal:
+<Modal.Content
+  scrollable={false}
+  style={{ backgroundColor: theme.colors.surface1 }}
+  contentContainerStyle={{ padding: 0, gap: 0 }}
+>
+  <FlatList
+    style={{ flex: 1, minHeight: 0 }}
+    data={items}
+    keyExtractor={(item) => item.id}
+    renderItem={({ item }) => (
+      <Text style={{ padding: 16, color: theme.colors.foreground }}>{item.title}</Text>
+    )}
+  />
+</Modal.Content>;
+```
+
+가로 탭은 기본 `Modal.Content` 안에 `<ScrollView horizontal style={{ flexGrow: 0 }}>…</ScrollView>`를 배치하세요. 콘텐츠의 세로 스크롤은 호스트에 맡깁니다.
+
+### 복사와 붙여넣기
+
+`copyText(text): Promise<void>`는 앱이 실행되는 기기의 클립보드에 씁니다. 사용자 동작에서 호출하고 성공을 알리기 전에 완료를 기다리세요. 플랫폼에서 복사를 거부하거나 클립보드를 사용할 수 없으면 거부됩니다. 브라우저 권한과 보안 컨텍스트 요구 사항도 그대로 적용됩니다.
+
+```tsx
+import { copyText, useToast } from "@getpaseo/plugin/react-native";
+
+// Inside your component:
+const toast = useToast();
+async function copyResult() {
+  try {
+    await copyText(result);
+    toast.show("Copied", { variant: "success" });
+  } catch {
+    toast.error("Could not copy. Select the text and use Copy.");
+  }
+}
+```
+
+프로그래밍 방식 복사와 네이티브 텍스트 선택은 별개의 상호작용입니다. 길게 눌러 선택하고 OS 복사 기능을 사용하려면 `<Text selectable>`을 사용하세요. 모달 양식에는 `@getpaseo/plugin/react-native`의 `TextInput`을 가져오세요. React Native 입력 props와 ref를 받고 OS 붙여넣기를 지원하며, 네이티브 시트에 포커스를 등록하므로 키보드가 양식을 위로 올릴 수 있습니다. 시트 밖에서는 일반 입력을 사용합니다. 일반 React Native 입력도 붙여넣기를 지원하지만 시트에 포커스를 등록하지 않아 키보드가 입력을 가릴 수 있습니다. OS 붙여넣기에는 클립보드 읽기 API가 필요하지 않습니다. 네이티브 플러그인에서는 DOM 클립보드 코드와 `react-native`의 더 이상 사용되지 않는 `Clipboard` 내보내기를 피하세요.
+
+실행 가능한 [모달 UI 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/modal-ui)에는 패딩된 양식, 전체 너비 행, 가상 목록, 가로 탭, 복사/붙여넣기 입력이 포함되어 있습니다.
 
 ### 토스트
 
@@ -446,6 +522,95 @@ export default function contribute(client: PluginClientContext) {
 플러그인이 제공하는 테마는 한 번에 하나만 활성화할 수 있습니다. 선택한 테마는 저장됩니다. 이후 플러그인을 비활성화하거나 제거하면 Paseo는 앱에 색상이 적용되지 않는 상태로 두지 않고 기본 테마로 돌아갑니다.
 
 테마에는 이를 지원하는 호스트가 필요합니다. `addTheme` 도입 전에 출시된 클라이언트는 해당 클라이언트 진입점을 평가할 수 없으며 `client.addTheme is not a function` 오류를 보고합니다. 클라이언트를 업데이트하세요.
+
+## 설정 화면
+
+`index.client.tsx`에서 `client.addSettingsScreen({ id, title, icon, Component })`로 구성 요소를 등록하세요. 해당 호스트의 **설정 → 플러그인 → 플러그인 이름** 아래에 표시됩니다. `id`는 설치본 내에서 고유하고 `icon`은 Lucide 이름입니다. 등록 함수는 멱등성을 갖는 제거 함수를 반환하며 플러그인을 종료하면 남은 화면이 제거됩니다.
+
+직접 만든 화면을 열려면 `client.openSettings(id)` 또는 Command Center 콜백의 `openSettings(id)`를 호출하세요. 여러 호스트에 같은 플러그인이 설치되어 있어도 각 설치본에는 자체 값과 경로가 있습니다.
+
+구성 요소는 `PluginSurfaceProps`를 전달받습니다. Paseo는 헤더, 뒤로 가기, 안전 영역, 스크롤, 가운데 정렬된 설정 열을 관리합니다. 좁은 창에서는 전체 화면 세부 페이지를 밀어 넣고, 넓은 창에서는 설정 사이드바를 유지합니다. 이 프레임 안에 React Native 구성 요소로 콘텐츠를 렌더링하세요. 비활성화되거나 제거된 플러그인은 뒤로 가기가 작동하는 사용 불가 화면을 남깁니다.
+
+### 이름이 지정된 UI 구성 요소
+
+설정 구성 요소는 `@getpaseo/plugin/ui`에서 가져오세요. 자체 상태 및 RPC와 함께 작동하며 양식 래퍼나 저장소 바인딩은 필요하지 않습니다.
+
+```tsx
+import { useState } from "react";
+import { SettingsCard, SettingsSection, SettingsSwitch } from "@getpaseo/plugin/ui";
+
+export function DisplaySettings() {
+  const [visible, setVisible] = useState(true);
+  return (
+    <SettingsSection title="Display">
+      <SettingsCard>
+        <SettingsSwitch label="Show metadata" value={visible} onValueChange={setVisible} />
+      </SettingsCard>
+    </SettingsSection>
+  );
+}
+```
+
+| 구성 요소 | Props와 동작 |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `SettingsGroup`, `SettingsSection` | 필수 `title`, `children`; 선택적 `info` 도구 설명, `trailing` 콘텐츠, `testID`. 섹션 간격과 제목을 관리합니다. |
+| `SettingsCard` | `children`, 선택적 `testID`. 카드 표면과 직접 자식 사이의 구분선을 관리합니다. 매핑한 행에는 안정적인 React 키를 지정하세요. |
+| `SettingsRow` | 필수 `label`; 선택적 `hint`, `error`, `children`, `testID`. 사용자 지정 제어 항목이나 콘텐츠를 감쌉니다. |
+| `SettingsSwitch` | 행 props와 필수 `value: boolean`, `onValueChange`; 선택적 `disabled`. |
+| `SettingsSelect` | 행 props와 필수 문자열 `value`, `options: { label, value }[]`, `onValueChange`; 선택적 `disabled`. Paseo의 적응형 메뉴를 사용합니다. |
+| `SettingsInput` | 행 props와 필수 `onChangeText`; 선택적 `initialValue`, `placeholder`, `disabled`, `secureTextEntry`, `ref`. |
+| `SettingsAction` | 행 props와 필수 `actionLabel`, `onPress`; 선택적 `disabled`. |
+
+`SettingsInput`은 입력 중인 텍스트를 자체 관리합니다. `initialValue`는 마운트될 때 초깃값을 설정합니다. ref는 명시적인 프로그래밍 방식 변경을 위한 `focus()`, `blur()`, `getText()`, `replaceText(text)`를 노출합니다. 사용자가 저장하기 전까지 초안 텍스트를 지속 값과 분리하세요. 사용자 지정 미리 보기와 제어 항목은 이 구성 요소 옆이나 안에 배치할 수 있습니다.
+
+### 지속되는 값
+
+`shared/`에 설정 문서를 정의합니다.
+
+```ts
+import { defineSettings } from "@getpaseo/plugin";
+import { z } from "zod";
+
+export const preferences = defineSettings({
+  id: "display",
+  scope: "host",
+  version: 1,
+  schema: z.object({ showMetadata: z.boolean().default(true) }),
+});
+```
+
+정리 함수를 반환하기 전에 `index.server.ts`에서 `server.registerSettings(preferences)`로 등록하세요. 내장 지속성을 사용하려면 이 서버 진입점이 필요합니다. 자체 데이터를 사용하는 화면은 클라이언트 전용으로 둘 수 있습니다.
+
+| 정의 필드 | 계약 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `id` | `[a-z][a-z0-9_-]*`와 일치하는 소문자 식별자이며 설치본 내에서 고유합니다. |
+| `scope` | 필수 값은 `"host"`입니다. 해당 호스트의 승인된 모든 클라이언트가 문서를 공유합니다. 사용자별, 기기 로컬 또는 호스트 간 동기화는 없습니다. |
+| `version` | 쓰기 리비전과 별개로 스키마를 설명하는 필수 양의 정수입니다. |
+| `schema` | JSON 값용 Zod 스키마입니다. `{}`를 파싱하면 완전한 문서가 되도록 기본값을 지정하세요. |
+| `migrate(values, fromVersion)` | 이전에 저장된 버전을 동기 또는 비동기로 변환하는 선택적 함수입니다. 출력은 현재 스키마를 통과해야 합니다. |
+
+기여한 구성 요소에서 `useSettings(preferences)`를 호출하세요. 판별 가능한 상태를 반환합니다.
+
+| `status` | 사용할 수 있는 데이터 |
+| --------- | ------------------------------------------------------------------------ |
+| `loading` | 읽기가 진행 중입니다. 기본값을 저장된 값처럼 렌더링하지 마세요. |
+| `ready` | 타입이 지정된 `values`와 불투명한 `revision`. |
+| `invalid` | `error`와 `revision`. 저장된 데이터는 보존됩니다. |
+| `error` | 읽기 또는 연결에서 발생한 `error`. |
+
+모든 상태는 `saving`, `saveError`와 다음 동작도 노출합니다.
+
+- `save(values, revision): Promise<boolean>`은 완전한 문서를 검증하고 저장합니다. 검증, 충돌 또는 전송 실패 시 예외를 던지지 않고 `false`를 반환하며 `saveError`를 설정합니다.
+- `reset(): Promise<boolean>`은 훅에서 불러온 리비전을 사용해 문서를 스키마 기본값으로 명시적으로 교체합니다. 잘못 저장된 데이터를 복구할 수 있습니다.
+- `reload(): Promise<void>`는 저장 오류를 지우고 다시 읽습니다. 구성 요소가 초안을 소유하므로 다시 불러와도 자동으로 초안을 버리지 않습니다.
+
+즉시 적용하는 토글은 `{ ...settings.values, showMetadata }`와 `settings.revision`을 `save`에 전달하세요. 초안 편집기는 열 때 값과 리비전을 함께 캡처합니다. 저장에 성공하거나 사용자가 초안을 버릴 때까지 해당 리비전을 유지하세요. 오래된 리비전으로 저장하면 거부되며 초안과 더 새로운 저장 값이 모두 보존됩니다.
+
+쓰기는 원자적으로 처리되고 호스트에서 검증됩니다. 연결된 클라이언트는 플러그인을 다시 불러오지 않아도 업데이트를 받습니다. 값은 데몬 재시작, 플러그인 다시 로드, 비활성화, 업데이트 후에도 유지됩니다. 설치본을 제거하면 설정이 삭제됩니다. 같은 ID를 다시 설치하면 기본값에서 시작합니다.
+
+문서가 없으면 스키마 기본값을 사용합니다. 잘못된 데이터, 실패한 마이그레이션, 지원하지 않는 더 새로운 버전은 파일을 조용히 초기화하지 않고 `invalid`를 생성합니다. 성공한 마이그레이션은 새 버전을 한 번 저장합니다. 이 문서는 일반적인 호스트 측 JSON이며 자격 증명 보관소가 아닙니다. 설정 RPC는 플러그인 실행에 사용되는 기존 `daemon.manage` 권한을 사용합니다.
+
+즉시 적용 제어 항목, 검증 기능이 있는 초안 편집기, 사용자 지정 콘텐츠, Command Center 탐색은 전체 [설정 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/settings)를 확인하세요.
 
 ## 작업공간 패널
 
@@ -748,7 +913,7 @@ function PullRequestAction() {
 }
 ```
 
-반환되는 API는 프로젝트, 작업공간, 에이전트, 제공자, 데몬 설정을 다룹니다. 메서드는 [SDK API 참조](/docs/sdk/reference)를 확인하세요. Paseo가 연결을 관리하므로 연결 수명 주기 메서드는 의도적으로 제외되어 있습니다.
+반환되는 API는 프로젝트, 작업공간, 에이전트, 터미널, 공급자, 데몬 설정을 다룹니다. 메서드는 [SDK API 참조](/docs/sdk/reference)를 확인하세요. Paseo가 연결을 관리하므로 연결 수명 주기 메서드는 의도적으로 제외되어 있습니다.
 
 ## 플러그인 전용 백엔드 동작 추가
 
@@ -940,16 +1105,17 @@ paseo plugin install /absolute/path/to/plugin --id another-runtime-id
 paseo plugin add owner/repository
 paseo plugin add https://git.example.com/owner/repository.git --ref main
 paseo plugin add owner/monorepo:plugins/review
-paseo plugin status [id]
+paseo plugin ls [id]
 paseo plugin update <id>
 paseo plugin update --all
-paseo plugin ls
 paseo plugin reload my-plugin
 paseo plugin logs my-plugin
 paseo plugin disable my-plugin
 paseo plugin enable my-plugin
 paseo plugin remove my-plugin
 ```
+
+`ls`는 원격에 연결하지 않고 런타임 상태, 소스 세부정보, 설치된 커밋을 보고합니다. Paseo가 추적 중인 Git 원격에 연결하여 사용 가능한 업데이트를 설치하게 하려면 `update`를 사용하세요.
 
 대상이 CLI의 기본 데몬이 아니라면 관리 명령 앞에 `--host <url>`을 넣으세요. `remove`는 디렉토리 소스를 삭제하지 않으며, Git 소스의 경우 관리형 체크아웃을 삭제합니다. 설치 시 지정하는 `--id`는 런타임 ID이며, 같은 디렉토리나 저장소를 여러 번 설치할 수 있게 합니다.
 
@@ -983,7 +1149,7 @@ paseo plugin remove my-plugin
 
 | 증상 | 확인 사항 |
 | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `Plugin entry split is required` | 디렉토리에 `index.ts` 진입점만 있습니다. [마이그레이션 가이드](/docs/plugins/v0.8/migration)를 따르세요. |
+| `This plugin was made for an older version of Paseo` | 디렉토리에 `index.ts` 진입점만 있습니다. [마이그레이션 가이드](/docs/plugins/v0.8/migration)를 따르세요. |
 | `Plugin entry points are missing` | `index.client.tsx`와 `index.server.ts` 중 정확히 해당 이름으로 존재하는 파일이 없습니다. |
 | `server-only module cannot be imported into the plugin client bundle` | 클라이언트 코드가 `server/` 또는 `*.server.*` 파일을 가져옵니다. 해당 작업을 RPC 뒤로 옮기고 계약을 `shared/`에서 가져오세요. |
 | `client-only module cannot be imported into the plugin server bundle` | 서버 코드가 `client/` 또는 `*.client.*` 파일을 가져옵니다. 해당 기여를 `index.client.tsx`에서 등록하세요. |

@@ -132,10 +132,9 @@ paseo plugin add owner/repository --ref main
 
 플러그인이 저장소 루트 아래에 있으면 소스에 `:relative/path`를 덧붙이세요.
 
-`--ref`를 생략하면 기본 브랜치를 추적합니다. 명시한 브랜치는 업데이트를 추적하고, 태그와 커밋은 고정됩니다. 다음 명령으로 업데이트를 확인하고 적용하세요.
+`--ref`를 생략하면 기본 브랜치를 추적합니다. 명시한 브랜치는 업데이트를 추적하고, 태그와 커밋은 고정됩니다. 다음 명령으로 업데이트를 적용하세요.
 
 ```bash
-paseo plugin status
 paseo plugin update workspace-plugin
 paseo plugin update --all
 ```

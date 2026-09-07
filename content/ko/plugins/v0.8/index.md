@@ -24,7 +24,7 @@ category: Plugins
 [타임라인 항목](/docs/plugins/v0.8/reference#timeline-items),
 [테마](/docs/plugins/v0.8/reference#contribute-a-theme),
 [첨부 소스](/docs/plugins/v0.8/reference#add-a-composer-attachment-source),
-[데몬 측 RPC](/docs/plugins/v0.8/reference#add-plugin-specific-backend-behavior)를 추가할 수 있습니다. 클라이언트
+[데몬 측 RPC](/docs/plugins/v0.8/reference#add-plugin-specific-backend-behavior)를 추가할 수 있습니다. 또한 [코딩 에이전트를 공급자로 연결](/docs/plugins/v0.8/providers)할 수 있습니다. 클라이언트
 기여는 모바일을 포함해 해당 데몬에 연결된 모든 Paseo 클라이언트에서 실행됩니다.
 
 이 가이드에서는 플러그인의 기본 구조를 생성하고 실행한 다음 작업공간 패널을 추가합니다.
@@ -231,10 +231,12 @@ paseo plugin add owner/repository --ref main
 기본 브랜치를 추적합니다. 브랜치는 업데이트를 추적하고, 태그나 커밋은 고정됩니다.
 
 ```bash
-paseo plugin status
+paseo plugin ls
 paseo plugin update workspace-plugin
 paseo plugin update --all
 ```
+
+`ls`는 원격에 연결하지 않고 런타임 상태, 소스 세부정보, 설치된 커밋을 보고합니다.
 
 Paseo가 직접 TypeScript를 컴파일하므로 대부분의 플러그인에는 빌드 단계가 필요하지 않습니다.
 Paseo가 제공하지 않는 종속성을 설치하거나 파일을 생성해야 하는 저장소는 매니페스트에
@@ -263,6 +265,7 @@ paseo plugin logs workspace-plugin --json
 
 ## 다음
 
+- [공급자 플러그인 만들기](/docs/plugins/v0.8/providers): 에이전트를 직접 또는 ACP를 통해 연결하고, 공급자 소유 타임라인 항목을 렌더링하고, 테스트하고, 게시합니다.
 - [플러그인 참조](/docs/plugins/v0.8/reference): 모든 기여 유형과 해당 필드, 런타임
   모듈, 호스트, CLI를 설명합니다.
 - [플러그인을 런타임 진입점으로 마이그레이션하기](/docs/plugins/v0.8/migration): 단일 `index.ts`

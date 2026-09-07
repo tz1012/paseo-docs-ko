@@ -81,6 +81,22 @@ const agent = await client.agents.create({
 
 데몬은 여전히 프로젝트와 새로운 작업공간을 생성합니다. 생성된 워크스페이스 ID가 필요한 경우 `agent.workspaceId`을 읽어보세요.
 
+## 작업공간에서 터미널 시작하기
+
+```ts
+const terminal = await workspace.terminals.create({ name: "Development" });
+terminal.write("echo ready");
+terminal.sendKeys(["Enter"]);
+
+const { lines } = await terminal.capture();
+const { entries } = await workspace.terminals.list();
+await terminal.kill();
+```
+
+두 작업공간이 하나의 디렉터리를 공유할 수 있습니다. 작업공간 핸들이 ID를 제공하므로 각 작업공간의 터미널을 구분할 수 있습니다. 이미 가진 ID를 사용하려면 `client.workspaces.ref(workspaceId).terminals.create()`를 호출하세요.
+
+명령 인수, 작업 디렉터리 재정의, 입력 및 캡처 옵션은 [터미널 API 참조](/docs/sdk/reference#clientterminals)를 확인하세요.
+
 ## 작업공간 나열
 
 ```ts

@@ -192,4 +192,4 @@ stdio를 통해 [ACP](https://agentclientprotocol.com)를 사용하는 에이전
 
 ## 전체 참조
 
-전체 필드 참조(`extends`, `label`, `command`, `env`, `models`, `additionalModels`, `disallowedTools`, `enabled`, `order`), 모델 및 사고 옵션 스키마 및 심층 각 계획에 대한 예는 GitHub의 [docs/custom-providers.md](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)를 참조하세요.
+전체 필드 참조(`extends`, `label`, `command`, `env`, `models`, `additionalModels`, `disallowedTools`, `paseoTools`, `enabled`, `order`), 모델 및 사고 옵션 스키마, 각 구성 방식의 자세한 예시는 GitHub의 [docs/custom-providers.md](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)를 참조하세요. `paseoTools` 구성은 [공급자별 Paseo 도구 제한](/docs/mcp#limit-paseo-tools-by-provider)을 참조하세요.

@@ -128,6 +128,25 @@ paseo workspace archive <workspace-id>
 
 Paseo가 소스 체크아웃에서 forge(코드 호스팅 서비스)를 식별할 수 없는 경우 PR 체크아웃에 `--forge <name>`을 추가하세요. 설정 후크 및 서비스는 [Git 작업 트리](/docs/worktrees)를 참조하세요.
 
+## 터미널
+
+여러 작업공간이 하나의 디렉터리를 공유하는 경우 작업공간 ID를 사용하세요.
+
+```bash
+paseo terminal create --workspace <workspace-id> --name Development
+paseo terminal ls --workspace <workspace-id> --json
+paseo terminal send-keys <terminal-id> -l "echo ready"
+paseo terminal send-keys <terminal-id> Enter
+paseo terminal capture <terminal-id>
+paseo terminal kill <terminal-id>
+```
+
+기본적으로 작업공간 디렉터리에서 터미널을 생성합니다. 해당 작업공간을 소유자로 유지하면서 프로세스 디렉터리를 바꾸려면 `--cwd <absolute-path>`를 추가하세요. 알 수 없거나 보관된 작업공간 ID를 지정하면 실패합니다.
+
+`--workspace`가 없으면 생성 시 `--cwd` 또는 현재 디렉터리의 프로젝트를 열고 가장 오래된 활성 작업공간을 재사용합니다. 목록 조회 시 `--workspace`가 없으면 `--cwd` 또는 현재 디렉터리로 필터링하며 여러 작업공간이 포함될 수 있습니다. `ls --all`은 호스트의 모든 터미널을 나열하며 디렉터리 또는 작업공간 필터와 함께 사용할 수 없습니다.
+
+생성 및 목록 결과에는 `id`, `name`, `cwd`, `workspaceId`가 포함됩니다. 구조화된 출력에는 `--json`을 사용하고, 다른 데몬을 대상으로 하려면 전역 `--host` 옵션을 사용하세요. 이 명령에는 [작업공간 터미널 API](/docs/sdk/reference#clientterminals)를 지원하는 호스트가 필요하며, 오래된 호스트는 업데이트 안내를 반환합니다.
+
 ## 작업공간 스크립트
 
 작업공간의 `paseo.json`에 구성된 스크립트를 나열하고 시작하고 중지합니다.
@@ -154,10 +173,9 @@ paseo plugin install /absolute/path/to/plugin
 paseo plugin add owner/repository
 paseo plugin add https://gitlab.com/group/repository.git --ref main
 paseo plugin add owner/monorepo:plugins/review
-paseo plugin status
+paseo plugin ls [id]
 paseo plugin update my-plugin
 paseo plugin update --all
-paseo plugin ls
 paseo plugin reload my-plugin
 paseo plugin logs my-plugin
 paseo plugin disable my-plugin
@@ -165,7 +183,7 @@ paseo plugin enable my-plugin
 paseo plugin remove my-plugin
 ```
 
-GitHub 단축 표기는 먼저 기존 호스트 디렉터리를 확인합니다. 모노레포의 플러그인에는 `:<directory>`를 덧붙이세요. `paseo plugin logs <id>`는 플러그인의 최근 데몬 측 stdout과 stderr을 반환합니다. 구조화된 항목을 받으려면 `--json`을 추가하고, 다른 데몬을 대상으로 하려면 `paseo --host <target> plugin logs <id>`를 실행하세요. 설치, 신뢰, 수명 주기, 로그 보존 동작은 [플러그인 참조](/docs/plugins/v0.7/reference)를 확인하세요.
+GitHub 단축 표기는 먼저 기존 호스트 디렉터리를 확인합니다. 모노레포의 플러그인에는 `:<directory>`를 덧붙이세요. `paseo plugin ls [id]`는 원격에 연결하지 않습니다. `paseo plugin logs <id>`는 플러그인의 최근 데몬 측 stdout과 stderr을 반환합니다. 구조화된 항목을 받으려면 `--json`을 추가하고, 다른 데몬을 대상으로 하려면 `paseo --host <target> plugin logs <id>`를 실행하세요. 설치, 신뢰, 수명 주기, 로그 보존 동작은 [플러그인 참조](/docs/plugins/v0.7/reference)를 확인하세요.
 
 ## 리스팅 에이전트
 

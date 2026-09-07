@@ -90,6 +90,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `current()` | `PaseoAgent \| null` | 이 핸들에서 관찰된 현재 세부 값입니다. 절대 가져오지 않습니다.                                    |
 | `refresh(requestId?)` | `PaseoAgentRefetchResult \| null` | 현재 에이전트 및 프로젝트 배치를 가져옵니다.                                                  |
 | `send(text, options?)` | `Promise<void>` | 데몬이 프롬프트를 수락하면 해결됩니다.                                                      |
+| `respondToPermission(options)` | `Promise<void>` | `requestId`로 대기 중인 권한 요청에 허용 또는 거부 `response`를 답합니다. |
 | `run(text, options?)` | `PaseoAgentRunResult` | 프롬프트를 보내고 해당 차례를 기다립니다. `timeoutMs`은 대기 시간을 제어합니다. 기본값은 10분입니다. |
 | `waitForFinish(timeoutMs?)` | `PaseoAgentRunResult` | 초기 프롬프트를 포함하여 활성 차례를 기다립니다. 기본 시간 초과: 10분.              |
 | `commands(options?)` | `PaseoAgentCommandsResult` | 실시간 세션에 슬래시 명령과 내장 스킬을 요청합니다. 옵션은 `requestId`입니다. |
@@ -114,6 +115,9 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | 메서드 | 결과 | 동작 |
 | ---------------- | ------------------------ | ----------------------------------------------------------------------------- |
 | `list(options?)` | `PaseoProjectListResult` | 활성 작업공간이 없는 프로젝트를 포함해 등록된 모든 프로젝트를 나열합니다. |
+| `subscribe(handler)` | 구독 취소 기능 | 향후 프로젝트 추가/갱신 및 제거만 수신합니다. 초기 상태는 `list()`와 함께 구성하세요. |
+
+초기화 누락 없이 완전한 프로젝트 캐시를 만들려면 `list()`를 기다리기 전에 구독하고 업데이트를 버퍼링하세요. 목록 결과로 캐시를 초기화한 다음 버퍼링된 업데이트를 도착 순서대로 적용합니다.
 
 ## `client.workspaces`
 
@@ -127,6 +131,46 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `subscribe(handler)` | 구독 취소 기능 | 연결-로컬 작업공간 업데이트를 수신합니다. `list({ subscribe })`에 먼저 호출하세요. |
 
 작업 영역 핸들은 `id`, `projectId`, `directory`, `name`, `status`, `current()`, `refresh()`, `setTitle(title)`, `archive()` 및 `subscribe()`을 노출합니다. 파생된 작업공간 이름으로 복원하려면 `setTitle`에 `null`을 전달하세요. 작업공간 ID나 디렉터리를 반복하지 않고 에이전트를 생성하려면 `workspace.agents.create(options)`을 사용하세요.
+
+## `client.terminals`
+
+터미널 작업에는 작업공간 터미널을 지원하는 호스트가 필요합니다. 오래된 호스트에는 터미널 요청을 보내지 않으며 SDK가 호스트 업데이트 오류를 발생시킵니다.
+
+| 메서드 | 결과 | 동작 |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------- |
+| `create(options)` | `Promise<PaseoTerminalHandle>` | 필수 `workspaceId`가 소유하는 터미널을 만듭니다. |
+| `list(options?)` | `Promise<PaseoTerminalListResult>` | `{ entries, requestId }`를 반환합니다. 필터를 생략하면 이 호스트의 모든 터미널을 나열합니다. |
+| `ref(terminalOrId)` | `PaseoTerminalHandle` | 가져오거나 터미널 스트림에 연결하지 않고 로컬 핸들을 만듭니다. |
+
+생성 옵션:
+
+| 필드 | 의미 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `workspaceId` | 필수 활성 작업공간 ID입니다. 알 수 없거나 보관된 ID는 실패합니다. |
+| `cwd` | 선택적 절대 프로세스 작업 디렉터리입니다. 기본값은 작업공간 디렉터리이며, 바꿔도 소유권은 변경되지 않습니다. |
+| `name` | 선택적 터미널 이름입니다. |
+| `command`, `args` | 선택적 실행 파일 및 인수 배열입니다. 생략하면 기본 셸을 시작합니다. |
+| `size` | 선택적 초기 뷰포트 `{ rows, cols }`입니다. |
+| `requestId` | 선택적 요청 상관관계 ID입니다. |
+
+목록 옵션은 `workspaceId`, `cwd`, `requestId`입니다. `workspaceId`는 작업공간 디렉터리 밖에서 시작한 터미널을 포함해 소유권으로 선택합니다. 이 값이 있으면 `cwd`는 결과를 제한하지 않습니다. ID가 없으면 `cwd`는 작업공간 루트 디렉터리로 필터링합니다. 각 항목에는 `id`, `workspaceId`, `cwd`, `name`이 포함되며 `cwd`는 터미널이 실제로 시작된 디렉터리입니다.
+
+터미널 핸들은 다음을 노출합니다.
+
+| 메서드 | 결과 | 동작 |
+| ------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `current()` | `PaseoTerminal \| null` | 생성, `ref(snapshot)` 또는 새로 고침에서 얻은 마지막 스냅샷입니다. ID로 만든 핸들은 빈 상태에서 시작합니다. |
+| `refresh(options?)` | `Promise<PaseoTerminal \| null>` | 터미널 스냅샷을 가져오며, 더 이상 존재하지 않으면 `null`을 반환합니다. `requestId`를 받습니다. |
+| `write(data)` | `number` | 키 이름을 해석하지 않고 리터럴 텍스트를 보냅니다. 입력의 UTF-16 길이를 반환합니다. |
+| `sendKeys(keys)` | `number` | 키 토큰을 확장해 결합된 입력을 보냅니다. UTF-16 길이를 반환합니다. |
+| `capture(options?)` | `Promise<PaseoTerminalCaptureResult>` | `{ terminalId, lines, totalLines, requestId }`를 반환합니다. |
+| `kill(requestId?)` | `Promise<void>` | 터미널이 종료될 때까지 기다립니다. 이미 제거된 터미널을 종료해도 성공합니다. |
+
+`sendKeys()`는 `Enter`, `Tab`, `Escape`, `Space`, `BSpace`, `C-c`, `C-d`, `C-z`, `C-l`, `C-a`, `C-e`를 인식합니다. 다른 문자열은 그대로 전달됩니다. 입력 메서드는 명령 실행을 기다리거나 터미널이 입력을 처리했는지 확인하지 않고 전송합니다.
+
+캡처 옵션은 `start`, `end`, `stripAnsi`, `requestId`입니다. 행 경계는 스크롤백과 뷰포트 전체에서 0부터 시작하며 양 끝을 포함합니다. 음수 경계는 끝에서부터 셉니다. 경계를 생략하면 모든 행을 캡처합니다. `stripAnsi`의 기본값은 `true`입니다. 터미널이 없으면 빈 행을 반환합니다.
+
+`workspace.terminals.create(options?)`와 `workspace.terminals.list(options?)`를 사용하면 핸들에서 작업공간 ID를 제공합니다. 생성은 `workspaceId`를 제외한 같은 옵션을 받고, 목록은 `requestId`만 받습니다. 플러그인은 `usePaseo()`와 핸들러의 `paseo` 컨텍스트를 통해 이 메서드를 사용할 수 있습니다.
 
 ## `client.providers`
 

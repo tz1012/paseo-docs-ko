@@ -40,6 +40,37 @@ Hub 대시보드에서 트리거를 만들거나 편집할 때는 먼저 데몬�
 
 데몬이 오프라인이거나 더 새로운 Paseo 버전이 필요하면 에이전트 선택기에 오류와 다시 시도 기능이 표시됩니다. 트리거의 나머지 부분과 YAML은 계속 편집할 수 있습니다.
 
+## 같은 에이전트 이어서 사용하기
+
+대시보드 트리거의 기본값은 **같은 대화**입니다. 같은 Slack 또는 Discord 스레드의 메시지, 같은 GitHub 이슈나 끌어오기 요청의 이벤트, 같은 Linear 이슈의 이벤트는 해당 프로젝트의 기존 에이전트를 이어서 사용합니다. 대화가 없는 이벤트는 새 에이전트를 시작합니다.
+
+에이전트가 작업 중이면 새 프롬프트가 현재 작업의 방향을 조정합니다. 작업공간이 보관되어 있으면 Hub는 프롬프트를 보내기 전에 Paseo에 복원을 요청합니다. 각 도착 이벤트에는 여전히 자체 기한, 출력 제한, 완료 상태가 있습니다.
+
+입력값으로 도착 이벤트를 묶으려면 **사용자 지정 키**를, 서로 분리하려면 **새 에이전트**를 선택하세요. 자체 완결형 트리거 문서에서도 같은 선택을 표현할 수 있습니다.
+
+```yaml
+name: support
+on:
+  slack.mention:
+    filters:
+      from_users: [U01234567]
+run:
+  target:
+    daemon: laptop
+    cwd: /Users/you/code/support
+  agent:
+    provider: codex
+  continuation:
+    mode: conversation
+  max_runtime: 30m
+  idle_timeout: 5m
+  prompt: Handle this request and call finish_execution when complete.
+```
+
+키와 호환성은 [연속 실행 참조](/docs/hub/configuration/hub-yml#agent-continuation)에 설명되어 있습니다. 실행 세부정보에는 각 도착 이벤트가 에이전트를 생성했는지, 이어서 사용했는지, 복원했는지가 표시됩니다.
+
+Hub는 각 프롬프트에 `executionId`를 포함합니다. 에이전트를 이어서 사용할 때는 해당 ID를 `reply`와 `finish_execution`에 전달하세요. 이 도구들은 해당 도착 이벤트의 대상과 계약에 작동하며, 오래되었거나 관련 없는 실행 ID는 거부됩니다.
+
 ## 이벤트
 
 | `on`                                  | 다음 경우에 발생                                      |

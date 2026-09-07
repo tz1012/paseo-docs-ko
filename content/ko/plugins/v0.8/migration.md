@@ -78,6 +78,7 @@ my-plugin/
 | 기존 루트 진입점의 `plugin.addClientSide(fn)`                                              | 래퍼를 삭제하고 `fn`의 본문을 기본 클라이언트 진입점 함수로 옮기세요        |
 | 기존 클라이언트 콜백 안의 `client.addComposerPill(pill)`                                 | `index.client.tsx` 또는 가져온 `client/` 함수 안의 `client.addComposerPill(pill)` |
 | 기존 루트 진입점의 `plugin.addAttachmentSource(source)`                                    | `index.client.tsx`의 `client.addAttachmentSource(source)`                                 |
+| 새 설정 화면 기여                                                              | `index.client.tsx`의 `client.addSettingsScreen(screen)`; [설정 화면](reference#settings-screens) 참조 |
 | 기존 루트 진입점의 `plugin.addTheme(theme)`                                                | `index.client.tsx`의 `client.addTheme(theme)`                                             |
 | 기존 루트 진입점의 `plugin.addTimelineTransformer(transformer)`                            | `index.client.tsx`의 `client.addTimelineTransformer(transformer)`                         |
 | 기존 루트 진입점의 `plugin.addTimelineRenderer(renderer)`                                  | `index.client.tsx`의 `client.addTimelineRenderer(renderer)`                               |
@@ -101,7 +102,7 @@ my-plugin/
 
 | 컴파일 또는 로드 오류                                                                                                     | 의미와 해결 방법                                                                                                           |
 | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `Plugin entry split is required`                                                                                           | 디렉터리에 여전히 기존 루트 진입점만 있습니다. 런타임 진입점을 만들고 등록을 옮긴 다음 기존 파일을 삭제하세요.    |
+| `This plugin was made for an older version of Paseo`                                                                       | 디렉터리에 여전히 기존 루트 진입점만 있습니다. 런타임 진입점을 만들고 등록을 옮긴 다음 기존 파일을 삭제하세요.    |
 | `Plugin entry points are missing: expected index.client.ts or index.client.tsx and/or index.server.ts or index.server.tsx` | 지원되는 진입점이 없습니다. 정확한 파일 이름으로 적어도 하나를 추가하세요.                                                               |
 | `server-only module cannot be imported into the plugin client bundle: <file>`                                              | 클라이언트 가져오기가 `server/`에 도달합니다. 호출을 RPC 뒤로 옮기고 해당 계약을 `shared/`에서 가져오세요.                    |
 | `client-only module cannot be imported into the plugin server bundle: <file>`                                              | 서버 가져오기가 `client/`에 도달합니다. 해당 등록과 가져오기를 클라이언트 진입점으로 옮기세요.                                 |
