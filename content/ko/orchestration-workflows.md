@@ -1,6 +1,6 @@
 ---
 title: Common orchestration workflows
-description: Copyable prompts for delegating, parallelizing, reviewing, and continuing agent work with Paseo.
+description: Prompts for delegating, parallelizing, reviewing, and continuing agent work with Paseo.
 nav: Common workflows
 order: 31
 category: Orchestration
@@ -8,87 +8,96 @@ category: Orchestration
 
 # 일반적인 오케스트레이션 워크플로
 
-이 예는 주 에이전트를 위한 프롬프트입니다. 작업에 맞게 공급자, 모델, 작업 및 분기 이름을 변경하세요.
+[Paseo 도구를 활성화](/docs/orchestration#get-started)한 다음 주 에이전트에게 다음 워크플로 중 하나를 요청하세요. 프로젝트에 맞게 작업을 조정하세요. [에이전트 프로필](/docs/agent-profiles)을 사용하면 설정을 저장하고 작업 종류마다 사용할 에이전트를 설명할 수 있습니다.
 
 ## 다른 모델에게 작업 보내기
 
-기본 채팅에서 강력한 계획을 유지하고 구현을 주력으로 보냅니다.
+계획은 주 채팅에서 진행하고 구현은 위임하세요.
 
-```text
-Stay as the orchestrator. Use Paseo to find the available Codex 5.6 model, then
-create a worktree-isolated workspace and launch a subagent there. Ask it to
-implement the parser change and run the focused tests.
-```
+> Paseo로 내 에이전트 프로필과 메모를 확인하세요. 구현에 사용할 프로필을 선택하고, 작업 트리 격리 작업공간을 만든 뒤 거기에서 하위 에이전트를 시작해 파서 변경을 구현하도록 하세요. 집중 테스트를 실행하고 결과를 보고하게 하세요.
 
-정확한 모델 ID가 확실하지 않은 경우 오케스트레이터에게 먼저 공급자를 검사하도록 요청하세요. 사용 가능한 모델은 자체 설치 및 인증된 CLI에서 제공됩니다.
+작업자는 자체 작업 트리에서 변경합니다. 적합한 프로필이 없으면 에이전트가 구성된 공급자와 모델을 검색하고 무엇을 선택했는지 알려줄 수 있습니다.
 
-## 팬아웃 연구
+## 조사 병렬화하기
 
-읽기 전용 작업은 하나의 작업 공간을 안전하게 공유할 수 있습니다.
+독립적인 질문을 작업자들에게 나누세요.
 
-```text
-Create three Paseo subagents in this workspace. Have one trace the request path,
-one inspect the tests, and one look for related regressions. Do not edit files.
-Synthesize their findings when all three report back.
-```
+> 이 작업공간에 Paseo 하위 에이전트 세 개를 만드세요. 하나는 요청 경로를 추적하고, 하나는 테스트를 살펴보고, 하나는 관련 회귀를 찾게 하세요. 파일은 편집하지 마세요. 세 에이전트가 모두 보고하면 조사 결과를 종합하세요.
 
-각 작업자는 하위 에이전트 트랙에 표시되며 오케스트레이터는 실행되는 동안 계속 작업할 수 있습니다.
+작업자들은 파일을 공유하며 하위 에이전트 트랙에 나타납니다. 주 에이전트가 조사 결과를 하나의 답변으로 정리합니다.
 
-## 충돌 없이 편집 병렬화
+## 충돌 없이 편집 병렬화하기
 
-각 독립적 구현에 고유한 작업 트리 격리 작업 공간을 제공합니다.
+독립적인 변경마다 별도 작업 트리를 제공하세요.
 
-```text
-Split these two issues between two Paseo subagents. Create a separate workspace
-with worktree isolation from main for each issue, use the best available
-implementation model, and have each agent run the focused checks for its change.
-Summarize both diffs when done.
-```
+> 이 두 이슈를 Paseo 하위 에이전트 두 개에 나누세요. 각 이슈마다 main에서 작업 트리로 격리된 별도 작업공간을 만드세요. 내 프로필에서 구현에 적합한 설정을 확인하고, 각 에이전트가 해당 변경의 집중 검사를 실행하게 하세요. 완료되면 두 diff를 요약하세요.
 
-동일한 파일에 대한 공동작업을 위해 현재 작업공간을 사용하세요. 에이전트가 독립적으로 편집할 수 있는 경우 작업 트리를 사용하십시오.
+각 작업자는 별도 체크아웃을 편집합니다. 검사 결과와 함께 살펴볼 두 변경을 받게 됩니다.
 
-## 구현 후 검토
+## 구현 후 검토하기
 
-변화를 만들고 판단하기 위해 다양한 모델을 사용하십시오.
+변경 작성과 판단에 서로 다른 에이전트를 선택하세요.
 
-```text
-Create a worktree-isolated workspace and launch a worker there to implement this
-feature. When it finishes, create a second subagent in the same workspace to
-review the diff for correctness, missing tests, and unnecessary complexity.
-Bring the review back here.
-```
+> 내 Paseo 프로필과 메모에서 구현 및 검토에 사용할 항목을 확인하세요. 작업 트리 격리 작업공간을 만들고 거기에서 구현 작업자를 시작하세요. 작업자가 완료하면 같은 작업공간에서 독립적인 검토자를 시작해 정확성, 누락된 테스트 및 불필요한 복잡성을 확인하게 하세요. 검토 결과를 여기로 가져오세요.
 
-두 번째 에이전트는 대화 컨텍스트를 공유하지 않고 작업자의 파일을 볼 수 있으므로 검토가 더욱 독립적이 됩니다.
+검토자는 새로운 대화에서 작업자의 파일을 봅니다. 다른 모델의 판단을 원하면 서로 다른 공급자의 프로필을 사용하세요.
+
+## 다른 에이전트에 프롬프트 보내기
+
+에이전트는 Paseo가 특정 에이전트를 지정할 때 사용하는 식별자인 **에이전트 ID**로 서로에게 프롬프트를 보낼 수 있습니다. 같은 호스트의 작업공간이라면 자신이 시작하지 않은 에이전트와도 통신할 수 있습니다.
+
+1. 수신 에이전트의 탭을 마우스 오른쪽 버튼으로 클릭하고 **에이전트 ID 복사**를 선택합니다.
+2. 해당 ID를 송신 에이전트와의 대화에 붙여 넣고 다음과 같이 요청합니다.
+
+> Paseo를 사용해 [여기에 에이전트 ID 붙여넣기] 에이전트에게 다음 프롬프트를 보내세요. “작업공간의 파서 변경을 검토하고 누락된 테스트 사례가 있으면 보고하세요.”
+
+수신 에이전트는 기존 대화에서 프롬프트를 받습니다. 별도 메시지로 회신하게 하려면 송신 에이전트의 ID도 알려주세요.
+
+내부적으로 에이전트는 수신자의 `agentId`와 `prompt`를 사용해 `send_agent_prompt`를 호출합니다. `list_agents`로 ID를 찾을 수도 있으며, CLI에서는 [`paseo send <id>`](/docs/cli#sending-messages)를 사용합니다. 다른 호스트의 경우 [원격 CLI 워크플로](#work-on-another-machine)를 사용하세요.
 
 ## 작업 확인, 리디렉션 또는 계속하기
 
-오케스트레이터는 작업자를 검사하고 다시 시작하지 않고도 후속 조치를 보낼 수 있습니다.
+필요할 때 다음 프롬프트를 각각 보내세요.
 
-```text
-Summarize what the subagents are doing and flag anything blocked.
-```
+> 하위 에이전트들이 무엇을 하고 있는지 요약하고 차단된 사항을 표시하세요.
 
-```text
-Tell the parser worker to add the malformed-input case and rerun its test file.
-```
+주 대화에서 진행 상황 요약을 받습니다.
 
-```text
-Cancel the UI worker's current turn, but keep the agent so I can redirect it.
-```
+> 파서 작업자에게 잘못된 입력 사례를 추가하고 해당 테스트 파일을 다시 실행하라고 하세요.
 
-## 에이전트의 지속적인 작업 유지
+작업자는 기존 대화에서 계속 진행합니다.
 
-현재 에이전트가 스스로 깨어나 작업을 재평가하고 작업을 계속해야 할 때 하트비트를 사용합니다.
+> UI 작업자의 현재 턴을 취소하되, 리디렉션할 수 있도록 에이전트는 유지하세요.
 
-```text
-Use Paseo to create a heartbeat every 10 minutes. Continue this migration in
-small steps, run the focused checks after each step, and stop when the migration
-is complete or after two hours.
-```
+현재 작업이 중지되고 작업자는 후속 작업을 받을 수 있는 상태로 남습니다.
 
-```text
-Create a heartbeat every 5 minutes to check this deployment. Investigate any
-failure and report meaningful changes in this conversation. Stop after one hour.
-```
+## 다른 머신에서 작업하기
 
-하트비트가 동일한 대화로 돌아옵니다. 일일 분류와 같은 cron 스타일 반복 작업의 경우 [일정](/docs/schedules)을 사용하세요. 핸드오프, 위원회, 자문, 제한된 루프 등 재사용 가능한 워크플로는 [오케스트레이션 기술](/docs/skills)을 참조하세요.
+CLI는 다른 Paseo 호스트를 대상으로 사용할 수 있습니다. 먼저 [원격 데몬에 연결](/docs/cli#connecting-to-a-remote-daemon)하고 해당 호스트의 작업공간을 확인하세요. 저장소와 필요한 공급자를 원격 머신에서 사용할 수 있어야 합니다.
+
+> 내가 제공한 원격 호스트와 작업공간에서 Paseo CLI를 사용하세요. 그곳에서 에이전트를 시작해 실패한 빌드를 조사하고 출력을 확인한 뒤 결과를 여기에 요약하세요. 파일은 변경하지 마세요.
+
+작업자는 원격 머신에서 실행됩니다. 해당 목적지에는 CLI의 전역 `--host` 옵션을 사용하세요. 주입된 Paseo 도구는 주 에이전트 자체의 호스트에서 작동합니다.
+
+## 하트비트로 에이전트가 계속 작업하게 하기
+
+하트비트는 대화를 유지하면서 같은 에이전트에 주기적으로 프롬프트를 보냅니다.
+
+> Paseo를 사용해 10분마다 실행되는 하트비트를 만드세요. 이 마이그레이션을 작은 단계로 계속 진행하고, 각 단계가 끝날 때 집중 검사를 실행하며, 마이그레이션이 완료되면 하트비트를 삭제하세요. 두 시간 후 만료되도록 설정하세요.
+
+에이전트는 해당 주기에 맞춰 작업을 재개합니다. 실행할 때마다 새 에이전트를 사용하려면 [일정](/docs/schedules)을 대신 만드세요.
+
+## 작업이 표시되는 위치
+
+위임한 작업을 확인하려면 작성기 근처의 **하위 에이전트 트랙**을 여세요.
+
+| | Paseo 하위 에이전트 | 기본 공급자 하위 에이전트 |
+| ------------ | ---------------------------------------------- | ---------------------------------------------- |
+| 공급자 | 구성된 모든 공급자 | 상위 공급자의 자체 시스템에서 선택 |
+| 작업공간 | 현재 또는 명시적으로 선택한 작업공간 | 공급자가 관리 |
+| 대화 | 대화할 수 있는 전체 에이전트 세션 | 읽기 전용 타임라인 |
+| 제어 | 후속 작업, 설정 변경, 보관 또는 분리 | 공급자가 수명 주기 관리 |
+
+다른 작업공간의 Paseo 하위 에이전트도 상위 에이전트의 트랙에 속합니다. 자체 작업공간에서는 탭으로도 열립니다. 최상위 에이전트로 만들려면 앱이나 [`paseo agent detach`](/docs/cli#agent-modes)로 분리하세요.
+
+작업공간과 상위 관계 규칙은 [MCP 참조](/docs/mcp#mental-model)를 확인하세요.

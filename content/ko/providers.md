@@ -24,5 +24,6 @@ Paseo는 자체 코딩 에이전트를 제공하지 않습니다. **이미 설�
 ## 다음은 어디로 갈까?
 
 - [지원되는 공급자](/docs/supported-providers), 설치 링크가 포함된 전체 목록.
-- [맞춤 공급자](/docs/custom-providers), 자체 공급자 추가, 다른 엔드포인트의 기존 공급자 지정, 여러 프로필 실행 또는 `~/.paseo/config.json`의 바이너리 재정의.
+- [에이전트 프로필](/docs/agent-profiles), 모델, 모드 및 사고 설정을 함께 저장하고 메모로 위임을 안내합니다.
+- [맞춤 공급자](/docs/custom-providers), 자체 공급자 추가, 다른 엔드포인트의 기존 공급자 지정, 여러 공급자 별칭 구성 또는 `~/.paseo/config.json`의 바이너리 재정의.
 - [paseo.sh/agents](/agents), 지원되는 각 제공업체에 대한 에이전트별 랜딩 페이지입니다.

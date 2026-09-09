@@ -8,7 +8,7 @@ category: Plugins
 
 # 플러그인 참조
 
-> **출시 예정인 Paseo v0.8용 문서입니다.** [v0.8 빠른 시작](/docs/plugins/v0.8)으로 돌아가세요.
+> **Paseo v0.8 베타용 문서입니다.** [v0.8 빠른 시작](/docs/plugins/v0.8)으로 돌아가세요.
 
 기존 플러그인을 마이그레이션하려면 별도의 [런타임 진입점 마이그레이션 가이드](/docs/plugins/v0.8/migration)를 따르세요.
 
@@ -42,16 +42,47 @@ my-plugin/
   tsconfig.json
 ```
 
-필수 루트 매니페스트는 `paseo-plugin.json`입니다. 여기에는 기본 플러그인 ID가 들어 있습니다.
+필수 루트 매니페스트는 `paseo-plugin.json`입니다. 여기에는 기본 플러그인 ID와 지원되는 Paseo 버전이 들어 있습니다.
 
 ```json
-{ "id": "my-plugin" }
+{ "id": "my-plugin", "requirements": { "paseo": ">=0.8.0" } }
 ```
 
+### 요구 사항
+
+`requirements`는 선택적 객체입니다. 현재 지원되는 키 `paseo`에는 npm semver 범위를 사용할 수 있습니다.
+`requirements.paseo`를 생략하면 `<0.8.0`, 즉 최초로 호환성을 깨는 플러그인 릴리스보다 앞서 만들어진
+플러그인을 의미합니다. Paseo 0.8 이상은 이를 거부하고 [마이그레이션 가이드](migration) 링크를 표시합니다.
+빈 문자열, 잘못된 범위 및 알 수 없는 매니페스트 요구 사항 키는 거부됩니다.
+
+| 범위 | 호환 릴리스 |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `>=0.8.0` | 시험판과 이후 호환성을 깨는 릴리스를 포함한 0.8.0 이상 |
+| `^0.8.0` | 시험판을 포함한 0.8.x 릴리스 |
+| `>=0.8.3 <0.9.0` | 시험판을 포함한 0.8.3부터 마지막 0.8 패치까지 |
+
+Paseo 시험판 버전은 안정화 핵심 버전(`major.minor.patch`)이 만족하는 범위도 만족합니다. 따라서
+`0.8.0-beta.1`은 `>=0.8.0`을 만족하지만 `<0.8.0`은 만족하지 않습니다.
+
+`paseo plugin init`은 현재 CLI 버전 앞에 `>=`를 붙여 기록하고 타입 검사를 위해 일치하는 SDK 버전을
+고정합니다. 새 API를 채택할 때는 최소 버전을 올리세요. 새 릴리스가 호환되지 않으면 상한을 추가하세요.
+최소 버전만으로는 향후 호환성을 깨는 변경으로부터 보호된다고 보장할 수 없습니다.
+
+데몬은 플러그인을 설치하거나 Git 빌드 명령을 실행하거나 로드하기 전에 버전을 확인하며, 시작·활성화·다시
+로드할 때도 확인합니다. 거부된 Git 업데이트에서는 설치된 리비전을 유지합니다. 연결된 각 앱은 클라이언트
+코드를 평가하기 전에 자체 버전을 확인하고 **설정 → 플러그인**에 비호환 상태를 표시합니다. 데몬이 호환된다고
+해서 오래된 앱도 호환되는 것은 아닙니다. 클라이언트 진입점이 없는 플러그인은 연결된 앱 버전과 일치하지 않아도 됩니다.
+
+예: `Plugin "review" requires Paseo >=0.8.0. Your daemon is 0.7.2.` 호환되는 플러그인 리비전을
+사용하거나 이름이 표시된 런타임을 업데이트하세요. 0.8 이전 릴리스는 이 매니페스트 필드를 이해하지 못하며
+새 진단을 표시할 수 없습니다.
+
+### 런타임 진입점
+
 | 진입점 | 런타임 | 전달받는 값 | 필수 조건 |
-| ------------------ | --------------------- | --------------------- | ----------------------------------------------------------------- |
+| ------------------ | --------------------- | --------------------- | ------------------------------------------------------------------------------- |
 | `index.client.tsx` | Paseo 앱, 클라이언트별 실행 | `PluginClientContext` | 플러그인에 UI, 콜백, 테마 또는 첨부 소스가 있는 경우 |
-| `index.server.ts` | 데몬 하위 프로세스 | `PluginServerContext` | 플러그인이 RPC를 처리하는 경우 |
+| `index.server.ts` | 데몬 하위 프로세스 | `PluginServerContext` | 플러그인이 핸들러, 훅, 설정 지속성 또는 공급자를 제공하는 경우 |
 
 진입점이 하나 이상 필요하며, 두 진입점 모두 `.ts` 또는 `.tsx`를 사용할 수 있습니다. 기존 `index.ts`만 있는 디렉토리는 로드에 실패하며 [마이그레이션 가이드](/docs/plugins/v0.8/migration)를 안내합니다.
 
@@ -69,23 +100,34 @@ my-plugin/
 
 ## 런타임 모듈
 
-Paseo는 각 번들을 해당 진입점에서 빌드합니다. `client/`를 데몬 번들로 가져오거나, `server/`를 앱 번들로 가져오거나, 앱 번들 어디에서든 `node:` 모듈을 가져오면 컴파일 오류가 발생합니다. `shared/`에는 Node 및 React Native 런타임 코드를 넣지 마세요.
+Paseo는 각 번들을 해당 진입점에서 빌드합니다. `client/`를 데몬 번들로 가져오거나, `server/`를 앱 번들로 가져오거나,
+앱 번들 어디에서든 Node 모듈을 가져오면 컴파일 오류가 발생합니다. 서버에서 React, React Native 또는 클라이언트 SDK
+진입점을 가져와도 실패합니다. 공유 코드는 공유 코드만 가져와야 하며 Node, React, 런타임별 SDK 진입점 또는
+런타임별 타입을 가져오면 안 됩니다.
+
+SDK 루트(`@getpaseo/plugin`)에는 공유 데이터, 스키마 및 런타임 중립적인 도우미만 있습니다. 클라이언트
+컨텍스트와 훅은 `/client`, 서버 컨텍스트와 수명 주기 계약은 `/server`, UI는 `/client/react-native` 또는
+`/client/ui`에서 가져오세요. 이러한 규칙은 타입 가져오기와 전이 종속성에도 적용됩니다. `/client/host`는
+앱 호스트 전용이며 플러그인에서 가져올 수 없습니다.
 
 ### 클라이언트 런타임
 
 Paseo는 클라이언트 코드에 다음 모듈을 제공합니다.
 
 | 모듈 | 용도 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `@getpaseo/plugin` | 기여 계약, `defineRpc`, `defineAttachmentSource`, `RpcInput`, `RpcOutput`, 데이터 훅 |
-| `@getpaseo/plugin/ui` | 이름이 지정된 조합 가능한 설정 구성 요소 |
-| `@getpaseo/plugin/react-native` | Paseo UI 구성 요소와 UI 훅 |
-| `@getpaseo/plugin/server` | `PluginHandlerContext` 같은 핸들러 전용 타입 |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `@getpaseo/plugin` | 공유 데이터, `defineRpc`, `defineSettings`, `defineAttachmentSource`, `RpcInput`, `RpcOutput` |
+| `@getpaseo/plugin/client/ui` | 이름이 지정된 조합 가능한 설정 구성 요소 |
+| `@getpaseo/plugin/client/react-native` | Paseo UI 구성 요소와 UI 훅 |
+| `@getpaseo/plugin/client` | 클라이언트 기여 컨텍스트, `usePaseo`, `useRpc`, `useSettings` 및 데이터 훅 |
 | `@tanstack/react-query` | 요청 상태와 캐싱 |
 | `react` | 구성 요소와 훅 |
 | `react/jsx-runtime` | 컴파일된 JSX |
 | `react-native` | 크로스 플랫폼 UI |
 | `zod` | 공유 스키마 |
+
+호스트가 함께 사용하는 React와 렌더러 버전을 소유합니다. SDK의 React 피어 범위는 도구와 Node 소비자를 위해
+패치 버전을 허용하지만, 앱에 고정된 React 버전을 바꾸거나 다른 호스트 렌더러와의 호환성을 보장하지 않습니다.
 
 위와 정확히 일치하는 모듈 지정자는 호스트의 런타임 인스턴스를 사용합니다. 다른 호스트 모듈을 요청하는 클라이언트 번들은 `Module "<name>" is not available in plugin client code` 오류와 함께 실패합니다.
 
@@ -127,13 +169,13 @@ export async function openExternal(url: string): Promise<void> {
 
 ### 서버 런타임
 
-Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpaseo/plugin/provider`, `@getpaseo/plugin/acp`, `zod`를 제공합니다. 백엔드 기여는 데몬 하위 프로세스에서 실행되며 Node를 통해 호스트 머신에 접근할 수 있습니다. 파일 시스템, 프로세스, 자격 증명 및 기타 머신 로컬 작업은 `server/` 아래에 두세요. `index.server.ts`가 없는 플러그인은 하위 프로세스를 시작하지 않습니다.
+Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpaseo/plugin/server/provider`, `@getpaseo/plugin/server/acp`, `zod`를 제공합니다. 백엔드 기여는 데몬 하위 프로세스에서 실행되며 Node를 통해 호스트 머신에 접근할 수 있습니다. 파일 시스템, 프로세스, 자격 증명 및 기타 머신 로컬 작업은 `server/` 아래에 두세요. `index.server.ts`가 없는 플러그인은 하위 프로세스를 시작하지 않습니다.
 
 ### 공급자
 
 직접 구현과 ACP 구현, 세션 수명 주기, 작성기 설정, 타임라인 렌더러, 테스트, 배포는 [공급자 플러그인 만들기](/docs/plugins/v0.8/providers)를 따르세요.
 
-`@getpaseo/plugin/provider`의 `ProviderRegistration`을 `server.registerProvider()`에 전달하세요. 연결은 `send()`로 입력을 받고 `onEvent()`를 통해 완전한 상태 스냅샷을 내보냅니다. `send()`는 수락 여부만 보고합니다. 프롬프트 처리 결과, 턴, 구성, 지속성, 권한, 실패는 이벤트로 전달됩니다.
+`@getpaseo/plugin/server/provider`의 `ProviderRegistration`을 `server.registerProvider()`에 전달하세요. 연결은 `send()`로 입력을 받고 `onEvent()`를 통해 완전한 상태 스냅샷을 내보냅니다. `send()`는 수락 여부만 보고합니다. 프롬프트 처리 결과, 턴, 구성, 지속성, 권한, 실패는 이벤트로 전달됩니다.
 
 메시지, 구조화된 명령, 방향 조정, 명령 부수 효과에는 하나의 `session.prompt` 입력을 사용하세요. 실시간 사용자 타임라인 항목에 `clientMessageId`를 반복하고 정확히 하나의 일치하는 `session.prompt_result`를 게시합니다. 공급자가 만든 하위 항목은 `parentSessionId`가 있는 세션으로 게시하세요.
 
@@ -141,7 +183,7 @@ Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpa
 
 Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용해 다시 여는 방식으로 에이전트를 새로 고칩니다. 공급자는 `session.open` 중에 외부 상태를 다시 읽습니다.
 
-명령 기반 ACP를 연동하려면 `@getpaseo/plugin/acp`의 `runAcpProvider()`를 사용하세요. 공급업체별 검색, 구성, 알림 또는 도구 호출 차이에만 변환기 훅을 추가합니다.
+명령 기반 ACP를 연동하려면 `@getpaseo/plugin/server/acp`의 `runAcpProvider()`를 사용하세요. 공급업체별 검색, 구성, 알림 또는 도구 호출 차이에만 변환기 훅을 추가합니다.
 
 `ProviderRegistration.icon`은 `icon.svg`처럼 플러그인 디렉터리를 기준으로 한 파일 경로입니다. 해당 디렉터리 안에 있는 64KiB 이하의 일반 SVG 파일이어야 합니다. SVG는 자체 완결형이어야 하며 스크립트, 스타일, `foreignObject`, 이벤트 핸들러 속성, JavaScript URL, 외부 `href` 또는 `xlink:href` 참조는 거부됩니다. `#mark` 같은 프래그먼트 참조는 허용됩니다. Paseo는 플러그인을 시작할 때 파일을 읽고 정제합니다. 문자열 자체를 인라인 SVG나 URL로 사용하지 않습니다.
 
@@ -150,7 +192,7 @@ Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용�
 각 진입점은 기여 함수 하나를 기본으로 내보내고 정리 함수를 반환합니다. 클라이언트 진입점은 `PluginClientContext`를, 서버 진입점은 `PluginServerContext`를 전달받습니다. 모든 클라이언트 `add*`는 여러 번 호출해도 같은 결과를 내는 제거 함수를 반환합니다. 진입점의 정리 함수는 Paseo가 남아 있는 등록을 제거하기 전에 실행됩니다.
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { Main } from "./client/main";
 
 export default function contribute(client: PluginClientContext) {
@@ -161,6 +203,319 @@ export default function contribute(client: PluginClientContext) {
 
 정리 함수는 비동기일 수 있습니다. 플러그인이 생성한 타이머, 감시자, 소켓 및 기타 리소스를 해제하세요. Paseo는 다시 로드, 비활성화, 제거, 연결 해제 또는 데몬 종료 시 등록을 제거하고, 표면을 마운트 해제하고, 대기 중인 RPC를 거부하고, 플러그인의 데몬 세션을 닫고, 하위 프로세스를 중지합니다.
 
+## 수명 주기 훅
+
+`index.server.ts`에서 다음과 같이 등록합니다.
+
+```ts
+import type { PluginServerContext } from "@getpaseo/plugin/server";
+
+export default function contribute(server: PluginServerContext) {
+  server.on("agent.turn_ended", (event) => {
+    console.log(event.agent.id, event.outcome);
+  });
+
+  return () => {};
+}
+```
+
+| 등록 | 콜백이 받는 값 | 반환 값 |
+| ------------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| `server.on(name, callback)` | `(event, { paseo, signal })` | `void` 또는 `Promise<void>` |
+| `server.before(name, callback)` | `({ request }, { paseo, signal })` | 변경된 요청, 또는 유지하려면 `undefined`; 비동기 지원 |
+
+앱이 연결되어 있지 않아도 플러그인이 활성화된 동안 데몬에서 훅이 실행됩니다.
+
+### 구성을 변경하고 MCP 서버 주입하기
+
+다음 콜백을 `contribute(server)` 안에 추가하세요. 자리표시자 URL을 MCP 엔드포인트로 바꾸세요.
+
+```ts
+server.before("agent.create", ({ request }) => {
+  if (request.config.provider !== "codex") {
+    return request;
+  }
+
+  return {
+    ...request,
+    config: {
+      ...request.config,
+      providerOptions: {
+        ...request.config.providerOptions,
+        sandbox_mode: "workspace-write",
+        approval_policy: "on-request",
+      },
+      mcpServers: {
+        ...request.config.mcpServers,
+        company: {
+          type: "http",
+          url: "https://tools.example.com/mcp",
+        },
+      },
+    },
+  };
+});
+```
+
+| 입력 | 결과 |
+| ------------------------------------------- | ----------------------------- |
+| `providerOptions.sandbox_mode: "read-only"` | `"workspace-write"` |
+| `providerOptions.web_search: "disabled"` | 전개 연산자로 보존 |
+| 기존 `mcpServers.search` | 전개 연산자로 보존 |
+| 기존 `mcpServers.company` | 위 항목으로 교체 |
+
+선택한 공급자가 `providerOptions`를 검증하며, 구성된 MCP 서버를 지원해야 합니다. 명시적인 Codex 샌드박스 및 승인 옵션은 모드 프리셋보다 우선합니다.
+
+### 세션을 열 때마다 환경 변수 주입하기
+
+```ts
+server.before("agent.session_open", ({ request }) => {
+  return {
+    ...request,
+    env: {
+      ...request.env,
+      COMPANY_ENV: "development",
+    },
+  };
+});
+```
+
+생성, 재개, 새로 고침 및 가져오기 때 실행됩니다. 생성할 때만 주입하려면 대신 `agent.create` 콜백에서 `env`를 설정하세요.
+
+### 작업공간 격리 선택하기
+
+```ts
+server.before("workspace.create", ({ request }) => {
+  if (request.source.kind !== "directory") {
+    return request;
+  }
+
+  return {
+    ...request,
+    source: {
+      kind: "worktree",
+      cwd: request.source.path,
+      action: "branch-off",
+    },
+  };
+});
+```
+
+**결과:** 명시적인 디렉터리 생성 요청이 작업 트리 요청으로 바뀝니다. 기존 작업공간과 디렉터리 조회/가져오기 작업에는 영향을 주지 않습니다.
+
+### 턴이 끝날 때 후속 작업 보내기
+
+[server/inspect.ts](https://github.com/getpaseo/paseo/blob/main/plugin-examples/lifecycle-actions/server/inspect.ts)를 플러그인에 복사하세요. 이 도우미는 `@getpaseo/protocol/agent-types`에서 타입을 가져옵니다. 플러그인 SDK와 같은 버전의 `@getpaseo/protocol`을 개발 종속성에 추가하고 플러그인을 로드하기 전에 설치하세요. `latestOutputText`는 마지막 사용자 메시지 이후의 텍스트 조각을 합칩니다.
+
+```ts
+import type { PluginServerContext } from "@getpaseo/plugin/server";
+import { latestOutputText } from "./server/inspect";
+
+export default function contribute(server: PluginServerContext) {
+  server.on("agent.turn_ended", async (event, context) => {
+    if (event.outcome.kind === "canceled") {
+      return;
+    }
+
+    const text = latestOutputText(event.timeline);
+    if (/out of credits/i.test(text)) {
+      await context.paseo.agents.ref(event.agent.id).send("Try again.");
+    }
+  });
+
+  return () => {};
+}
+```
+
+```text
+Turn ends: "out of credits"
+  → plugin sends "Try again."
+  → a new turn starts
+```
+
+기존 SDK로 새 메시지를 보냅니다. 계속 일치하면 후속 작업도 계속 전송되므로 필요에 따라 플러그인에 제한이나 지연을 추가하세요. 첨부 파일과 도구 효과는 재실행되지 않습니다.
+
+### 권한 요청에 응답하기
+
+같은 [도우미 파일](https://github.com/getpaseo/paseo/blob/main/plugin-examples/lifecycle-actions/server/inspect.ts)의 `shellCommand`를 사용합니다.
+
+```ts
+import type { PluginServerContext } from "@getpaseo/plugin/server";
+import { shellCommand } from "./server/inspect";
+
+export default function contribute(server: PluginServerContext) {
+  server.on("agent.permission_requested", async (event, context) => {
+    const command = shellCommand(event.request);
+    if (command === null) {
+      return;
+    }
+
+    const agent = context.paseo.agents.ref(event.agent.id);
+    if (/\brm\s+-rf\b/.test(command)) {
+      await agent.respondToPermission({
+        requestId: event.request.id,
+        response: { behavior: "deny", message: "Recursive deletion is blocked." },
+      });
+      return;
+    }
+
+    if (command.trim() === "git status") {
+      await agent.respondToPermission({
+        requestId: event.request.id,
+        response: { behavior: "allow" },
+      });
+    }
+  });
+
+  return () => {};
+}
+```
+
+| 요청 | 결과 |
+| ------------------------ | ------------------------- |
+| `rm -rf build` | 거부 |
+| `git status` | 승인 |
+| 그 밖의 명령 또는 요청 | 사용자의 응답을 기다림 |
+| 이미 해결된 요청 | SDK 응답 실패 |
+
+정규식은 예시 정책이지 셸 파서가 아닙니다. 권한 요청에는 질문, 계획 및 모드 변경도 포함될 수 있습니다. 권한을 요청해도 턴은 끝나지 않습니다.
+
+### 이벤트
+
+| 이름 | 이벤트 필드 | 트리거 |
+| ---------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| `agent.created` | `agent` | 일반 생성 완료; 가져오기/재개 제외 |
+| `agent.turn_started` | `agent`, `turnId` | 실시간 턴 시작 |
+| `agent.turn_ended` | `agent`, `turnId`, `outcome`, `timeline` | 실시간 턴 완료, 실패 또는 취소 |
+| `agent.permission_requested` | `agent`, `request` | 권한 또는 질문이 대기 상태가 됨 |
+| `agent.permission_resolved` | `agent`, `requestId`, `resolution` | 대기 중인 요청에 응답하거나 요청이 지워짐 |
+| `agent.archived` | `agent`, `archivedAt` | 보관 상태 저장 |
+| `workspace.created` | `workspace` | 레코드 생성 및 디렉터리 사용 가능 |
+| `workspace.archived` | `workspace` | 보관 상태 저장 |
+
+에이전트 이벤트는 내부 유틸리티 에이전트를 제외합니다. 보관 이벤트가 런타임/작업 트리 정리보다 먼저 발생할 수 있으며, `workspace.created`는 에이전트 시작 전 설정 장벽이 아닙니다.
+
+**공유 페이로드 형태** (`@getpaseo/plugin/server`):
+
+```ts
+interface PluginHookAgent {
+  id: string;
+  workspaceId: string | null;
+  parentAgentId: string | null;
+  provider: string;
+  cwd: string;
+  title: string | null;
+}
+
+interface PluginHookWorkspace {
+  id: string;
+  projectId: string;
+  cwd: string;
+  name: string | null;
+  archivedAt: string | null;
+}
+
+type PluginTurnOutcome =
+  | { kind: "completed" }
+  | { kind: "failed"; error: { message: string; code?: string } }
+  | { kind: "canceled"; reason: string };
+```
+
+| 필드 | 형태/의미 |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| `turnId` | 공급자가 보고한 `string` 또는 `null`; 세션을 다시 연 뒤 반복될 수 있음 |
+| `timeline` | `readonly AgentTimelineItem[]`; 이전 대화를 포함한 전체 스냅샷이며 텍스트가 여러 항목에 걸칠 수 있음 |
+| `request` | SDK `AgentPermissionRequest`; `kind`는 `tool`, `plan`, `question`, `mode` 또는 `other` |
+| `resolution` | SDK `AgentPermissionResponse` |
+| `archivedAt` | 타임스탬프 문자열 |
+
+### 사전 훅
+
+| 이름 | 요청 필드 | 편집 가능 항목 |
+| -------------------- | ----------------------------------------------------------------------- | --------------------------------------- |
+| `agent.create` | `config`, 선택적 `env` | `cwd`를 제외한 공개 에이전트 구성, `env` |
+| `agent.session_open` | `agentId`, `workspaceId`, `provider`, `cwd`, `reason`, `purpose`, `env` | `env`만 |
+| `workspace.create` | `source`, 선택적 `title`, `firstAgentContext` | 명시적 생성 요청 전체 |
+
+**`agent.create.config`**는 `AgentSessionConfig`를 사용합니다.
+
+| 필드 | 제약 조건 |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| `provider`, `model` | 별도 필드; 공급자를 바꾸면 모델/모드/옵션도 바꿔야 할 수 있음 |
+| `modeId`, `thinkingOptionId`, `featureValues` | 공급자별 선택 사항 |
+| `title`, `systemPrompt` | 에이전트 구성 |
+| `providerOptions` | 공급자별로 검증되는 옵션 |
+| `mcpServers`, `toolPolicy` | MCP 구성과 정확한 도구 사전 승인 |
+| `cwd` | 변경할 수 없음 |
+| `internal` | 데몬 소유이며 이 훅에서 변경할 수 없음 |
+
+**`agent.session_open` 요청 예시:**
+
+```json
+{
+  "agentId": "agent-123",
+  "workspaceId": "workspace-456",
+  "provider": "codex",
+  "cwd": "/projects/shop",
+  "reason": "resume",
+  "purpose": "interactive",
+  "env": { "COMPANY_ENV": "development" }
+}
+```
+
+| 필드 | 값 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `workspaceId` | 문자열 또는 `null` |
+| `reason` | `create`, `resume`, `refresh`, `import` |
+| `purpose` | `interactive`, `history` |
+| `env` | 실행 재정의 맵이며 데몬에서 상속된 환경은 제외합니다. 맵을 교체해 재정의를 추가, 교체 또는 제거합니다. |
+
+### 순서와 반환 값
+
+```text
+Creation request
+  → agent.create hooks (plugin-ID order; registration order within each plugin)
+  → resolve defaults and validate provider configuration
+  → derive launch configuration with Paseo runtime tools and daemon prompt
+  → agent.session_open hooks (same ordering; env only)
+  → set PASEO_AGENT_ID and PASEO_AGENT_CWD
+  → open provider session and save agent configuration
+```
+
+| 콜백 반환 값 | 다음 콜백이 받는 값 |
+| ------------------------------------------------------- | --------------------------------------------------- |
+| `{ ...request, env: { ...request.env, REGION: "eu" } }` | 이전 요청에 `REGION` 추가/교체 |
+| `{ ...request, env: { REGION: "eu" } }` | 이전 요청에서 재정의 맵 전체가 교체됨 |
+| `undefined` | 변경되지 않은 요청 |
+| 예외 발생 또는 잘못된 데이터 반환 | 작업 실패, 이후 콜백은 실행하지 않음 |
+
+자동 심층 병합은 없습니다. 뒤의 콜백이 앞의 값을 덮어쓸 수 있습니다. 에이전트 구성은 저장되지만 환경 재정의는 함께 지속되지 않습니다.
+
+### 컨텍스트와 정리
+
+| 계약 | 동작 |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `context.paseo` | 이 데몬에 연결된 기존 SDK |
+| `context.signal` | 호출 시간 초과 또는 플러그인 중지 시 중단됨; 외부 요청에 전달 |
+| 입력 데이터 | 분리된 스냅샷; 반환 요청 또는 SDK 명령으로 상태 변경 |
+| 등록 결과 | 멱등성을 갖는 제거 함수. 예: `const remove = server.on(...); remove();` |
+| 다시 로드, 비활성화, 제거, 종료 | 남은 등록 제거 |
+| 알 수 없는 훅 이름 | 등록 실패 |
+| 훅 시간 초과 | 30초, 신호 중단. 사전 훅은 대기 중인 작업을 실패시키고 이벤트 핸들러는 오류 기록 |
+| 이벤트 핸들러 오류 | 플러그인에 기록되고 원래 작업은 계속됨 |
+| 이벤트 전달 | 실시간 최선형; 재생, 지속성 또는 자동 재시도 없음 |
+| 이벤트 동시성 | 서로 다른 이벤트가 겹칠 수 있으며 콜백 완료 순서는 보장되지 않음 |
+
+### 전체 예제
+
+| 플러그인 | 포함 내용 |
+| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| [lifecycle-logger](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-logger) | 11개 훅 전체, 환경 값을 가린 JSON 로그 |
+| [lifecycle-actions](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-actions) | 후속 작업, 권한, 환경, 공급자 전환, 작업 트리 선택 |
+| [agent-configuration](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-configuration) | MCP 주입과 Codex 샌드박스/승인 옵션 |
+
+로거 출력은 `paseo plugin logs lifecycle-logger` 또는 호스트의 `daemon.log`에서 확인하세요.
+
 ## 표면과 사이드바 항목
 
 구성 요소를 등록한 뒤 사이드바 항목이 해당 표면 ID를 가리키도록 설정하세요.
@@ -168,7 +523,7 @@ export default function contribute(client: PluginClientContext) {
 `client/main.tsx`:
 
 ```tsx
-import type { PluginSurfaceProps } from "@getpaseo/plugin";
+import type { PluginSurfaceProps } from "@getpaseo/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -197,7 +552,7 @@ export function Main({ theme, host, layout }: PluginSurfaceProps) {
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { Main } from "./client/main";
 
 export default function contribute(client: PluginClientContext) {
@@ -225,11 +580,11 @@ Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계, 쿼�
 
 ## 호스트 UI
 
-클라이언트 코드에서 `@getpaseo/plugin/react-native`를 통해 Paseo가 제공하는 UI를 가져오세요. 다음 예제는 제어형 모달을 열고, 호스트 아이콘을 렌더링하고, 토스트로 작업 결과를 알립니다.
+클라이언트 코드에서 `@getpaseo/plugin/client/react-native`를 통해 Paseo가 제공하는 UI를 가져오세요. 다음 예제는 제어형 모달을 열고, 호스트 아이콘을 렌더링하고, 토스트로 작업 결과를 알립니다.
 
 ```tsx
-import type { PluginSurfaceProps } from "@getpaseo/plugin";
-import { Icon, Modal, useToast } from "@getpaseo/plugin/react-native";
+import type { PluginSurfaceProps } from "@getpaseo/plugin/client";
+import { Icon, Modal, useToast } from "@getpaseo/plugin/client/react-native";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -291,7 +646,7 @@ export function IssueActions({ theme }: PluginSurfaceProps) {
 
 일반 `Modal.Content`에는 이미 패딩과 스크롤 기능이 있습니다. 추가 여백을 원하지 않으면 패딩 래퍼를 하나 더 추가하지 마세요. 본문 스타일은 호스트 헤더, 드래그 핸들, 닫기 제어 항목을 그대로 유지합니다. 호스트는 좁은 네이티브 레이아웃에서 하단 안전 영역을 확보합니다. 콘텐츠 패딩을 0으로 설정해도 이 공간은 사라지지 않고 장식용 여백만 제거됩니다. 키보드 여유 공간은 별도로 처리됩니다.
 
-`scrollable={false}`이면 본문이 사용 가능한 시트 높이를 채우고 가운데 대화상자는 사용 가능한 높이의 85%를 사용합니다. 목록에는 `flex: 1, minHeight: 0`을 사용하세요. 이 모드에서 본문은 모든 시트 높이에서 스크롤됩니다. 핸들을 드래그해 시트 크기를 조절하거나 닫을 수 있습니다. 기본 스크롤 대화상자는 넓은 레이아웃에서 콘텐츠 크기에 맞춰집니다. 표시 방식은 좁은 데스크톱 창과 넓은 태블릿을 포함해 창 크기를 따릅니다.
+`scrollable={false}`이면 본문이 사용 가능한 시트 높이를 채우고 가운데 대화상자는 사용 가능한 높이의 85%를 사용합니다. 목록에는 `flex: 1, minHeight: 0`을 사용하세요. 기본 스크롤 대화상자는 넓은 레이아웃에서 콘텐츠 크기에 맞춰집니다. 표시 방식은 좁은 데스크톱 창과 넓은 태블릿을 포함해 창 크기를 따릅니다.
 
 닫기 버튼, 배경 영역, 플랫폼의 뒤로 가기 동작, 웹의 Escape 키, 좁은 레이아웃의 시트 제스처로 모달을 닫을 수 있습니다. 닫기 동작은 `onOpenChange(false)`를 호출합니다. 플러그인이 `open`을 갱신해야 모달이 닫힙니다.
 
@@ -299,12 +654,14 @@ export function IssueActions({ theme }: PluginSurfaceProps) {
 
 ### 스크롤
 
-Paseo 모달에 표시될 수 있는 콘텐츠에는 `@getpaseo/plugin/react-native`의 `ScrollView`와 `FlatList`를 가져오세요. React Native props와 ref를 받으며 시트 제스처와 연동됩니다. 시트 밖에서는 일반 React Native 스크롤을 사용합니다. 하단 시트 라이브러리를 직접 가져오지 마세요.
+Paseo 모달에 표시될 수 있는 콘텐츠에는 `@getpaseo/plugin/client/react-native`의 `ScrollView`와 `FlatList`를 가져오세요. React Native props와 ref를 받으며 시트 제스처와 연동됩니다. 시트 밖에서는 일반 React Native 스크롤을 사용합니다. 하단 시트 라이브러리를 직접 가져오지 마세요.
 
 세로 스크롤 소유자는 기본 모달 본문 또는 `scrollable={false}`로 설정한 자체 목록 중 하나만 사용하세요. 기본 스크롤 본문 안에 고정 높이 세로 목록을 중첩하면 Android에서 시트와 제스처를 두고 충돌할 수 있습니다. 가로 스크롤은 호스트의 세로 본문과 함께 사용할 수 있습니다.
 
+기본 본문과 SDK 목록은 네이티브 시트 제스처를 공유합니다. 스크롤하기 전에 위로 드래그해 확장하고, 목록 맨 위에서 아래로 드래그해 축소하거나 닫으세요. `scrollable={false}`는 제스처를 바꾸지 않고 호스트의 스크롤 컨테이너만 제거합니다. `scrollToEnd` 같은 목록 메서드를 사용하기 전에 시트를 확장하세요. 시트가 최대 높이보다 낮으면 목록 오프셋이 잠깁니다.
+
 ```tsx
-import { FlatList, Modal } from "@getpaseo/plugin/react-native";
+import { FlatList, Modal } from "@getpaseo/plugin/client/react-native";
 import { Text } from "react-native";
 
 // Inside your controlled Modal:
@@ -331,7 +688,7 @@ import { Text } from "react-native";
 `copyText(text): Promise<void>`는 앱이 실행되는 기기의 클립보드에 씁니다. 사용자 동작에서 호출하고 성공을 알리기 전에 완료를 기다리세요. 플랫폼에서 복사를 거부하거나 클립보드를 사용할 수 없으면 거부됩니다. 브라우저 권한과 보안 컨텍스트 요구 사항도 그대로 적용됩니다.
 
 ```tsx
-import { copyText, useToast } from "@getpaseo/plugin/react-native";
+import { copyText, useToast } from "@getpaseo/plugin/client/react-native";
 
 // Inside your component:
 const toast = useToast();
@@ -345,7 +702,7 @@ async function copyResult() {
 }
 ```
 
-프로그래밍 방식 복사와 네이티브 텍스트 선택은 별개의 상호작용입니다. 길게 눌러 선택하고 OS 복사 기능을 사용하려면 `<Text selectable>`을 사용하세요. 모달 양식에는 `@getpaseo/plugin/react-native`의 `TextInput`을 가져오세요. React Native 입력 props와 ref를 받고 OS 붙여넣기를 지원하며, 네이티브 시트에 포커스를 등록하므로 키보드가 양식을 위로 올릴 수 있습니다. 시트 밖에서는 일반 입력을 사용합니다. 일반 React Native 입력도 붙여넣기를 지원하지만 시트에 포커스를 등록하지 않아 키보드가 입력을 가릴 수 있습니다. OS 붙여넣기에는 클립보드 읽기 API가 필요하지 않습니다. 네이티브 플러그인에서는 DOM 클립보드 코드와 `react-native`의 더 이상 사용되지 않는 `Clipboard` 내보내기를 피하세요.
+프로그래밍 방식 복사와 네이티브 텍스트 선택은 별개의 상호작용입니다. 길게 눌러 선택하고 OS 복사 기능을 사용하려면 `<Text selectable>`을 사용하세요. 모달 양식에는 `@getpaseo/plugin/client/react-native`의 `TextInput`을 가져오세요. React Native 입력 props와 ref를 받고 OS 붙여넣기를 지원하며, 네이티브 시트에 포커스를 등록하므로 키보드가 양식을 위로 올릴 수 있습니다. 시트 밖에서는 일반 입력을 사용합니다. 일반 React Native 입력도 붙여넣기를 지원하지만 시트에 포커스를 등록하지 않아 키보드가 입력을 가릴 수 있습니다. OS 붙여넣기에는 클립보드 읽기 API가 필요하지 않습니다. 네이티브 플러그인에서는 DOM 클립보드 코드와 `react-native`의 더 이상 사용되지 않는 `Clipboard` 내보내기를 피하세요.
 
 실행 가능한 [모달 UI 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/modal-ui)에는 패딩된 양식, 전체 너비 행, 가상 목록, 가로 탭, 복사/붙여넣기 입력이 포함되어 있습니다.
 
@@ -382,7 +739,7 @@ async function copyResult() {
 플러그인은 에이전트 타임라인 항목을 자체 데이터와 React Native 렌더러로 대체할 수 있습니다. 두 등록 모두 클라이언트 기여입니다. Paseo는 실시간 스트리밍 갱신을 포함해 렌더링 모델을 구성할 때마다 변환기를 적용합니다.
 
 ```tsx
-import type { PluginClientContext, PluginTimelineItemProps } from "@getpaseo/plugin";
+import type { PluginClientContext, PluginTimelineItemProps } from "@getpaseo/plugin/client";
 import { Text } from "react-native";
 import { z } from "zod";
 
@@ -428,7 +785,7 @@ export default function contribute(client: PluginClientContext) {
 서버 핸들러는 정식 기록에 플러그인 소유의 행을 추가할 수 있습니다.
 
 ```ts
-import type { PluginHandlerContext } from "@getpaseo/plugin";
+import type { PluginHandlerContext } from "@getpaseo/plugin/server";
 
 async function publishReview(agentId: string, { paseo }: PluginHandlerContext) {
   await paseo.agents.ref(agentId).timeline.append({
@@ -482,7 +839,7 @@ async function publishReview(agentId: string, { paseo }: PluginHandlerContext) {
 `addTheme`는 Settings → Appearance에 밝은 테마나 어두운 테마를 추가하며, 기본 테마 아래에 `name`으로 표시됩니다. 테마는 데이터이므로 구성 요소 파일이 필요하지 않습니다.
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 
 export default function contribute(client: PluginClientContext) {
   client.addTheme({
@@ -533,11 +890,11 @@ export default function contribute(client: PluginClientContext) {
 
 ### 이름이 지정된 UI 구성 요소
 
-설정 구성 요소는 `@getpaseo/plugin/ui`에서 가져오세요. 자체 상태 및 RPC와 함께 작동하며 양식 래퍼나 저장소 바인딩은 필요하지 않습니다.
+설정 구성 요소는 `@getpaseo/plugin/client/ui`에서 가져오세요. 자체 상태 및 RPC와 함께 작동하며 양식 래퍼나 저장소 바인딩은 필요하지 않습니다.
 
 ```tsx
 import { useState } from "react";
-import { SettingsCard, SettingsSection, SettingsSwitch } from "@getpaseo/plugin/ui";
+import { SettingsCard, SettingsSection, SettingsSwitch } from "@getpaseo/plugin/client/ui";
 
 export function DisplaySettings() {
   const [visible, setVisible] = useState(true);
@@ -619,7 +976,7 @@ export const preferences = defineSettings({
 `client/review.tsx`:
 
 ```tsx
-import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@getpaseo/plugin";
+import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@getpaseo/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -650,7 +1007,7 @@ export function ReviewPanel({ theme, layout, workspaceId, agentId }: PluginAgent
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { ReviewPanel } from "./client/review";
 
 export default function contribute(client: PluginClientContext) {
@@ -736,7 +1093,7 @@ import { z } from "zod";
 
 const refreshReview = defineRpc({
   name: "review.refresh",
-  input: z.object({ agentId: z.string() }),
+  input: z.object({ agentId: z.string(), scope: z.string().optional() }),
   output: z.object({ refreshed: z.boolean() }),
 });
 
@@ -815,12 +1172,12 @@ client.addSlashCommand({
 클라이언트 진입점은 필의 생성과 제거를 관리합니다. 이 로직은 `index.client.tsx`에 직접 두거나 `client/`에서 가져오는 함수 안에 둘 수 있습니다.
 
 ```tsx
+import { Icon } from "@getpaseo/plugin/client/react-native";
 import {
-  Icon,
   type PluginClientContext,
   type PluginComposerPillProps,
   useAgent,
-} from "@getpaseo/plugin";
+} from "@getpaseo/plugin/client";
 import { Text } from "react-native";
 
 function ReviewPill({ theme, agentId }: PluginComposerPillProps) {
@@ -883,10 +1240,10 @@ Paseo는 누를 수 있는 영역, 필의 공통 외형, 대기 상태, 오류 �
 표면에서 일반 Paseo 작업을 수행하려면 `usePaseo()`를 사용하세요. 선택한 호스트의 기존 연결을 빌려 쓰므로 클라이언트를 새로 만들지 마세요.
 
 ```tsx
-import { usePaseo } from "@getpaseo/plugin";
+import { type PluginSurfaceProps, usePaseo } from "@getpaseo/plugin/client";
 import { Pressable, Text } from "react-native";
 
-function PullRequestAction() {
+function PullRequestAction({ theme }: PluginSurfaceProps) {
   const paseo = usePaseo();
 
   async function createReviewWorkspace() {
@@ -907,7 +1264,7 @@ function PullRequestAction() {
 
   return (
     <Pressable accessibilityRole="button" onPress={() => void createReviewWorkspace()}>
-      <Text>Create review workspace</Text>
+      <Text style={{ color: theme.colors.foreground }}>Create review workspace</Text>
     </Pressable>
   );
 }
@@ -937,7 +1294,7 @@ export const greeting = defineRpc({
 `client/greeting.tsx`:
 
 ```tsx
-import { useRpc } from "@getpaseo/plugin";
+import { useRpc } from "@getpaseo/plugin/client";
 import { greeting } from "../shared/greeting";
 
 export function GreetingButton() {
@@ -961,7 +1318,7 @@ export function createGreeting({ name }: RpcInput<typeof greeting>) {
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { GreetingButton } from "./client/greeting";
 
 export default function contribute(client: PluginClientContext) {
@@ -973,7 +1330,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin";
+import type { PluginServerContext } from "@getpaseo/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greeting } from "./shared/greeting";
 
@@ -985,7 +1342,7 @@ export default function contribute(server: PluginServerContext) {
 
 입력과 출력은 양쪽 모두에서 검증됩니다. RPC 이름은 소문자로 시작하며 소문자, 숫자, 점, 하이픈 또는 밑줄로 구성됩니다. `useRpc()`는 타입이 지정된 비동기 함수를 반환합니다. 요청 상태, 캐싱, 변경 작업에는 TanStack Query를 사용하세요.
 
-백엔드 핸들러는 동일한 `PaseoApi`를 `{ paseo }` 형태로 전달받습니다. 이 연결은 하위 프로세스에 속하며 플러그인이 중지되면 닫힙니다. 백엔드 코드는 Node API와 플러그인 디렉토리에 설치된 종속성을 사용할 수 있습니다.
+백엔드 핸들러는 동일한 `PaseoApi`를 `{ paseo }` 형태로 전달받습니다. 이 연결은 하위 프로세스에 속하며 플러그인이 중지되면 닫힙니다. 플러그인 코드가 구독하기 전에는 타임라인이나 카탈로그 이벤트를 구독하지 않습니다. 정리와 타임라인 교체는 [SDK 이벤트 계약](../../sdk/events.md)을 따르세요. 백엔드 코드는 Node API와 플러그인 디렉토리에 설치된 종속성을 사용할 수 있습니다.
 
 ## 백엔드 출력 디버깅
 
@@ -1064,7 +1421,7 @@ export function search({ query }: RpcInput<typeof searchIssues>) {
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { issues } from "./shared/issues";
 
 export default function contribute(client: PluginClientContext) {
@@ -1076,7 +1433,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin";
+import type { PluginServerContext } from "@getpaseo/plugin/server";
 import { search } from "./server/issues";
 import { searchIssues } from "./shared/issues";
 
@@ -1128,6 +1485,7 @@ paseo plugin remove my-plugin
 ```json
 {
   "id": "review",
+  "requirements": { "paseo": ">=0.8.0" },
   "build": [
     ["npm", "ci"],
     ["npm", "run", "build"]
@@ -1137,7 +1495,7 @@ paseo plugin remove my-plugin
 
 `build`는 비어 있지 않은 argv 배열의 목록입니다. Paseo는 정확한 커밋과 매니페스트를 확인한 뒤 준비 중인 플러그인 디렉토리에서 셸 없이 각 실행 파일을 직접 실행합니다. 잠금 파일에서 패키지 관리자나 명령을 추론하지 않습니다. 설치와 업데이트 모두 검증, 컴파일, 활성화 또는 교체 전에 `build`를 실행합니다. 명령이 실패하면 출력을 보고하고 후보 버전을 폐기하며, 설치되어 실행 중인 버전은 그대로 유지합니다. 데몬 로그에는 각 명령과 출력이 기록됩니다. 전역 `--host` 옵션을 사용하면 해당 데몬 호스트에서 실행됩니다.
 
-설치하거나 다시 로드하기 전에 `npm run typecheck`를 실행하세요. 데몬 설정을 직접 편집하지 마세요.
+설치하거나 다시 로드하기 전에 `npm run typecheck`를 실행하세요. 플러그인 소스 항목은 CLI 또는 설정에서 관리하세요.
 
 데몬 전체에 적용되는 **Enable plugins** 스위치는 **Settings → Plugins**에 있습니다. 이 스위치와 플러그인 자체의 활성화 상태가 모두 켜지기 전까지 설정된 플러그인은 `disabled` 상태로 유지됩니다.
 
@@ -1151,8 +1509,8 @@ paseo plugin remove my-plugin
 | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `This plugin was made for an older version of Paseo` | 디렉토리에 `index.ts` 진입점만 있습니다. [마이그레이션 가이드](/docs/plugins/v0.8/migration)를 따르세요. |
 | `Plugin entry points are missing` | `index.client.tsx`와 `index.server.ts` 중 정확히 해당 이름으로 존재하는 파일이 없습니다. |
-| `server-only module cannot be imported into the plugin client bundle` | 클라이언트 코드가 `server/` 또는 `*.server.*` 파일을 가져옵니다. 해당 작업을 RPC 뒤로 옮기고 계약을 `shared/`에서 가져오세요. |
-| `client-only module cannot be imported into the plugin server bundle` | 서버 코드가 `client/` 또는 `*.client.*` 파일을 가져옵니다. 해당 기여를 `index.client.tsx`에서 등록하세요. |
+| `server-only module cannot be imported into the plugin client bundle` | 클라이언트 코드가 `server/`를 가져옵니다. 해당 작업을 RPC 뒤로 옮기고 계약을 `shared/`에서 가져오세요. |
+| `client-only module cannot be imported into the plugin server bundle` | 서버 코드가 `client/`를 가져옵니다. 해당 기여를 `index.client.tsx`에서 등록하세요. |
 | `Node module cannot be imported into the plugin client bundle` | 클라이언트 코드가 `node:*`를 가져옵니다. 작업을 `server/`로 옮기고 RPC를 통해 호출하세요. |
 | 사이드바 항목이 없음 | 플러그인이 `running` 상태인지, 항목이 기존 표면을 참조하는지, 아이콘 이름이 유효한지, 클라이언트가 설치본의 호스트에 연결되어 있는지 확인하세요. |
 | 클라이언트 모듈을 사용할 수 없음 | 위에 나열된 호스트 제공 클라이언트 모듈만 가져오세요. |

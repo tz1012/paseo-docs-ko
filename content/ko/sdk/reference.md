@@ -108,7 +108,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 
 `agent.timeline.refetch(options?)`이 페이지를 가져옵니다. 옵션은 `direction`, `cursor`, `limit`, `projection` 및 `requestId`입니다.
 
-`agent.timeline.subscribe(handler)`은 에이전트에 속한 스트림 이벤트를 수신하고 로컬 구독 취소 기능을 반환합니다.
+`agent.timeline.subscribe(handler)`은 이 에이전트에 대한 네트워크 수요를 설정하고 재연결 후 복원합니다. 구독 취소 함수는 해당 수요를 해제합니다. 작업을 시작하기 전에 초기 데몬 확인을 위해 `unsubscribe.ready`를 기다리세요. 기록이 교체되면 핸들러는 `{ agentId, event: { type: "replacement", epoch } }`도 수신합니다. 필요한 페이지를 다시 가져오세요. [이벤트](./events.md#follow-timeline-events)를 확인하세요.
 
 ## `client.projects`
 
@@ -184,6 +184,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `listModes(provider, options?)` | 모드 결과 | 권한 또는 작동 모드를 검색합니다.                                                                                                                 |
 | `listFeatures(draftConfig)` | 기능 결과 | 현재 초안 공급자 구성의 기능을 검색합니다.                                                                                         |
 | `diagnostic(provider)` | 진단 결과 | 사람이 읽을 수 있는 설정 진단을 반환합니다.                                                                                                                |
+| `listUsage(options?)` | `PaseoProviderUsageResult` | 정규화된 구독 기간, 잔액 및 공급자 세부 정보를 반환합니다. 지원하지 않는 경우 호스트 업데이트 오류로 거부됩니다. 옵션은 `requestId`입니다. |
 | `subscribe(handler)` | 구독 취소 기능 | 카탈로그 업데이트를 수신합니다.                                                                                                                             |
 
 ## `client.config`

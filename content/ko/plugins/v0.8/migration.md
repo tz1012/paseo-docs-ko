@@ -8,7 +8,7 @@ category: Plugins
 
 # 플러그인을 런타임 진입점으로 마이그레이션하기
 
-> **출시 예정인 Paseo v0.8용 문서입니다.** Paseo v0.7에서는 이 마이그레이션이 필요하지 않습니다.
+> **Paseo v0.8 베타용 문서입니다.** Paseo v0.7에서는 이 마이그레이션이 필요하지 않습니다.
 
 플러그인 디렉터리를 작업 디렉터리로 사용하는 코딩 에이전트에게 이 페이지를 전달하세요. 단계를
 순서대로 실행하세요. 호환성 진입점은 남겨 두지 마세요.
@@ -85,13 +85,31 @@ my-plugin/
 | 공유 파일의 `import { defineRpc, defineAttachmentSource } from "@getpaseo/plugin/server"` | `import { defineRpc, defineAttachmentSource } from "@getpaseo/plugin"`                     |
 | `ZodOutput<typeof contract.input>` 핸들러 매개변수 유형                                    | `@getpaseo/plugin`의 `RpcInput<typeof contract>`, 반환 유형에는 `RpcOutput` 사용          |
 
-클라이언트 진입점에서는 `PluginClientContext`를, 서버 진입점에서는 `PluginServerContext`를 가져오세요.
-기존 컨텍스트 유형의 가져오기는 제거하세요. 이제 `@getpaseo/plugin/server`는 `PluginHandlerContext`와 같은
-핸들러 측 유형만 내보냅니다. 이제 클라이언트의 모든 `add*`는 멱등성을 갖는 제거 함수를
-반환합니다. 플러그인이 종료 정리 전에 호출하는 제거 함수는 유지하세요. Paseo는 진입점의 정리 함수가
-실행된 후 남아 있는 등록을 제거합니다.
+클라이언트 진입점에서는 `@getpaseo/plugin/client`의 `PluginClientContext`를, 서버 진입점에서는
+`@getpaseo/plugin/server`의 `PluginServerContext`를 가져오세요. 기존 컨텍스트 유형의 가져오기는
+제거하세요. 이제 클라이언트의 모든 `add*`는 멱등성을 갖는 제거 함수를 반환합니다. 플러그인이 종료
+정리 전에 호출하는 제거 함수는 유지하세요. Paseo는 진입점의 정리 함수가 실행된 후 남아 있는 등록을 제거합니다.
 
 ## 4. 가져오기 분리하기
+
+훅(`usePaseo`, `useRpc`, `useSettings`, `useAgent`, `useWorkspace`)과 클라이언트 기여 유형을
+`@getpaseo/plugin`에서 `@getpaseo/plugin/client`로 옮기세요. `Icon`은
+`@getpaseo/plugin/client/react-native`로 옮기세요. 서버 컨텍스트와 수명 주기 계약은
+`@getpaseo/plugin/server`에서 가져옵니다. 공유 도우미(`defineRpc`, `defineSettings`,
+`defineAttachmentSource`), 스키마 및 일반 데이터 유형은 루트에 유지합니다. 유형 가져오기에도 같은 규칙이
+적용됩니다. 전체 계약은 [런타임 모듈](reference#runtime-modules)을 확인하세요.
+
+나머지 SDK 하위 경로도 소유 런타임 아래로 옮기세요.
+
+| 기존 진입점 | 0.8 진입점 |
+| ------------------------------- | -------------------------------------- |
+| `@getpaseo/plugin/react-native` | `@getpaseo/plugin/client/react-native` |
+| `@getpaseo/plugin/ui` | `@getpaseo/plugin/client/ui` |
+| `@getpaseo/plugin/provider` | `@getpaseo/plugin/server/provider` |
+| `@getpaseo/plugin/acp` | `@getpaseo/plugin/server/acp` |
+
+기존 진입점과 0.8 이전의 `@paseo/plugin` 스코프는 제거되었습니다. `/client/host`는 Paseo 앱 통합 전용이며
+플러그인 작성자가 가져와서는 안 됩니다.
 
 클라이언트 진입점은 `client/`, `shared/` 및 클라이언트에서 안전하게 사용할 수 있는 패키지만 가져옵니다. 서버 진입점은
 `server/`, `shared/` 및 서버에서 안전하게 사용할 수 있는 패키지만 가져옵니다. 클라이언트 진입점이나 그 진입점에서
@@ -102,6 +120,7 @@ my-plugin/
 
 | 컴파일 또는 로드 오류                                                                                                     | 의미와 해결 방법                                                                                                           |
 | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `This plugin has no requirements.paseo`                                                                                    | 마이그레이션을 완료하고 7단계에서 범위를 선언하세요.                                                                   |
 | `This plugin was made for an older version of Paseo`                                                                       | 디렉터리에 여전히 기존 루트 진입점만 있습니다. 런타임 진입점을 만들고 등록을 옮긴 다음 기존 파일을 삭제하세요.    |
 | `Plugin entry points are missing: expected index.client.ts or index.client.tsx and/or index.server.ts or index.server.tsx` | 지원되는 진입점이 없습니다. 정확한 파일 이름으로 적어도 하나를 추가하세요.                                                               |
 | `server-only module cannot be imported into the plugin client bundle: <file>`                                              | 클라이언트 가져오기가 `server/`에 도달합니다. 호출을 RPC 뒤로 옮기고 해당 계약을 `shared/`에서 가져오세요.                    |
@@ -168,7 +187,7 @@ local-plugin/
 
 ```tsx
 // index.client.tsx
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { contributeClient, ExamplePanel } from "./client/main";
 
 export default function contribute(client: PluginClientContext) {
@@ -195,7 +214,7 @@ export default function contribute(client: PluginClientContext) {
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin";
+import type { PluginServerContext } from "@getpaseo/plugin/server";
 import { increment } from "./server/increment";
 import { incrementRpc } from "./shared/increment";
 
@@ -221,7 +240,25 @@ export default function contribute(server: PluginServerContext) {
 이를 직접 호출하고 그 정리 함수를 반환합니다. `addClientSide` 콜백에서 필이나 구독도 등록했던
 플러그인은 해당 코드를 유지합니다. 래퍼만 제거됩니다.
 
-## 7. 마이그레이션 검증하기
+## 7. Paseo 요구 사항 선언하기
+
+진입점과 가져오기 마이그레이션을 마친 뒤 `paseo-plugin.json`에 최소 런타임 버전을 추가하세요.
+
+```json
+{
+  "id": "my-plugin",
+  "requirements": { "paseo": ">=0.8.0" }
+}
+```
+
+기존 ID와 빌드 명령은 유지하세요. `requirements.paseo`가 없으면 `<0.8.0`을 의미하므로 파일을 옮겼더라도
+Paseo 0.8은 플러그인을 거부합니다. 필드만 추가한다고 코드가 마이그레이션되는 것은 아닙니다. 로컬
+`@getpaseo/plugin` 개발 종속성을 대상 버전으로 업데이트하고 타입 검사 전에 종속성을 다시 설치하세요.
+
+0.8 베타에서는 SDK 종속성에 명시적인 베타 버전을 사용하고 매니페스트에는 `>=0.8.0`을 사용하세요.
+범위와 시험판 의미는 [요구 사항](reference#requirements)을 확인하세요.
+
+## 8. 마이그레이션 검증하기
 
 다음을 실행하세요.
 

@@ -1,65 +1,55 @@
 ---
 title: Orchestration skills
-description: "Paseo orchestration skills: teach coding agents to spawn, coordinate, and manage other agents using slash commands."
+description: Reusable workflows for handing off tasks, getting a second opinion, and planning with multiple agents.
 nav: Skills
-order: 32
+order: 33
 category: Orchestration
 ---
 
-# 오케스트레이션 기술
+# 오케스트레이션 스킬
 
-Paseo는 코딩 에이전트에게 Paseo 도구 및 CLI를 사용하여 다른 에이전트를 생성, 조정 및 관리하는 방법을 가르치는 오케스트레이션 기술을 제공합니다. Skills는 일반적인 워크플로를 슬래시 명령으로 패키지하므로 에이전트는 매번 브리핑 및 안전 레일을 작성하지 않고도 조정 방법을 알 수 있습니다.
+스킬은 에이전트에 위임, 핸드오프 및 검토를 위한 재사용 가능한 지침을 제공합니다. 스킬을 설치하지 않고도 [이러한 워크플로를 직접 요청](/docs/orchestration-workflows)할 수 있습니다.
 
-멘탈 모델을 원하면 [오케스트레이션](/docs/orchestration)으로 시작하고, 기술을 설치하지 않고도 사용할 수 있는 프롬프트를 원하면 [공통 워크플로](/docs/orchestration-workflows)로 시작하세요.
+| 스킬 | 용도 |
+| ------------------ | -------------------------------------------------------------------- |
+| `/paseo` | 에이전트, 작업공간, 일정 및 하트비트 관리 방법을 확인합니다. |
+| `/paseo-handoff` | 작업과 컨텍스트를 다른 에이전트에 전달합니다. |
+| `/paseo-committee` | 어려운 문제에 대해 독립적인 분석 두 개를 받습니다. |
+| `/paseo-advisor` | 현재 작업에 대한 두 번째 의견을 받습니다. |
 
 ## 설치
 
-설치하는 두 가지 방법:
+- **Paseo에서:** **설정 → 호스트 → 에이전트 → 오케스트레이션 스킬**을 열고 해당 호스트에 설치할 스킬을 선택합니다.
+- **터미널에서:** 에이전트가 실행되는 머신에서 `npx skills add getpaseo/paseo`를 실행합니다.
 
-- **Paseo 앱:** 호스트에 연결한 다음 설정 → 호스트 → 에이전트 → 오케스트레이션 스킬을 엽니다. 선택한 호스트가 자체 머신에 스킬을 설치합니다.
-- **수동:** `npx skills add getpaseo/paseo`, `~/.agents/skills/`에 설치되고 각 에이전트에 대한 심볼릭 링크를 설정합니다.
-
-데몬이 설치된 Paseo 스킬을 찾으면 선택 해제된 디렉터리를 제거하지 않고 시작 시 선택한 번들 스킬을 최신 상태로 유지합니다. 호스트의 오케스트레이션 스킬 카드에서 스킬을 설치, 업데이트, 선택 또는 제거하세요. 제거할 때는 항상 확인을 요청합니다.
+스킬을 업데이트하거나 제거할 때도 같은 설정 카드를 사용하세요. 호스트는 시작할 때 선택되어 설치된 Paseo 스킬도 갱신합니다.
 
 ## `/paseo`, Paseo 참조
 
-기초 스킬. 프로젝트, 작업공간 및 에이전트 관리를 위한 Paseo 참조입니다. 에이전트가 프로젝트를 등록하거나, 에이전트를 생성하거나, 메시지를 보내거나, 작업공간 격리를 관리해야 할 때 로드하세요.
+다른 스킬이 사용하는 기본 참조입니다. 에이전트가 위임하기 전에 [에이전트 프로필과 메모](/docs/agent-profiles#guide-delegation-with-notes)를 확인한 뒤 선택한 실행 설정을 적용하도록 안내합니다. 적합한 프로필이 없으면 사용 가능한 공급자와 모델을 검색하고 대체 선택을 사용자에게 알리도록 지시합니다.
 
-일반적으로 사용자가 직접 호출하지 않으며 다른 기술이 의존하는 참조입니다.
+> /paseo 작업 트리로 격리된 작업공간에서 에이전트를 만드는 방법을 알려주세요
 
-```
-/paseo show me the Paseo CLI surface for creating an agent in a worktree-isolated workspace
-```
+## `/paseo-handoff`, 작업 핸드오프
 
-## `/paseo-handoff`, 작업 전달
+관련 파일, 진행 상황, 결정, 제약 조건 및 승인 기준을 담은 브리핑과 함께 현재 작업을 전달합니다. 스킬은 수신 에이전트를 선택하기 전에 프로필을 확인하며, 원하는 프로필을 지정할 수도 있습니다.
 
-전체 컨텍스트를 통해 현재 작업을 다른 에이전트에게 전달합니다. "handoff", "handoff", "hand this to"라고 말하거나 작업을 다른 에이전트에게 전달하고 싶을 때 사용하세요.
+> /paseo-handoff 인증 수정을 자체 작업 트리의 구현 에이전트에 넘겨주세요
 
-수신 에이전트는 작업, 컨텍스트, 관련 파일, 현재 상태, 시도한 내용, 결정, 승인 기준 및 제약 조건이 포함된 자체 브리핑을 받습니다. 공급자는 이름을 지정하지 않는 한 오케스트레이션 기본 설정에서 제공됩니다. 요청 시 작업 트리 격리 작업 공간을 지원합니다.
+수신 에이전트는 계속 작업하는 데 필요한 컨텍스트를 받습니다. 독립적으로 편집해야 한다면 별도 작업 트리를 요청하세요.
 
-```
-/paseo-handoff hand off the auth fix to codex in a worktree-isolated workspace
-/paseo-handoff hand this to claude opus for review
-```
+## `/paseo-committee`, 위원회 계획
 
-## `/paseo-committee`, 위원회 기획
+에이전트 두 개가 어려운 문제를 독립적으로 분석하게 합니다. 스킬은 계획과 분석에 맞는 프로필 메모를 확인하고 가능하면 서로 다른 공급자 계열을 선호합니다.
 
-한발 물러서서 근본 원인을 분석하고 계획을 수립하기 위해 두 명의 고논리 대리인으로 구성된 위원회를 구성합니다. 막혔거나, 반복되거나, 터널 비전을 보거나, 어려운 계획 문제에 직면할 때 사용하세요.
+> /paseo-committee 부하가 걸릴 때 WebSocket 연결이 끊기는 이유가 무엇인가요?
 
-위원회 구성원은 분석만 수행합니다. 파일을 편집, 생성 또는 삭제하지 않습니다. 오케스트레이션 에이전트는 계획을 종합하고 구현한 다음 검토를 위해 차이점을 다시 보냅니다.
+위원회 구성원은 파일을 편집하지 않고 분석을 반환합니다. 주 에이전트가 계획을 종합하고 해결책을 구현한 뒤 diff를 다시 검토하도록 보냅니다.
 
-```
-/paseo-committee why are the websocket connections dropping under load?
-/paseo-committee plan the auth system migration
-```
+## `/paseo-advisor`, 조언자
 
-## `/paseo-advisor`, 고문
+설계, diff 또는 질문에 대해 다른 에이전트의 판단을 받습니다. 스킬은 메모가 작업에 맞는 프로필을 선택하거나 사용자가 지정한 프로필을 사용합니다.
 
-단일 에이전트를 현재 작업에 대한 두 번째 의견인 고문으로 구성합니다. "고문", "2차 의견", "X는 어떻게 생각하는가"라고 말하거나 작업 자체를 위임하지 않고 외부 의견을 듣고 싶을 때 사용하세요.
+> /paseo-advisor 이 마이그레이션 계획에서 놓친 것이 있나요?
 
-조언자는 판단을 내린다. 당신은 무엇을 해야할지 결정합니다. Advisor 프롬프트는 분석 전용이며 편집할 수 없는 지침으로 끝납니다.
-
-```
-/paseo-advisor did I miss anything in this migration plan?
-/paseo-advisor --provider claude/opus what is the UX risk in this flow?
-```
+조언자는 파일을 편집하지 않고 두 번째 의견을 반환합니다.

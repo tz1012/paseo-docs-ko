@@ -8,7 +8,7 @@ category: Plugins
 
 # 공급자 플러그인 만들기
 
-> **출시 예정인 Paseo v0.8용 문서입니다.** Paseo 플러그인을 만들어 본 적이 없다면
+> **Paseo v0.8 베타용 문서입니다.** Paseo 플러그인을 만들어 본 적이 없다면
 > [플러그인 빠른 시작](/docs/plugins/v0.8)부터 확인하세요.
 
 공급자 플러그인은 코딩 에이전트를 Paseo 코어에 추가하지 않고 Paseo에 연결합니다. 플러그인을 Git 저장소에 게시하면 사용자가 `paseo plugin add`와 `paseo plugin update`로 설치하고 업데이트할 수 있습니다.
@@ -20,10 +20,10 @@ category: Plugins
 | 이미 ACP를 구현함 | `runAcpProvider()`로 등록하고 공급업체별 변환기는 필요한 범위로만 추가합니다. |
 | TypeScript SDK, JSON-RPC API 또는 사용자 지정 프로세스 프로토콜이 있음 | `ProviderRegistration`을 직접 구현합니다. |
 
-전체 예제는 다음과 같습니다.
+예제는 다음과 같습니다.
 
 - [`provider-direct`](https://github.com/getpaseo/paseo/tree/main/plugin-examples/provider-direct): 세션, 설정, 프롬프트, 지속성, 하위 세션, 공급자 소유 타임라인 렌더러
-- [`provider-acp-transformer`](https://github.com/getpaseo/paseo/tree/main/plugin-examples/provider-acp-transformer): Zod로 검증하는 공급업체 편집 변환기가 포함된 ACP 명령
+- [`provider-acp-transformer`](https://github.com/getpaseo/paseo/tree/main/plugin-examples/provider-acp-transformer): Zod로 검증하는 공급업체 편집 변환기가 포함된 ACP 명령 템플릿입니다. 플러그인을 로드하기 전에 `example-acp --stdio`를 설치된 ACP 에이전트로 바꾸세요.
 - [`inline-thinking`](https://github.com/getpaseo/paseo/tree/main/plugin-examples/inline-thinking): 공급자를 구현하지 않는 렌더러 전용 플러그인
 
 ## 직접 공급자 등록하기
@@ -32,7 +32,7 @@ category: Plugins
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin";
+import type { PluginServerContext } from "@getpaseo/plugin/server";
 import { createProvider } from "./server/provider";
 
 export default function contribute(server: PluginServerContext) {
@@ -47,7 +47,7 @@ export default function contribute(server: PluginServerContext) {
 import {
   negotiateProviderCapabilities,
   type ProviderRegistration,
-} from "@getpaseo/plugin/provider";
+} from "@getpaseo/plugin/server/provider";
 
 const supported = ["prompt.message"] as const;
 
@@ -274,7 +274,7 @@ emit({
 렌더러는 `index.client.tsx`에 별도로 등록합니다.
 
 ```tsx
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { z } from "zod";
 import { ReviewVerdict } from "./client/review-verdict";
 
@@ -301,8 +301,8 @@ export default function contribute(client: PluginClientContext) {
 에이전트가 이미 ACP를 사용하면 ACP shim을 사용하세요.
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin";
-import { runAcpProvider } from "@getpaseo/plugin/acp";
+import type { PluginServerContext } from "@getpaseo/plugin/server";
+import { runAcpProvider } from "@getpaseo/plugin/server/acp";
 
 export default function contribute(server: PluginServerContext) {
   server.registerProvider(
@@ -322,7 +322,7 @@ shim이 ACP 프로세스, 기능 매핑, 세션 수명 주기, 프롬프트, 권
 ACP로 표현할 수 없는 공급업체별 차이에만 `transformers`를 사용하세요. 공급업체 페이로드는 Zod로 검증하고, 형식이 잘못되었거나 관련 없는 값은 변경하지 않습니다.
 
 ```ts
-import type { AcpTransformer } from "@getpaseo/plugin/acp";
+import type { AcpTransformer } from "@getpaseo/plugin/server/acp";
 import { z } from "zod";
 
 const editSchema = z.object({

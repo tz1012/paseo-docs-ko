@@ -1,15 +1,15 @@
 ---
 title: Plugin quickstart
 description: Build, install, share, and update a trusted Paseo plugin.
-nav: Paseo v0.8 — Preview
+nav: Paseo v0.8 — Beta
 order: 46
 category: Plugins
 ---
 
 # 플러그인 빠른 시작
 
-> **출시 예정인 Paseo v0.8용 문서입니다.** v0.8용 플러그인을 준비하는 경우가 아니라면
-> [현재 v0.7 문서](/docs/plugins/v0.7)를 사용하세요.
+> **Paseo v0.8 베타용 문서입니다.** 안정화 버전을 실행하는 경우
+> [v0.7 문서](/docs/plugins/v0.7)를 사용하세요.
 
 > **실험적 기능:** 플러그인 API는 계속 발전 중이므로 Paseo가 발전함에 따라 호환성을 깨는 변경 사항이 생기고
 > 플러그인을 업데이트해야 할 수 있습니다. 예정된 기여 영역은
@@ -48,7 +48,7 @@ RPC를 통해 데몬에 인사 메시지를 요청합니다.
 
 ```text
 workspace-plugin/
-  paseo-plugin.json      # { "id": "workspace-plugin" }
+  paseo-plugin.json      # plugin ID and supported Paseo versions
   index.client.tsx       # runs in the Paseo app
   index.server.ts        # runs in a daemon subprocess
   client/greeting.tsx    # the surface component
@@ -63,7 +63,7 @@ workspace-plugin/
 `index.client.tsx`는 표면과 이를 여는 사이드바 항목을 등록합니다.
 
 ```tsx
-import type { PluginClientContext } from "@getpaseo/plugin";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { GreetingSurface } from "./client/greeting";
 
 export default function contribute(client: PluginClientContext) {
@@ -81,7 +81,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts`는 `shared/greeting.ts`에 있는 계약의 핸들러를 등록합니다.
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin";
+import type { PluginServerContext } from "@getpaseo/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greetingRpc } from "./shared/greeting";
 
@@ -134,7 +134,7 @@ paseo plugin ls
 작업공간 패널은 에이전트, 터미널, 파일 옆에 탭으로 열립니다. `client/overview.tsx`를 만드세요.
 
 ```tsx
-import { type PluginWorkspacePanelProps, useWorkspace } from "@getpaseo/plugin";
+import { type PluginWorkspacePanelProps, useWorkspace } from "@getpaseo/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 

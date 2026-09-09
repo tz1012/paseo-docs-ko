@@ -10,7 +10,7 @@ category: TypeScript SDK
 
 구독은 변경사항이 발생한 후 보고합니다. 먼저 초기 스냅샷을 가져온 다음 업데이트를 적용하세요.
 
-모든 `subscribe()` 메소드는 로컬 구독 취소 기능을 반환합니다. 콜백을 제거합니다. 기본 리소스를 중지하거나 보관하지 않습니다.
+모든 `subscribe()` 메서드는 구독 취소 함수를 반환합니다. 타임라인, 프로젝트 및 공급자 구독은 네트워크 수요를 설정하고 재연결 후 복원합니다. 마지막 리스너가 떠날 때 구독을 취소하면 해당 수요가 해제됩니다. 에이전트 및 작업공간 디렉터리에서는 아래의 명시적인 `list({ subscribe })` 부트스트랩을 사용합니다. 구독을 취소해도 기본 리소스가 중지되거나 보관되지는 않습니다.
 
 ## 한 에이전트의 상태를 추적합니다.
 
@@ -39,16 +39,24 @@ const unsubscribe = agent.subscribe((update) => {
 ## 타임라인 이벤트 팔로우
 
 ```ts
-const unsubscribe = agent.timeline.subscribe(({ event, timestamp }) => {
+const unsubscribe = agent.timeline.subscribe((update) => {
+  const { event } = update;
+  if (event.type === "replacement") {
+    // Previously fetched history belongs to an old epoch. Fetch the page your UI needs.
+    void agent.timeline.refetch().then((page) => console.log(page.entries));
+    return;
+  }
   if (event.type === "timeline" && event.item.type === "assistant_message") {
     process.stdout.write(event.item.text);
   }
 
   if (event.type === "turn_completed") {
-    console.log(`\nCompleted at ${timestamp}`);
+    console.log("\nTurn completed");
   }
 });
 ```
+
+관찰해야 하는 이벤트를 생성하는 작업을 시작하기 전에 `unsubscribe.ready`를 기다리세요. 데몬이 구독을 확인하면 해결되고, 구독 설정에 실패하면 거부됩니다. 구독을 해제하려면 `unsubscribe()`를 호출하세요.
 
 어시스턴트 메시지는 여러 개로 나누어 도착할 수 있습니다. 완전한 메시지가 필요한 경우 텍스트를 연결하거나, 최종 응답만 필요한 경우 `run()`을 사용하고 `lastMessage`을 읽으세요.
 

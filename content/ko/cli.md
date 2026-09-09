@@ -1,12 +1,12 @@
 ---
-title: CLI
+title: CLI reference
 description: "Paseo CLI reference: manage projects, workspaces, agents, plugins, scripts, schedules, daemons, and permissions from your terminal."
-nav: CLI
-order: 3
-category: Getting started
+nav: CLI reference
+order: 35
+category: Orchestration
 ---
 
-# CLI
+# CLI 참조
 
 Paseo CLI를 사용하면 터미널에서 에이전트를 관리할 수 있습니다. 이는 데몬의 API에 의해 노출되는 것과 동일한 인터페이스이므로 앱에서 수행할 수 있는 모든 작업을 명령줄에서 수행할 수 있습니다.
 
@@ -185,13 +185,13 @@ paseo plugin remove my-plugin
 
 GitHub 단축 표기는 먼저 기존 호스트 디렉터리를 확인합니다. 모노레포의 플러그인에는 `:<directory>`를 덧붙이세요. `paseo plugin ls [id]`는 원격에 연결하지 않습니다. `paseo plugin logs <id>`는 플러그인의 최근 데몬 측 stdout과 stderr을 반환합니다. 구조화된 항목을 받으려면 `--json`을 추가하고, 다른 데몬을 대상으로 하려면 `paseo --host <target> plugin logs <id>`를 실행하세요. 설치, 신뢰, 수명 주기, 로그 보존 동작은 [플러그인 참조](/docs/plugins/v0.7/reference)를 확인하세요.
 
-## 리스팅 에이전트
+## 에이전트 나열
 
 ```bash
-paseo ls                    # Running agents in current directory
-paseo ls -a                 # Include completed/stopped agents
-paseo ls -g                 # All directories
-paseo ls -a -g --json       # Full list as JSON
+paseo ls                    # Non-archived agents in active workspaces
+paseo ls -a                 # Also include archived agents
+paseo ls -g                 # Non-archived agents across all workspaces
+paseo ls -a -g --json       # All agents, including archived, as JSON
 ```
 
 ## 스트리밍 출력
@@ -207,6 +207,8 @@ paseo attach abc123   # Attach to agent (Ctrl+C to detach)
 ## 메시지 보내기
 
 실행 중이거나 유휴 상태인 에이전트에 후속 작업을 보냅니다.
+
+`paseo ls`에서 수신자의 에이전트 ID를 사용하거나 [에이전트 탭에서 복사](/docs/orchestration-workflows#send-a-prompt-to-another-agent)하세요.
 
 ```bash
 paseo send <id> "now run the tests"
