@@ -77,6 +77,7 @@ my-plugin/
 | 기존 루트 진입점의 `plugin.addClientSlashCommand(command)`                                 | `index.client.tsx`의 `client.addSlashCommand(command)`                                    |
 | 기존 루트 진입점의 `plugin.addClientSide(fn)`                                              | 래퍼를 삭제하고 `fn`의 본문을 기본 클라이언트 진입점 함수로 옮기세요        |
 | 기존 클라이언트 콜백 안의 `client.addComposerPill(pill)`                                 | `index.client.tsx` 또는 가져온 `client/` 함수 안의 `client.addComposerPill(pill)` |
+| 새 헤더 기여 | `client.addHeaderButton({ id, workspaceId, button })` |
 | 기존 루트 진입점의 `plugin.addAttachmentSource(source)`                                    | `index.client.tsx`의 `client.addAttachmentSource(source)`                                 |
 | 새 설정 화면 기여                                                              | `index.client.tsx`의 `client.addSettingsScreen(screen)`; [설정 화면](reference#settings-screens) 참조 |
 | 기존 루트 진입점의 `plugin.addTheme(theme)`                                                | `index.client.tsx`의 `client.addTheme(theme)`                                             |
@@ -87,8 +88,44 @@ my-plugin/
 
 클라이언트 진입점에서는 `@getpaseo/plugin/client`의 `PluginClientContext`를, 서버 진입점에서는
 `@getpaseo/plugin/server`의 `PluginServerContext`를 가져오세요. 기존 컨텍스트 유형의 가져오기는
-제거하세요. 이제 클라이언트의 모든 `add*`는 멱등성을 갖는 제거 함수를 반환합니다. 플러그인이 종료
-정리 전에 호출하는 제거 함수는 유지하세요. Paseo는 진입점의 정리 함수가 실행된 후 남아 있는 등록을 제거합니다.
+제거하세요. 클라이언트 등록은 멱등성을 갖는 제거 함수를 반환하지만, 헤더 버튼과 작성기 필은
+`{ update, remove }` 핸들을 반환합니다. 플러그인이 종료 정리 전에 호출하는 제거 함수는 유지하세요.
+Paseo는 진입점의 정리 함수가 실행된 후 남아 있는 등록을 제거합니다.
+
+### 작성기 필
+
+플러그인 프로젝트의 `@getpaseo/plugin` 종속성을 업데이트한 다음 `npm run typecheck`를 실행하세요.
+이전 기여에는 필수 `button` 필드가 없고, `PluginComposerPillProps`는 더 이상 내보내지 않으며,
+새 등록을 함수처럼 호출하면 TypeScript 오류가 발생합니다. 이전 SDK에 고정된 프로젝트는 여전히
+이전 계약을 기준으로 검사됩니다. 플러그인을 설치하거나 다시 불러와도 TypeScript 타입 검사기는
+실행되지 않습니다.
+
+필의 `Component`를 `button.icon`과 `button.label`로 교체하고, `title`은 `button` 안으로,
+`onPress`는 `button.behavior` 안으로 옮기세요. 정리 코드는 반환된 함수를 호출하는 방식에서
+`.remove()` 메서드를 호출하는 방식으로 바뀝니다.
+
+```tsx
+const pill = client.addComposerPill({
+  id: "review",
+  workspaceId,
+  agentId,
+  button: {
+    title: "Open review",
+    icon: "Scan",
+    label: "Review",
+    behavior: { kind: "action", onPress: openReview },
+  },
+});
+
+pill.update({ label: "Review · 3", visible: true });
+// Client entry cleanup:
+pill.remove();
+```
+
+이전 구성 요소의 동적 텍스트는 모델 또는 SDK 구독에서 발생하는 업데이트로 옮기세요. 사용자 지정
+아이콘 구성 요소는 계속 훅을 사용할 수 있습니다. 작성기 필은 항상 아이콘과 레이블을 표시하며
+갈매기표는 표시하지 않습니다. 메뉴, 팝오버, 표시 여부는 [버튼](./reference.md#button-descriptor)을
+참조하세요.
 
 ## 4. 가져오기 분리하기
 

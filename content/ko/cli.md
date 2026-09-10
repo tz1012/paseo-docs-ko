@@ -288,25 +288,26 @@ paseo daemon stop              # Stop the daemon
 
 ```bash
 paseo hub login [url]          # Approve and store organization-scoped CLI access
-paseo hub init                 # Guided setup: scaffold and deploy a starter bundle here
+paseo hub init                 # Create and optionally deploy a starter trigger here
 paseo hub connect [url]        # Enroll this daemon using CLI access
-paseo hub projects             # List projects in the authenticated organization
+paseo hub projects             # List legacy projects in the authenticated organization
 paseo hub status               # Show the current Hub relationship
 paseo hub disconnect           # End it
-paseo hub deploy -p <project>  # Discover, validate, and activate a Hub bundle
-paseo hub deploy -p <project> --dry-run # Validate without activating
+paseo hub deploy               # Validate and install .paseo/triggers/*.yml
+paseo hub deploy --dry-run     # Validate without installing
+paseo hub deploy -p <project>   # Deploy an existing legacy project bundle
 paseo hub logout               # Remove the active stored CLI login
 ```
 
-프로젝트 루트에서 배포를 실행하세요. `.paseo/hub.yml`, 모든 직접 `.paseo/workflows/*.yml` 파일을 읽고 결정적 경로 순서로 참조된 `.paseo/workflows/partials/*` 파일을 읽습니다. 상위 항목을 검색하거나, 대체 리소스 경로를 허용하거나, 번들을 모놀리식 YAML로 평면화하지 않습니다.
+저장소 루트에서 배포를 실행하세요. 기본적으로 직접 위치한 모든 `.paseo/triggers/*.yml` 파일을 결정적인 경로 순서로 읽습니다. 모든 트리거를 검증한 다음 한 번에 하나씩 설치합니다. 이전 설치가 성공한 뒤 설치 하나가 실패하면 오류에 설치된 파일이 나열됩니다. `--dry-run`은 검증만 하며 개정을 생성하거나 활성화하지 않습니다.
 
-`-p, --project <slug>`을 전달하여 대상 프로젝트를 선택하세요. `--dry-run`은 개정판을 기록하거나 활성화하지 않고 동일한 검색 및 서버 유효성 검사를 수행합니다. 두 출력 모두 해결된 허브, 프로젝트 및 검색된 워크플로 개수를 포함합니다.
+기존 레거시 번들을 배포하려면 `-p, --project <slug>`을 전달하세요. 레거시 번들은 `.paseo/hub.yml`, 직접 위치한 `.paseo/workflows/*.yml` 파일, 참조된 워크플로 부분으로 구성됩니다. [CLI에서 배포](/docs/hub/configuration#deploy-from-the-cli)를 참조하세요.
 
-`login`은 허브 승인 페이지를 열고 `PASEO_HOME` 아래에 지속적인 조직 범위 CLI 자격 증명을 저장합니다. 대화형 터미널에서는 이어서 이 데몬을 연결할지, 시작용 워크플로를 초기화해 배포할지 묻고 두 항목 모두 기본값은 예입니다. 연결을 거부하면 연결만으로는 번들이 만들어지지 않으므로 `paseo hub connect <origin>; then paseo hub init`을 출력합니다. 시작용 워크플로만 거부하면 `paseo hub init`을 출력합니다. `--json` 및 비 TTY 로그인은 로그인만 수행하고 메시지를 표시하지 않습니다. 저장된 로그인은 `connect`이 생성한 데몬 관계와 별개입니다.
+`login`은 Hub 승인 페이지를 열고 `PASEO_HOME` 아래에 지속적인 조직 범위 CLI 자격 증명을 저장합니다. 대화형 터미널에서는 이 데몬을 연결할지 제안한 다음, Hub 자동화가 에이전트를 실행하도록 허용할지 별도로 묻습니다. 연결의 기본값은 예이고 실행 권한의 기본값은 아니요입니다. 그런 다음 Hub의 **Triggers** 페이지로 연결하고 코드 기반 설정을 위한 `paseo hub init`을 출력합니다. `--json` 및 비 TTY 로그인은 로그인만 수행하고 질문하지 않습니다. 저장된 로그인은 `connect`이 생성한 데몬 관계와 별개입니다.
 
-`init`은 같은 안내형 설정을 단독으로 실행하며 TTY가 필요합니다. 데몬을 연결하고, 조직에 프로젝트가 하나뿐이면 이를 사용하고 그렇지 않으면 프로젝트를 묻고, 시작용 워크플로의 기반으로 사용할 수 있는 Hub 앱 연결을 나열합니다. 사용할 수 있는 연결이 하나면 자동으로 선택하고, 여러 개면 **트리거 연결**을 선택합니다. 준비된 연결이 없으면 **Hub → Apps**로 안내하고 에이전트를 선택하거나 파일을 쓰기 전에 중지합니다.
+`init`에는 TTY가 필요합니다. 필요에 따라 로그인하고 데몬을 연결한 다음 시작용 트리거의 기반으로 사용할 수 있는 조직의 앱 연결을 나열합니다. 사용할 수 있는 연결이 하나면 자동으로 선택하고, 여러 개면 **Trigger connection**을 선택합니다. 준비된 연결이 없으면 **Hub → Apps**로 안내하고 에이전트를 선택하거나 파일을 쓰기 전에 중지합니다.
 
-그런 다음 설정은 연결된 데몬이 보고한 항목 중 시작용 워크플로에서 실행할 에이전트 공급자, 모델, 모드를 묻습니다. 데몬에서 선택 가능한 모델과 함께 활성화된 공급자만 제시됩니다. 제안되는 모델과 모드 항목은 데몬의 기본값이며, 목록의 첫 번째라는 이유만으로 공급자를 제안하지 않습니다. 모드를 제공하지 않는 공급자에서는 모드 질문을 건너뛰고, 데몬에 모드는 있지만 기본값이 없으면 명시적으로 묻습니다. 마지막으로 선택한 연결을 제한할 ID, 즉 GitHub 사용자 이름, Slack 멤버 ID 또는 Discord 사용자 ID를 묻습니다. `.paseo/hub.yml`과 `.paseo/workflows/<provider>-help.yml`을 쓰고 Hub에서 검증한 뒤 배포합니다. 기존 `.paseo/` 디렉터리는 확인한 뒤에만 교체합니다. [생성된 시작용 번들](/docs/hub/configuration#generated-starter-bundle)을 참조하세요.
+설정은 실행할 에이전트 공급자, 모델, 모드를 묻습니다. 공급자는 활성화되어 있고 선택 가능한 모델과 실행 모드를 모두 제공해야 합니다. 제안되는 모델과 모드 항목은 데몬의 기본값이며, 기본 모드가 없을 때도 모드를 명시적으로 선택합니다. 그런 다음 봇을 트리거할 수 있는 ID, 즉 GitHub 사용자 이름, Slack 멤버 ID 또는 Discord 사용자 ID를 묻습니다. 트리거를 검증하고 `.paseo/triggers/<provider>-help.yml`에 쓴 뒤 배포할지 묻습니다. 해당 파일을 교체하려면 확인이 필요하며 기존 레거시 번들과 다른 트리거 파일은 보존됩니다. [생성된 시작용 트리거](/docs/hub/configuration#generated-starter-trigger)를 참조하세요.
 
 대화형 로그아웃은 동일 출처 데몬 관계를 확인하고 로그인을 삭제하기 전에 연결을 끊을지 묻습니다. 거부하면 로그인만 제거됩니다. JSON 및 비대화형 로그아웃은 암시적으로 메시지를 표시하거나 연결을 끊지 않습니다. `--disconnect-daemon`은 명시적 자동화 경로이고 `--force`은 해당 데몬 연결 해제에 적용됩니다. 요청된 연결 해제가 실패하면 로그인이 유지됩니다.
 

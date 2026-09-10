@@ -1,6 +1,6 @@
 ---
 title: Hub configuration
-description: Configuration bundles, GitHub sync, CLI deployment, and revisions.
+description: Generate, edit, and deploy organization triggers from your repository.
 nav: Configuration
 order: 70
 category: Hub
@@ -8,98 +8,92 @@ category: Hub
 
 # 허브 구성
 
-프로젝트 구성은 버전이 지정된 하나의 번들입니다.
+각 조직 트리거는 자체 완결형 YAML 파일 하나입니다. 트리거를 저장소에 보관하고 `paseo hub deploy`로 배포하세요.
 
 ```text
 .paseo/
-├── hub.yml
-└── workflows/
-    ├── <workflow>.yml
-    └── partials/
-        └── <partial>.md
+└── triggers/
+    └── <trigger>.yml
 ```
 
-`hub.yml`은 명명된 환경과 에이전트를 소유합니다. 각 직계 하위 워크플로 파일은 하나의 트리거와 정렬된 인라인 단계를 소유합니다. 해당 워크플로에서 참조하는 프롬프트 부분은 `workflows/partials/` 아래에 있습니다. 워크플로 검색은 규칙에 따라 수정됩니다. 매니페스트나 포함 목록이 없습니다.
+## 생성된 시작용 트리거
 
-[single-repo-team-bot](https://github.com/getpaseo/hub/tree/main/examples/single-repo-team-bot)은 공유 부분을 사용하는 분류 에이전트와 작업 에이전트를 실행하는 Discord, Slack, GitHub 워크플로를 포함한 완전한 번들입니다. `.paseo/`을 저장소에 복사하고 README에 나열된 자리 표시자를 바꾸세요.
+에이전트가 작업할 저장소에서 `paseo hub init`을 실행하세요. 설정은 앱 연결과 사용 가능한 에이전트 런타임을 선택하고, 트리거할 수 있는 사용자를 물은 다음 결과를 검증해 파일 하나에 씁니다. 이어서 배포할지 묻습니다. 대화형 `paseo hub login`은 데몬을 연결하고 이 명령을 안내하지만 트리거 파일을 쓰지는 않습니다.
 
-## 생성된 시작용 번들
-
-`paseo hub init`과 대화형 `paseo hub login`이 제안하는 안내형 설정은 실행한 디렉터리에 두 파일을 작성합니다.
+이름이 `my-team`인 Slack 연결의 경우 생성되는 문서는 다음과 같습니다.
 
 ```yaml
-# .paseo/hub.yml
-environments:
-  my-macbook:
-    kind: daemon
+# .paseo/triggers/slack-help.yml
+name: slack-help
+enabled: true
+on:
+  slack.mention:
+    connection: my-team
+    filters:
+      from_users: [U01234567]
+max_runtime: 2h
+run:
+  target:
     daemon: my-macbook
     cwd: /Users/you/code/your-repo
-agents:
-  starter:
+  agent:
     provider: codex
     model: gpt-5
     mode: full-access
+  continuation:
+    mode: conversation
+  max_runtime: 90m
+  idle_timeout: 10m
+  prompt: |
+    Answer with hub.reply, then complete this request and call hub.finish_execution when done.
+
+    <user-prompt>
+    ${{ paseo.prompt }}
+    </user-prompt>
+  outputs:
+    slack.reply:
+      max: 1
+      required: true
 ```
 
-환경 이름은 연결된 데몬에서 가져오고 설정을 실행한 디렉터리를 가리킵니다. `provider`, `model`, `mode`는 해당 데몬이 보고한 항목 중 사용자가 선택한 런타임이므로, 시작용 에이전트는 처음 실행하기 전부터 완전히 선택되어 있습니다. 모드를 제공하지 않는 공급자에서는 `mode`를 생략합니다.
+`connection`은 조직에 있는 앱 연결의 슬러그입니다. `target.daemon`은 연결된 데몬의 슬러그이고 `target.cwd`는 설정을 실행한 절대 디렉터리입니다. `agent`에는 데몬에서 선택한 공급자, 모델, 실행 모드가 들어갑니다. 모드는 필수입니다.
+
+`continuation.mode: conversation`은 동일한 에이전트의 같은 공급자 대화에서 후속 작업을 이어갑니다. 프롬프트는 에이전트에게 응답한 다음 `hub.finish_execution`을 호출하도록 요청합니다. 응답만 해서는 실행이 완료되지 않습니다.
+
+Discord 시작용 트리거는 `discord.mention`, 사용자의 Discord 사용자 ID, `discord.reply`를 사용합니다. GitHub 시작용 트리거는 `github.issue_comment`를 사용하고 현재 GitHub 원격 저장소로 제한하며, `@paseo`와 사용자의 GitHub 사용자 이름을 모두 요구합니다. GitHub 시작용 트리거에는 명시적인 응답 출력 선언이 없습니다.
+
+설정은 선택한 트리거 파일을 교체하기 전에 확인합니다. 다른 트리거와 기존 레거시 번들은 보존합니다. `from_users` 또는 에이전트의 권한을 확대하기 전에 [Hub 보안](/docs/hub/security)을 읽으세요.
+
+## 시작 시간 제한
+
+Hub는 작업 트리 생성, 공급자 시작, 초기 프롬프트 수락을 포함해 에이전트가 시작할 때까지 최대 **2분** 기다립니다. 더 느린 머신에서는 트리거 YAML에 `run.startup_timeout`을 설정하세요.
 
 ```yaml
-# .paseo/workflows/slack-help.yml
-name: slack-help
-on: slack.mention
-max_runtime: 2h
-filters:
-  workspace: T01234567
-  from_users:
-    - U01234567
-steps:
-  - id: work
-    environment: my-macbook
-    max_runtime: 90m
-    idle_timeout: 10m
-    agent: starter
-    prompt:
-      - text: |
-          Answer with hub.reply, then complete this request and call hub.finish_execution when done.
-
-          <user-prompt>
-          ${{ paseo.prompt }}
-          </user-prompt>
-    allow_outputs:
-      - type: slack.reply
-        max: 1
-        required: true
+name: inspect
+on:
+  manual.run: {}
+run:
+  target: { daemon: devbox, cwd: /workspace/project }
+  agent: { provider: codex, mode: full-access }
+  startup_timeout: 5m
+  prompt: Inspect this repository and summarize its current state.
 ```
 
-`filters`에는 각 공급자가 일치시키는 ID가 들어갑니다. 위 예에서는 Slack 팀과 멤버 ID, Discord 시작용 워크플로에서는 Discord 길드와 사용자 ID, GitHub에서는 `owner/name`과 사용자 로그인을 사용합니다.
-
-Discord 시작용 파일은 `discord-help.yml`이며 위의 `slack.reply`에 대응하는 `discord.reply`를 포함합니다. GitHub 시작용 파일은 `github-help.yml`이며 응답 출력을 선언하지 않습니다. GitHub에는 응답 기능이 없으므로 댓글을 남겨야 하는 단계에는 [`github` 블록](/docs/hub/github)이 필요합니다.
-
-생성된 워크플로는 한 워크스페이스의 한 사용자만 허용합니다. 범위를 넓히기 전에 [Hub 보안](/docs/hub/security)을 읽으세요.
-
-## 소스
-
-구성은 하나의 소스에서 제공됩니다.
-
-- **GitHub 소스**: 저장소의 기본 브랜치에 있는 전체 `.paseo` 번들입니다.
-- **수동 소스**: 대시보드에서 소스 파일을 편집하고 활성화합니다.
-- **CLI/API 설치**: 조직 권한으로 전송되는 완전한 번들입니다.
-
-**구성** 탭에는 활성 개정판, 소스 파일 및 최신 동기화 시도가 표시됩니다.
+`ms`, `s`, `m`, `h` 단위의 양수 기간을 사용하며 최대값은 `24h`입니다. 이 필드를 생략하면 `2m`을 사용합니다. 기존 `max_runtime` 및 `idle_timeout` 제한은 시작 중에도 적용되며 더 먼저 만료될 수 있습니다. 이 설정은 Hub의 대기 예산을 변경하며, 공급자별 시간 제한은 계속 적용됩니다.
 
 ## CLI에서 배포
 
-프로젝트 루트에서 실행합니다.
+저장소 루트에서 실행합니다.
 
 ```sh
 paseo hub login https://hub.example.com
-paseo hub deploy -p my-project --dry-run
-paseo hub deploy -p my-project
+paseo hub deploy --dry-run
+paseo hub deploy
 ```
 
-두 명령 모두 `.paseo/hub.yml`, 모든 직접 `.paseo/workflows/*.yml` 파일 및 `.paseo/workflows/partials/` 아래의 각 참조 파일을 검색합니다. 파일은 동일한 번들 요청을 통해 결정적인 경로 순서로 전송됩니다. 테스트 실행은 서버 측 유효성 검사를 호출하고 개정을 생성하거나 활성화하지 않습니다.
+두 배포 명령 모두 직접 위치한 `.paseo/triggers/*.yml` 파일을 결정적인 경로 순서로 찾습니다. CLI는 중첩 파일, `.yaml` 확장자, 심볼릭 링크로 연결된 트리거 경로, 읽을 수 없는 파일을 거부합니다. 상위 디렉터리는 검색하지 않습니다.
 
-CLI는 Hub에 연결하기 전에 누락된 리소스 또는 워크플로 파일, `.yaml` 워크플로 확장, 중첩된 워크플로 파일, 안전하지 않은 부분 경로, 심볼릭 링크된 번들 경로 및 읽을 수 없는 파일을 거부합니다. 오류 이름 경로는 표시되지만 파일 내용이나 자격 증명은 인쇄되지 않습니다.
+테스트 실행은 문서를 각각 Hub에서 검증하되 개정을 저장하지 않습니다. 배포는 모든 문서를 먼저 검증한 다음 조직 트리거 API를 통해 한 번에 하나씩 설치합니다. 설치는 YAML의 `name`을 기준으로 트리거를 생성하거나 업데이트합니다. 뒤의 설치가 실패하면 오류에 이미 설치된 파일이 나열되며 해당 개정은 활성 상태로 유지됩니다. 오류에는 경로가 표시되지만 파일 내용이나 자격 증명은 출력되지 않습니다.
 
 원산지 우선순위:
 
@@ -115,6 +109,21 @@ CLI는 Hub에 연결하기 전에 누락된 리소스 또는 워크플로 파일
 3. 정확한 해결 출처에 대한 저장된 로그인
 
 플래그와 환경 키는 저장되지 않습니다. 엔드포인트 및 자격 증명 동작은 배포와 테스트 실행 간에 변경되지 않습니다.
+
+## 레거시 프로젝트 번들
+
+기존 프로젝트 번들은 `.paseo/hub.yml`, 직접 위치한 `.paseo/workflows/*.yml` 파일, `.paseo/workflows/partials/` 아래에서 참조하는 파일로 구성됩니다. `hub.yml`은 명명된 환경과 에이전트를 소유하며, 각 워크플로는 자체 트리거와 순서가 지정된 단계를 소유합니다.
+
+레거시 배포 경로를 명시적으로 선택하세요.
+
+```sh
+paseo hub deploy --project my-project --dry-run
+paseo hub deploy --project my-project
+```
+
+이 명령은 프로젝트 구성 API를 통해 전체 번들을 전송합니다. 테스트 실행은 개정을 기록하거나 활성화하지 않고 검증합니다. `paseo hub init`은 이러한 번들을 생성하거나 마이그레이션하지 않습니다.
+
+다음 소스 및 개정 동작은 레거시 프로젝트 번들에 적용됩니다.
 
 ## GitHub 동기화
 

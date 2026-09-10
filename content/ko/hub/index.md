@@ -20,7 +20,7 @@ category: Hub
 현재 제공되는 기능은 다음과 같습니다.
 
 - GitHub, Slack, Discord의 활동을 계기로 자동 시작되는 에이전트
-- 저장소에 보관되고 푸시할 때 배포되는 구성
+- 저장소에 보관하고 CLI에서 배포할 수 있는 트리거
 - 도착한 모든 요청과 일치 결과, 실행 내역을 담은 기록
 - 팀이 모든 정보를 한곳에서 볼 수 있는 공간
 
@@ -28,16 +28,15 @@ category: Hub
 
 ## 저장소에 포함되는 항목
 
-안내형 설정은 환경과 에이전트를 정의하는 프로젝트 리소스 파일과 안전한 시작용 워크플로 하나를 만듭니다.
+`paseo hub init`은 자체 완결형 시작용 트리거 하나를 만듭니다.
 
 ```text
 .paseo/
-├── hub.yml
-└── workflows/
+└── triggers/
     └── slack-help.yml
 ```
 
-안내형 설정이 번들을 배포하고, 봇을 멘션하면 사용자의 머신에서 에이전트가 시작됩니다. [빠른 시작](/docs/hub/quickstart)은 전체 과정을 안내하고, [생성된 시작용 번들](/docs/hub/configuration#generated-starter-bundle)은 작성된 내용을 보여주며, [워크플로](/docs/hub/workflows)는 라우팅, 프롬프트 부분, 공급자별 응답을 설명합니다.
+파일에는 앱 연결, 허용된 사용자, 데몬, 작업 디렉터리, 에이전트 런타임, 프롬프트, 출력이 지정됩니다. 설정은 파일을 검증한 뒤 배포할지 묻습니다. 봇을 멘션하면 사용자의 머신에서 에이전트가 시작됩니다. [빠른 시작](/docs/hub/quickstart)은 전체 과정을 안내하고, [생성된 시작용 트리거](/docs/hub/configuration#generated-starter-trigger)는 설정이 작성한 내용을 보여줍니다.
 
 ## 읽는 순서
 
@@ -56,4 +55,4 @@ category: Hub
 
 먼저 임베디드 데이터베이스를 사용해 로컬 머신에서 시작하고, 필요할 때만 PostgreSQL이나 공개 배포를 추가하세요. [자체 호스팅](/docs/hub/self-hosting)에서 각 단계를 설명합니다.
 
-[호스팅 Hub](/docs/hub/hosted)도 같은 프로젝트, 워크플로, 데몬, 활동 모델을 사용합니다. [로그인하여 무료 체험을 시작하세요](https://hub.paseo.sh).
+[호스팅 Hub](/docs/hub/hosted)도 같은 트리거, 데몬, 활동 모델을 사용합니다. [로그인하여 무료 체험을 시작하세요](https://hub.paseo.sh).

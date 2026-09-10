@@ -1,6 +1,6 @@
 ---
 title: Hub public API
-description: Use organization credentials to list projects, validate or install configuration, dispatch runs, and enroll daemons.
+description: Use organization credentials to install triggers, manage legacy configuration, dispatch runs, and enroll daemons.
 nav: Public API
 order: 79
 category: Hub
@@ -8,9 +8,7 @@ category: Hub
 
 # 허브 공개 API
 
-Hub 공개 API를 사용하면 프로젝트와 데몬을 하나로 자동화할 수 있습니다.
-조직. 예를 들어 아래 `PASEO_HUB_URL`에 허브 원본을 설정합니다.
-`https://hub.example.com`.
+Hub 공개 API를 사용하면 한 조직의 트리거, 프로젝트, 데몬을 자동으로 조작할 수 있습니다. 아래 예에서는 Hub 원본을 `PASEO_HUB_URL`에 설정합니다(예: `https://hub.example.com`).
 
 ## API 참조
 
@@ -37,13 +35,13 @@ API 키는 조직 범위입니다. 키를 소유한 조직이 결정합니다.
 
 각 키에는 하나 이상의 선택 가능한 범위가 있습니다.
 
-| 범위 | 운영 |
-| ------------------------ | -------------------------------------- |
-| `projects:read` | 조직의 활성 프로젝트를 나열합니다.           |
-| `configuration:validate` | 허브 상태를 변경하지 않고 구성을 검증합니다.  |
-| `configuration:install` | 프로젝트 구성을 교체하고 활성화합니다.     |
+| 범위 | 작업 |
+| ------------------------ | -------------------------------------------------------------------- |
+| `projects:read` | 조직의 활성 프로젝트를 나열합니다. |
+| `configuration:validate` | Hub 상태를 변경하지 않고 트리거 또는 레거시 구성을 검증합니다. |
+| `configuration:install` | 트리거를 설치하거나 레거시 프로젝트의 구성을 교체합니다. |
 | `runs:dispatch` | 프로젝트에 대해 구성된 수동 트리거를 전달합니다. |
-| `daemons:enroll` | 단기 데몬 등록 토큰을 발행합니다.        |
+| `daemons:enroll` | 단기 데몬 등록 토큰을 발행합니다. |
 
 API 키는 대시보드 액세스 권한을 부여하지 않습니다. 연결을 관리할 수 없습니다.
 프로젝트 또는 조직 구성원.
@@ -65,6 +63,34 @@ API 오류에는 RFC 9457 문제 세부 정보가 사용됩니다. 누락되거�
 
 엔드포인트에 필요한 범위가 없는 유효한 키는 동일한 형식으로 `403`을 반환합니다.
 
+## 트리거 검증 및 설치
+
+`paseo hub deploy --dry-run`은 `POST /api/v1/triggers/validate`를 통해 각 `.paseo/triggers/*.yml` 파일을 검증합니다. `paseo hub deploy`는 모든 파일을 먼저 검증한 뒤 `POST /api/v1/triggers/install`을 통해 각각 설치합니다.
+
+두 엔드포인트 모두 자체 완결형 문서 하나를 받습니다.
+
+```json
+{
+  "yaml": "name: manual-task\nenabled: true\non:\n  manual.run: {}\nrun:\n  target: { daemon: my-macbook, cwd: /workspace }\n  agent: { provider: codex, model: gpt-5, mode: full-access }\n  prompt: Complete the task and call hub.finish_execution.\n  max_runtime: 1h\n  idle_timeout: 5m\n"
+}
+```
+
+조직에서 사용할 수 있는 데몬 슬러그와 에이전트 런타임을 사용하세요. 검증에는 `configuration:validate`가 필요하며, 성공하면 `{ "name": "manual-task", "valid": true }`와 함께 `200`을 반환합니다.
+
+설치에는 `configuration:install`이 필요합니다. YAML의 `name`을 기준으로 조직의 트리거를 생성하거나 업데이트하며 `201`을 반환합니다.
+
+```json
+{
+  "triggerId": "00000000-0000-4000-8000-000000000001",
+  "name": "manual-task",
+  "revisionId": "00000000-0000-4000-8000-000000000002",
+  "version": 1,
+  "active": true
+}
+```
+
+잘못된 YAML 또는 알 수 없는 조직 리소스는 필드 문제와 함께 `422`를 반환합니다. 각 설치는 별도 요청이며, 뒤의 설치가 실패해도 앞서 성공한 설치는 취소되지 않습니다. [CLI에서 배포](/docs/hub/configuration#deploy-from-the-cli)를 참조하세요.
+
 ## 프로젝트 목록
 
 `GET /api/v1/projects`은 보유자 자격 증명 조직의 활성 프로젝트를 반환합니다. `paseo hub projects`은 프로젝트를 테이블로 렌더링합니다. `--json`을 사용하면 `{ "origin": "...", "projects": [...] }`을 반환하므로 빈 결과라도 해결된 허브를 기록합니다.
@@ -81,7 +107,7 @@ API 오류에는 RFC 9457 문제 세부 정보가 사용됩니다. 누락되거�
 }
 ```
 
-## 구성 유효성 검사
+## 레거시 구성 검증
 
 `POST /api/v1/configurations/validate`은 동일한 `projectSlug`을 허용하고 구성 설치로 `files` 번들을 완료합니다. 개정판을 기록하거나 활성 구성을 변경하지 않고 동일한 컴파일 및 리소스 확인을 수행합니다.
 
@@ -94,9 +120,9 @@ API 오류에는 RFC 9457 문제 세부 정보가 사용됩니다. 누락되거�
 }
 ```
 
-`paseo hub deploy --dry-run`은 배포에서 보낼 것과 동일한 로컬로 확인된 페이로드를 사용하여 이 끝점을 호출합니다.
+`paseo hub deploy --project <slug> --dry-run`은 배포에서 보낼 것과 동일한 로컬 확인 페이로드를 사용하여 이 엔드포인트를 호출합니다.
 
-## 구성 설치
+## 레거시 구성 설치
 
 `configuration:install`은 제공된 정식 번들의 유효성을 검사하고, 정확하게 작성된 파일을 저장하고, 새 개정판을 활성화합니다.
 
@@ -157,7 +183,7 @@ curl --fail-with-body -sS -X POST "$PASEO_HUB_URL/api/v1/configurations/install"
   --data @configuration-install.json
 ```
 
-`paseo hub deploy -p <project>`은 검색된 로컬 번들을 사용하여 이 엔드포인트를 호출합니다. 이 명령은 플래그와 환경 자격 증명이 없는 경우 정확한 출처에 저장된 로그인을 사용합니다. [CLI에서 배포](/docs/hub/configuration#deploy-from-the-cli)를 참조하세요.
+`paseo hub deploy -p <project>`은 검색된 로컬 번들과 함께 이 레거시 엔드포인트를 선택합니다. 이 명령은 플래그와 환경 자격 증명이 없는 경우 정확한 출처에 저장된 로그인을 사용합니다. [CLI에서 배포](/docs/hub/configuration#deploy-from-the-cli)를 참조하세요.
 
 ## 수동 실행 파견
 

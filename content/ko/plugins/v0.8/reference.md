@@ -189,7 +189,7 @@ Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용�
 
 ## 진입점과 정리
 
-각 진입점은 기여 함수 하나를 기본으로 내보내고 정리 함수를 반환합니다. 클라이언트 진입점은 `PluginClientContext`를, 서버 진입점은 `PluginServerContext`를 전달받습니다. 모든 클라이언트 `add*`는 여러 번 호출해도 같은 결과를 내는 제거 함수를 반환합니다. 진입점의 정리 함수는 Paseo가 남아 있는 등록을 제거하기 전에 실행됩니다.
+각 진입점은 기여 함수 하나를 기본으로 내보내고 정리 함수를 반환합니다. 클라이언트 진입점은 `PluginClientContext`를, 서버 진입점은 `PluginServerContext`를 전달받습니다. 클라이언트 등록 메서드는 멱등성을 갖는 제거 함수를 반환하지만, 헤더 버튼과 작성기 필은 `{ update, remove }` 핸들을 반환합니다. 진입점의 정리 함수는 Paseo가 남아 있는 등록을 제거하기 전에 실행됩니다.
 
 ```ts
 import type { PluginClientContext } from "@getpaseo/plugin/client";
@@ -1167,73 +1167,136 @@ client.addSlashCommand({
 
 우선순위는 기본 클라이언트 명령, 플러그인 명령, 제공자 명령 순입니다. 이름이 충돌하면 우선순위가 낮은 명령을 제외합니다. 기본 별칭도 이름을 예약합니다. 플러그인 간에 충돌하면 일정한 카탈로그 순서에서 먼저 나오는 플러그인이 우선합니다. 작성기에 첨부 파일이 있으면 명령이 실행되지 않습니다.
 
-## 작성기 필
+## 헤더 버튼
 
-클라이언트 진입점은 필의 생성과 제거를 관리합니다. 이 로직은 `index.client.tsx`에 직접 두거나 `client/`에서 가져오는 함수 안에 둘 수 있습니다.
+작업, 메뉴, 사용자 지정 아이콘과 콘텐츠, 헤더와 작성기의 표시 여부 업데이트는 [버튼 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/buttons)에서 확인하세요. 이 예제는 헤더 버튼 하나를 여러 모드 사이에서 전환하며 추가 작업에는 이름이 지정된 Tools 메뉴를 사용합니다.
+
+`client.addHeaderButton({ id, workspaceId, button })`은 작업공간 헤더 오른쪽에서 기본 제공 작업 앞에 버튼 하나를 추가합니다. `update(patch)`와 `remove()`가 있는 등록을 반환합니다.
 
 ```tsx
-import { Icon } from "@getpaseo/plugin/client/react-native";
-import {
-  type PluginClientContext,
-  type PluginComposerPillProps,
-  useAgent,
-} from "@getpaseo/plugin/client";
-import { Text } from "react-native";
+const review = client.addHeaderButton({
+  id: "review",
+  workspaceId,
+  button: {
+    title: "Open review",
+    icon: "Scan",
+    label: "Review",
+    behavior: {
+      kind: "action",
+      onPress() {
+        client.openPanel("review", { workspaceId });
+      },
+    },
+  },
+});
 
-function ReviewPill({ theme, agentId }: PluginComposerPillProps) {
-  const agent = useAgent(agentId, ({ title }) => ({ title }));
-  return (
-    <>
-      <Icon name="Scan" size={14} color={theme.colors.foregroundMuted} />
-      <Text numberOfLines={1} style={{ color: theme.colors.foregroundMuted, flexShrink: 1 }}>
-        {agent?.title ?? "Review"}
-      </Text>
-    </>
-  );
-}
-
-export default function contribute(client: PluginClientContext) {
-  const pills = new Map<string, () => void>();
-  const unsubscribe = client.paseo.agents.subscribe((update) => {
-    if (update.kind !== "upsert" || !update.agent.workspaceId) return;
-    const { id: agentId, workspaceId } = update.agent;
-    pills.get(agentId)?.();
-    pills.set(
-      agentId,
-      client.addComposerPill({
-        id: "review",
-        title: "Open review",
-        workspaceId,
-        agentId,
-        Component: ReviewPill,
-        async onPress() {
-          await client.rpc(refreshReview, { agentId });
-          client.openPanel("review", { workspaceId, agentId });
-        },
-      }),
-    );
-  });
-  return () => {
-    unsubscribe();
-    for (const remove of pills.values()) remove();
-  };
-}
+review.update({ label: "Review · 3" });
+review.update({ visible: false });
+review.update({ visible: true });
+review.remove();
 ```
 
-`addComposerPill` 필드:
+아이콘만 있는 헤더 버튼에는 `label`을 생략하세요. 넓은 레이아웃에서는 메뉴와 팝오버에 갈매기표가 표시됩니다. 컴팩트 헤더 버튼은 레이블이나 갈매기표 없이 아이콘을 사용합니다. Paseo는 공간을 초과한 기여를 공유 오버플로 메뉴로 옮깁니다. 배치와 오버플로는 호스트가 결정합니다.
+
+## 작성기 필
+
+`client.addComposerPill({ id, workspaceId, agentId, button })`은 같은 [버튼 설명자](#button-descriptor)를 사용하며 같은 등록을 반환합니다. 특정 에이전트의 작성기 트랙에서 Tasks 및 Subagents 옆을 대상으로 합니다. 작성기 필은 항상 아이콘과 `label`을 표시하며, `label`을 생략하면 `title`을 표시합니다. 메뉴와 팝오버를 포함해 갈매기표는 표시하지 않습니다.
+
+```tsx
+const pill = client.addComposerPill({
+  id: "review",
+  workspaceId,
+  agentId,
+  button: {
+    title: "Open review",
+    icon: "Scan",
+    label: "Review",
+    behavior: {
+      kind: "action",
+      onPress() {
+        client.openPanel("review", { workspaceId, agentId });
+      },
+    },
+  },
+});
+```
+
+## 버튼 설명자
+
+다음 계약은 `@getpaseo/plugin/client`에서 내보냅니다.
 
 | 필드 | 필수 | 의미 |
-| ------------- | -------- | ---------------------------------------------------------- |
-| `id` | 예 | 대상 에이전트 내의 플러그인 로컬 ID. |
-| `title` | 예 | 접근성을 위한 버튼 레이블. |
-| `workspaceId` | 예 | 필이 속하는 작성기 트랙의 작업공간. |
-| `agentId` | 예 | 필이 속하는 작성기 트랙의 에이전트. |
-| `Component` | 예 | 필의 아이콘과 텍스트를 렌더링하는 React Native 구성 요소. |
-| `onPress` | 예 | 클라이언트 측 콜백. |
+| ---------- | -------- | ----------------------------------------------------------------------- |
+| `title` | 예 | 비어 있지 않은 접근성 레이블, 툴팁, 시트 제목입니다. |
+| `icon` | 예 | Lucide 이름 또는 `ComponentType<PluginButtonIconProps>`입니다. |
+| `label` | 아니요 | 비어 있지 않은 표시 텍스트입니다. 배치의 기본값을 사용하려면 생략하세요. |
+| `visible` | 아니요 | 기본값은 `true`입니다. false이면 트리거와 레이아웃 공간을 제거합니다. |
+| `disabled` | 아니요 | 기본값은 `false`입니다. 버튼을 표시하되 상호 작용을 막습니다. |
+| `behavior` | 예 | 아래 세 가지 형태 중 하나입니다. |
 
-클라이언트 진입점은 연결된 각 앱에서 플러그인 설치본마다 한 번 실행됩니다. 이 컨텍스트는 `paseo`, 타입이 지정된 `rpc`, `openSurface`, 컨텍스트를 명시하는 `openPanel`, 모든 클라이언트 등록 기능을 제공합니다. `addComposerPill`은 여러 번 호출해도 같은 결과를 내는 제거 함수를 반환합니다. Paseo는 플러그인 설치본이나 호스트 연결이 정리될 때 남아 있는 필도 모두 제거합니다.
+```tsx
+type PluginButtonBehavior =
+  | { kind: "action"; onPress(): void | Promise<void> }
+  | { kind: "menu"; items: readonly PluginButtonMenuEntry[] }
+  | { kind: "popover"; Content: React.ComponentType<PluginButtonContentProps> };
+```
 
-Paseo는 누를 수 있는 영역, 필의 공통 외형, 대기 상태, 오류 보고, 트랙 바 배치를 관리합니다. 구성 요소는 `theme`, `host`, `layout`, `workspaceId`, `agentId`를 전달받습니다. 현재 값은 `useWorkspace`와 `useAgent`로 읽으세요. 플러그인은 필의 표시 시점, 아이콘과 텍스트, 콜백을 관리합니다. `openPanel(id, { workspaceId, agentId? })`는 같은 플러그인이 등록한 패널을 열거나 해당 패널에 포커스를 맞춥니다.
+작업은 클라이언트에서 실행됩니다. Paseo는 프로미스가 완료될 때까지 버튼을 사용 중으로 표시하고 반복해서 누르지 못하게 하며 실패를 토스트로 보여줍니다. 실패한 작업은 다시 시도할 수 있습니다. 일반 작업에는 클라이언트의 `paseo`를, 플러그인 전용 백엔드 작업에는 `rpc`를 사용하세요.
+
+메뉴와 팝오버는 넓은 레이아웃에서 고정된 표면으로, 컴팩트 레이아웃에서 하단 시트로 열립니다. 트리거 전체가 표면을 열며 분할 버튼 동작은 없습니다.
+
+### 메뉴 항목
+
+메뉴에는 항목과 구분선이 들어갑니다. ID는 소문자, 숫자, 하이픈을 사용하고 문자로 시작하며 해당 메뉴 안에서 고유해야 합니다.
+
+```tsx
+const behavior: PluginButtonBehavior = {
+  kind: "menu",
+  items: [
+    {
+      kind: "item",
+      id: "refresh",
+      title: "Refresh review",
+      icon: "RefreshCw",
+      behavior: { kind: "action", onPress: refreshReview },
+    },
+    { kind: "separator", id: "details-divider" },
+    {
+      kind: "item",
+      id: "details",
+      title: "Review details",
+      behavior: { kind: "popover", Content: ReviewDetails },
+    },
+  ],
+};
+```
+
+항목에는 `kind: "item"`, `id`, `title`, `behavior`가 필요합니다. 선택적 `icon`, `visible`, `disabled`는 버튼 규칙을 따릅니다. 구분선에는 `kind: "separator"`와 `id`만 포함됩니다. Paseo는 숨겨진 항목을 필터링한 뒤 앞쪽, 뒤쪽, 연속된 구분선을 제거합니다.
+
+항목은 세 가지 동작을 모두 사용할 수 있습니다. 중첩 메뉴는 넓은 레이아웃에서 플라이아웃으로 열리고 컴팩트 시트에서는 같은 시트 안에서 뒤로 탐색할 수 있는 페이지로 열립니다. 사용자 지정 콘텐츠 페이지는 선택할 때만 열리며 마우스를 올려서는 열리지 않습니다. 작업을 선택하면 메뉴가 닫히고, 다른 페이지를 열면 메뉴가 열린 상태로 유지됩니다.
+
+### 사용자 지정 아이콘과 팝오버 콘텐츠
+
+`PluginButtonIconProps`에는 `theme`, `host`, `layout`, `size`, `color`, 대상 컨텍스트가 포함됩니다. 제공된 크기 안에서 React Native 아이콘이나 표시기를 렌더링하세요. Paseo는 아이콘 슬롯의 경계를 제한하고 모든 포인터 상호 작용을 소유합니다. 아이콘 구성 요소는 플러그인 훅을 사용할 수 있습니다.
+
+`PluginButtonContentProps`에는 `theme`, `host`, `layout`, 대상 컨텍스트, `close()`가 포함됩니다. 본문만 렌더링하세요. Paseo는 고정 위치, 스크롤, 패딩, 시트 표시를 소유합니다. 콘텐츠는 `usePaseo`, `useRpc`, `useWorkspace`, `useAgent`와 설치본의 React Query 캐시를 사용할 수 있습니다.
+
+대상 컨텍스트는 다음 중 하나입니다.
+
+```ts
+{ context: "workspace", workspaceId: string } // Header button
+{ context: "agent", workspaceId: string, agentId: string } // Composer pill
+```
+
+### 업데이트와 수명 주기
+
+각 등록은 하나의 플러그인 설치본, 배치, 작업공간, 필의 경우 에이전트에 속합니다. `id`는 해당 대상 안에서 플러그인 로컬 값이며 메뉴 ID와 같은 형식을 사용합니다. 같은 ID를 서로 다른 대상이나 배치에서 사용할 수 있습니다. 같은 대상에 중복 등록하면 오류가 발생합니다.
+
+`update(patch: Partial<PluginButton>)`는 설명자를 제자리에서 변경해 ID와 순서를 유지합니다. `behavior`를 변경할 때는 완전한 새 동작 객체를 제공하세요. 유효하지 않은 업데이트는 기존 버튼을 변경하지 않고 오류를 발생시킵니다. 자체 모델 또는 클라이언트 API를 구독하고 `update`를 호출해 반응형 변경을 게시하세요. 원래 설명자를 변경해도 UI는 업데이트되지 않습니다.
+
+버튼을 숨기거나 비활성화하면 표면이 닫힙니다. 동작을 업데이트해도 표면이 닫힙니다. 숨겨도 등록은 유지되므로 다시 표시하면 원래 위치로 돌아갑니다. 이미 진행 중인 작업은 취소하지 않습니다.
+
+`remove()`는 멱등성을 갖습니다. 제거 후 업데이트는 아무 동작도 하지 않습니다. Paseo는 플러그인 설치본이나 호스트 연결이 정리될 때 남아 있는 버튼을 제거합니다. 구독, 타이머, 기타 리소스의 정리 함수는 클라이언트 진입점에서 반환하세요.
 
 ## Paseo SDK 사용
 
