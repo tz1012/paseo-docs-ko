@@ -37,7 +37,7 @@ steps:
           ${{ paseo.prompt }}
 ```
 
-에이전트는 선언된 저장소 및 권한 내에서 `git` 및 `gh`을 사용할 수 있습니다. Hub는 단계가 시작될 때 토큰을 생성하고 실행이 끝나면 취소합니다.
+에이전트는 선언된 저장소 및 권한 내에서 `git` 및 `gh`을 사용할 수 있습니다. 요청이 에이전트를 이어서 사용할 때의 토큰 수명 주기는 [에이전트 연속 실행](/docs/hub/configuration/hub-yml#agent-continuation)을 참조하세요.
 
 ## 필드
 
@@ -73,4 +73,4 @@ env:
   SOME_TOKEN: "${{ paseo.connections.some-connection.token }}"
 ```
 
-Hub는 단계의 값을 확인하고 이를 유지하지 않습니다. 공급자 및 호스트 경계는 [허브 보안](/docs/hub/security)을 참조하세요.
+Hub는 에이전트의 환경을 준비할 때 값을 확인합니다. 공급자 및 호스트 경계는 [허브 보안](/docs/hub/security)을 참조하세요.
