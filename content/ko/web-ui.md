@@ -20,16 +20,17 @@ Paseo의 데몬은 이미 API에 사용하는 것과 동일한 주소에서 브�
 
 ## 활성화
 
-번들 웹 UI는 기본적으로 꺼져 있습니다. 데몬을 시작할 때 켜십시오.
+번들 웹 UI는 기본적으로 꺼져 있습니다. 설정을 저장한 다음 데몬을 시작하세요.
 
 ```bash
-paseo daemon start --web-ui
+paseo daemon config set features.webUi.enabled true
+paseo daemon start
 ```
 
-또는 환경 변수를 사용하여:
+또는 환경 변수를 사용해 포그라운드 배포를 실행하세요.
 
 ```bash
-PASEO_WEB_UI_ENABLED=true paseo daemon start
+PASEO_WEB_UI_ENABLED=true paseo daemon run
 ```
 
 또는 `config.json`에 유지하여 다시 시작해도 유지됩니다.
@@ -73,7 +74,8 @@ http://localhost:6767/
 기본적으로 데몬은 동일한 시스템에서만 연결할 수 있는 `127.0.0.1:6767`을 수신합니다. 다른 장치에서 연결하려면 네트워크 인터페이스에 바인딩하세요.
 
 ```bash
-paseo daemon start --web-ui --listen 0.0.0.0:6767
+paseo daemon config set daemon.listen 0.0.0.0:6767
+paseo daemon start
 ```
 
 > **수신 주소에 도달할 수 있는 사람은 누구나 에이전트를 사용할 수 있습니다.** localhost를 넘어 바인딩하기 전에 비밀번호를 설정하고 호스트 허용 목록을 검토하세요. 릴레이 페어링 경로는 데몬을 로컬 호스트에 바인딩하여 이를 완전히 방지합니다. [보안](/docs/security)을 참조하세요.
@@ -82,19 +84,19 @@ paseo daemon start --web-ui --listen 0.0.0.0:6767
 
 1. 인증된 클라이언트만 연결할 수 있도록 **비밀번호를 설정**하세요.
 
-```bash
-   PASEO_PASSWORD=my-secret paseo daemon start --web-ui --listen 0.0.0.0:6767
+   ```bash
+   paseo daemon set-password
    ```
 
 영구 설정은 [비밀번호 인증](/docs/configuration#password-authentication)을 참조하세요. 비밀번호 인증은 액세스를 제어합니다. 트래픽을 암호화하지 않으므로 신뢰할 수 없는 네트워크의 앞에(아래) TLS를 배치합니다.
 
 2. **호스트 이름을 허용**하여 데몬의 DNS 리바인딩 보호가 도메인에 대한 요청을 수락하도록 합니다.
 
-```bash
-   paseo daemon start --web-ui --listen 0.0.0.0:6767 --hostnames ".example.com"
+   ```bash
+   paseo daemon config set daemon.hostnames '[".example.com"]'
    ```
 
-호스트 허용 목록 작동 방식은 [DNS 리바인딩 보호](/docs/security#dns-rebound-protection)를 참조하세요.
+호스트 허용 목록 작동 방식은 [DNS 리바인딩 보호](/docs/security#dns-rebinding-protection)를 참조하세요.
 
 > **웹 앱은 인증 전에 로드되도록 설계되었습니다.** 로그인 화면이 렌더링될 수 있도록 정적 UI 파일은 데몬 비밀번호 없이 제공됩니다. API 및 WebSocket에는 에이전트 데이터가 반환되거나 명령이 실행되기 전에 여전히 비밀번호가 필요합니다. "로드된 페이지"를 "데몬이 열려 있음"으로 처리하지 말고 네트워크에 바인딩하기 전에 비밀번호를 설정하여 페이지 뒤의 데이터를 보호하세요.
 
@@ -179,7 +181,7 @@ paseo.example.com {
 `PASEO_TRUSTED_PROXIES`은 동일한 쉼표로 구분된 값을 허용합니다.
 
 ```bash
-PASEO_TRUSTED_PROXIES=loopback,172.16.0.0/12 paseo daemon start --web-ui
+PASEO_TRUSTED_PROXIES=loopback,172.16.0.0/12 PASEO_WEB_UI_ENABLED=true paseo daemon run
 ```
 
 신뢰할 수 있는 최종 프록시가 클라이언트 제공 `X-Forwarded-*` 헤더를 덮어쓰는 경우에만 `trustedProxies: true`을 사용하세요. 그렇지 않으면 클라이언트가 전달된 헤더 값을 스푸핑할 수 있습니다.
@@ -194,7 +196,7 @@ HTTPS를 통해 UI를 제공하지만 앱이 `ws://`을 통해 연결을 시도�
 
 - **Tailscale Serve**는 이를 tailnet 내부에 유지하고 공개적으로 노출되지 않으며 TLS가 자동으로 처리됩니다.
 
-```bash
+  ```bash
   tailscale serve https / http://127.0.0.1:6767
   ```
 
@@ -202,7 +204,7 @@ HTTPS를 통해 UI를 제공하지만 앱이 `ws://`을 통해 연결을 시도�
 
 - **Cloudflare Tunnel**은 TLS 및 WebSocket 지원을 통해 공개 호스트 이름에 이를 노출합니다.
 
-```bash
+  ```bash
   cloudflared tunnel --url http://localhost:6767
   ```
 
@@ -225,7 +227,7 @@ Cloudflare는 TLS를 종료하고 `X-Forwarded-Proto: https`을 설정하므로 
 - **페이지가 로드되지만 연결되지 않습니다.** 프록시가 WebSocket 업그레이드를 전달하지 않거나 `Host` 헤더를 제거합니다. 프록시 구성에서 업그레이드 헤더를 확인하세요.
 - **연결된 후 출력이 멈춥니다.** 응답 버퍼링이 켜져 있거나 읽기 시간 초과가 너무 짧습니다. 버퍼링을 비활성화하고 시간 제한을 늘립니다.
 - **"혼합 콘텐츠" / HTTPS를 통한 연결이 차단되었습니다.** 앱이 `ws://`으로 대체되었습니다. 프록시가 `X-Forwarded-Proto: https`을 보내지 않거나 데몬이 프록시 주소를 신뢰하지 않습니다. 프록시가 루프백이 아닌 경우 헤더를 전달하고 `daemon.trustedProxies`을 구성합니다.
-- **`403 Invalid Host header`.** 귀하의 도메인이 허용 목록에 없습니다. `--hostnames` 또는 `daemon.hostnames`을 사용하여 추가하세요. [DNS 리바인딩 보호](/docs/security#dns-rebound-protection)를 참조하세요.
+- **`403 Invalid Host header`.** 귀하의 도메인이 허용 목록에 없습니다. `--hostnames` 또는 `daemon.hostnames`을 사용하여 추가하세요. [DNS 리바인딩 보호](/docs/security#dns-rebinding-protection)를 참조하세요.
 - **큰 메시지 또는 업로드가 실패합니다.** 프록시의 최대 본문 크기(Nginx의 `client_max_body_size`)를 늘리세요.
 
 ## 참고하세요

@@ -43,7 +43,7 @@ paseo --host ssh://user@host:2222 ls -a
 paseo --host 'ssh://user@host?daemonPort=7777' ls -a
 ```
 
-`--host`는 명령 앞에 두세요. `paseo daemon status`는 로컬 데몬만 확인하므로, 원격 연결을 확인하려면 `paseo --host ssh://user@host ls`를 사용하세요. `paseo --host ssh://user@host run --cwd /path/on/remote ...`에는 원격 호스트에 존재하는 작업 디렉터리가 필요합니다.
+`--host`는 명령 앞에 두세요. `paseo daemon status`는 기본 로컬 홈을 관찰합니다. 원격 데몬을 조회하려면 `paseo --host ssh://user@host daemon status`를 사용하세요. `paseo --host ssh://user@host run --cwd /path/on/remote ...`에는 원격 호스트에 존재하는 작업 디렉터리가 필요합니다.
 
 Paseo Desktop에서는 **설정 → 호스트 추가 → 원격 SSH**를 열고 같은 `ssh://` 대상을 입력합니다.
 

@@ -271,18 +271,55 @@ paseo agent detach <id>        # Make a subagent top-level
 
 ## 데몬 관리
 
+인스턴스를 한 번 정의한 다음 저장된 구성을 시작하세요.
+
 ```bash
-paseo daemon start             # Start the daemon
-paseo daemon start --web-ui    # Start and serve the bundled web UI
-paseo daemon status            # Check status
-paseo reload                    # Reload config.json (top-level alias)
-paseo daemon reload             # Reload config.json
-paseo daemon stop              # Stop the daemon
+paseo daemon config set daemon.listen 127.0.0.1:6799 --home ~/paseo-test
+paseo daemon config set daemon.relay.enabled false --home ~/paseo-test
+paseo daemon start --home ~/paseo-test
+paseo project ls --home ~/paseo-test
+paseo daemon restart --home ~/paseo-test
+paseo daemon stop --home ~/paseo-test
 ```
 
-다시 로드는 파일 전체를 검증하고, 런타임에 안전한 변경을 적용한 다음 `appliedPaths`, `restartRequiredPaths`, `overrideControlledPaths`를 보고합니다. 사람이 읽는 출력에는 변경된 설정에 재시작이 필요할 때만 `paseo daemon restart`가 표시됩니다. 구조화된 결과에는 `--json` 또는 `--format yaml`을 사용하세요. 원격 데몬의 구성 파일을 다시 로드하려면 `paseo --host <target> reload`를 실행하세요. 다시 로드를 지원하지 않는 이전 호스트는 호스트 업데이트 오류를 반환합니다.
+`start`는 백그라운드에서 실행되며 실제 수신 주소와 슈퍼바이저 PID를 보고합니다. 홈 선택과 `--timeout <seconds>`(기본값 600)만 허용합니다. 대기 시간이 초과되어도 슈퍼바이저는 계속 실행됩니다. 출력된 상태, 로그, 중지 안내를 사용하세요. 준비되기 전에 워커가 종료되면 시작에 실패합니다.
 
-여러 개의 격리된 데몬 인스턴스를 실행하려면 `PASEO_HOME`을 사용하세요.
+`restart`는 기존 슈퍼바이저에 대체 워커를 요청합니다. 파일을 다시 읽고 슈퍼바이저의 원래 환경과 인수를 유지합니다. 성공은 서로 다른 워커가 준비되었음을 확인하며, 홈 대상의 주소가 바뀌었다면 새 주소를 따릅니다. 중지된 데몬을 시작하거나 슈퍼바이저 바이너리를 새로 고치지는 않습니다. 시간 초과는 요청의 승인 여부를 보고하지만 재연결 실패 이유를 입증하지는 않습니다.
+
+`stop --home`은 해당 로컬 슈퍼바이저가 종료될 때까지 기다립니다. POSIX에서는 TCP 엔드포인트에 연결하지 않고 슈퍼바이저에 신호를 보냅니다. Windows에서는 준비된 데몬의 종료 RPC를 사용하며, 바인딩되지 않은 인스턴스에는 명시적인 `--force`가 필요합니다. `--force`를 사용하면 정상 종료 시간 초과(기본값 15초) 뒤에 프로세스 트리를 강제로 정리할 수 있습니다. `stop --host`는 **종료 요청됨**만 보고하며 원격 프로세스 종료를 확인하지 않습니다. 캡처한 슈퍼바이저가 종료된 뒤 서비스 관리자가 다른 인스턴스를 시작할 수 있습니다.
+
+`status`는 로컬 슈퍼바이저 상태, 게시된 엔드포인트, 구성된 주소, RPC 도달 가능성을 구분합니다. 중지된 홈은 구성된 주소에서 탐색하지 않습니다. 바인딩되지 않은 실행 중 슈퍼바이저는 **준비되지 않음** 상태입니다. 인증된 로컬 연결이 열린 상태에서 상태 세부 정보 시간이 초과되면 결과는 `reachable`로 유지되며 세부 정보를 사용할 수 없다는 설명이 붙습니다. 워커와 공급자 필드는 생략됩니다. 명시적인 `--host` 쿼리는 상태 요청에 실패하면 여전히 실패합니다.
+
+`reload`는 파일을 검증하고 런타임에 안전한 변경을 적용한 다음 `appliedPaths`, `restartRequiredPaths`, `overrideControlledPaths`를 보고합니다. 암시적으로 재시작하지 않습니다. 구조화된 결과에는 `--json` 또는 `--format yaml`을 사용하세요. 기능이 없는 이전 호스트는 업데이트가 필요하다고 보고합니다.
+
+루트 별칭 `start`, `status`, `restart`, `reload`, `pair`는 `daemon`과 같은 명령을 사용합니다. 루트 `run`과 `stop`은 에이전트 작업으로 유지됩니다.
+
+### 포그라운드 배포 및 마이그레이션
+
+포그라운드 배포 명령에는 환경 재정의를 사용하세요.
+
+```bash
+PASEO_LISTEN=127.0.0.1:6799 PASEO_RELAY_ENABLED=false paseo daemon run --home ~/paseo-test
+```
+
+슈퍼바이저가 종료되거나 사용자가 취소할 때까지 연결된 상태를 유지하며 준비 시간 초과는 없습니다. 워커를 재시작해도 이러한 실행 입력을 유지합니다. 입력을 변경하려면 배포를 중지하고 다시 시작하세요. 홈에 이미 실행 중인 슈퍼바이저가 있으면 `run`은 포그라운드 프로세스를 소유하거나 시작하지 않고 `already_running`을 반환합니다.
+
+관리형 `start`는 `PORT`, `PASEO_LISTEN`, 릴레이, 음성, 웹 UI 설정을 비롯해 상속된 데몬 설정 재정의를 무시합니다. 공급자 자격 증명과 실행 파일/런타임 제어는 유지합니다. `start --foreground`는 제거되었습니다. `daemon run`을 사용하세요. `--port`, `--no-relay`, `--web-ui` 같은 이전 start/restart 구성 플래그는 부작용이 발생하기 전에 실패하고 그에 해당하는 `config set` 마이그레이션을 안내합니다. [구성 편집](/docs/configuration#apply-changes)을 참조하세요.
+
+### 데몬 하나 선택하기
+
+데몬에 연결되는 모든 CLI 명령은 명령 앞이나 뒤에 전역 `--home` 또는 `--host`를 허용합니다. 홈은 로컬 슈퍼바이저가 게시한 엔드포인트를 선택하고, 호스트는 명시적인 엔드포인트를 선택합니다. 구성된 주소나 기본 포트로 대체하지 않습니다.
+
+| 선택자                                      | 결과                                                        |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| `--home`                                    | 두 환경 선택자를 모두 재정의하는 해당 로컬 홈               |
+| `--host`                                    | 두 환경 선택자를 모두 재정의하는 해당 엔드포인트             |
+| 두 플래그 모두 또는 충돌하는 중복 플래그    | `TARGET_AMBIGUOUS`                                          |
+| `PASEO_HOME` 또는 `PASEO_HOST` 중 하나만    | 해당 대상                                                    |
+| 플래그 없이 두 환경 선택자 모두             | `TARGET_AMBIGUOUS`                                          |
+| 둘 다 없음                                  | 기본 로컬 홈 `~/.paseo`                                     |
+
+로컬 전용 `start`, `daemon run`, `config`, `onboard`, `set-password`는 명시적인 `--host`를 거부하고 `PASEO_HOST`를 무시합니다. 엔드포인트 작업은 TCP, Unix 소켓, Windows 파이프, SSH, 페어링 제안 전송을 계속 지원합니다. 컨테이너를 제어하는 호스트 측 CLI에는 `--host` 또는 `PASEO_HOST`가 필요합니다.
 
 ## 허브
 
@@ -324,12 +361,12 @@ paseo hub logout               # Remove the active stored CLI login
 제어하려는 데몬으로부터 제안 URL을 얻으세요:
 
 ```bash
-paseo daemon pair          # asks before enabling relay, then prints the QR and link
+paseo daemon pair          # prints the QR and link when relay is enabled
 paseo daemon pair --relay  # enables relay without prompting
 paseo daemon pair --json   # structured output; never prompts
 ```
 
-새로운 설치를 위해 릴레이가 꺼졌습니다. 비대화형 또는 JSON 모드에서 비활성화된 릴레이는 `RELAY_DISABLED` 오류를 반환합니다. 명시적인 동의를 제공하려면 `--relay`을 전달하세요. 릴레이 페어링은 종단 간 암호화됩니다. [보안](/docs/security)을 참조하세요.
+새 설치에서는 릴레이가 꺼져 있습니다. 비활성화된 릴레이는 `RELAY_DISABLED` 오류를 반환합니다. 명시적인 동의를 제공하려면 `--relay`를 전달하세요. 중지된 홈의 페어링은 오프라인으로 표시됩니다. `--relay`는 릴레이 활성화를 저장하며 제안에는 시작 안내가 포함됩니다. 실행 중이지만 도달할 수 없는 홈은 오프라인 ID로 대체하지 않습니다. 릴레이 페어링은 종단 간 암호화됩니다. [보안](/docs/security)을 참조하세요.
 
 어디서나 사용하세요:
 

@@ -156,12 +156,17 @@ console.log(agent.lastUsage?.totalCostUsd, agent.runtimeInfo?.sessionId);
 
 `ref()`에서 생성한 핸들은 아직 아무것도 관찰하지 않았으므로 `refresh()`, `run()`, `waitForFinish()`, 타임라인 다시 가져오기 또는 `subscribe()`가 스냅샷을 전달할 때까지 모든 속성이 `null`입니다. 관찰한 스냅샷의 선택적 값도 `null`로 읽힙니다. 전체 스냅샷이 필요하거나 이러한 상태를 구분해야 할 때는 `current()`를 사용하세요.
 
-`subscribe()`는 속성을 최신 상태로 유지하므로, 수명이 긴 핸들은 다른 RPC 없이도 속성을 폴링할 수 있습니다.
+`subscribe()`는 로컬 리스너입니다. 소유된 에이전트 디렉터리 관찰이 업데이트를 제공합니다.
 
 ```ts
 const unsubscribe = agent.subscribe(() => {
   if (agent.status === "error") console.error(agent.lastError);
 });
+const directory = await client.agents.list({ subscribe: {} });
+
+// When this view closes:
+unsubscribe();
+await directory.subscription.release();
 ```
 
 ## 세션이 로드한 명령 나열하기

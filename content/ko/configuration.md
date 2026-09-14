@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Configure Paseo via config.json, environment variables, and CLI overrides.
+description: Configure managed instances and foreground deployments.
 nav: Configuration
 order: 40
 category: Configuration
@@ -8,7 +8,7 @@ category: Configuration
 
 # 구성
 
-Paseo는 선택적 환경 변수 및 CLI 재정의를 통해 Paseo 홈 디렉터리의 단일 JSON 파일에서 구성을 로드합니다.
+관리형 인스턴스는 홈의 `config.json`과 기본값에서 구성을 로드합니다. 포그라운드 배포는 환경 변수로 해당 파일을 재정의할 수 있습니다.
 
 ## 구성이 존재하는 곳
 
@@ -18,18 +18,13 @@ Paseo는 선택적 환경 변수 및 CLI 재정의를 통해 Paseo 홈 디렉터
 ~/.paseo/config.json
 ```
 
-`PASEO_HOME`을 설정하거나 `--home`을 `paseo daemon start`에 전달하여 홈 디렉터리를 변경할 수 있습니다.
+`PASEO_HOME`을 설정하거나 CLI 명령에서 `--home`을 선택하여 홈 디렉터리를 변경할 수 있습니다.
 
 ## 우선순위
 
-Paseo는 다음 순서로 구성을 병합합니다.
+관리형 `start`와 Desktop은 기본값을 적용한 다음 `config.json`을 적용합니다. 상속된 데몬 설정 환경 변수는 실행 환경에서 제거됩니다.
 
-1. 기본값
-2. `config.json`
-3. 환경변수
-4. CLI 플래그
-
-목록은 여러 소스에 걸쳐 추가됩니다(예: `hostnames` 및 `cors.allowedOrigins`).
+포그라운드 `paseo daemon run`, Docker, 직접 실행한 슈퍼바이저는 파일 뒤에 환경 변수를 적용합니다. 기존 레거시 슈퍼바이저 플래그는 워커를 재시작해도 우선순위를 유지합니다. 배포 재정의를 변경하려면 해당 배포를 중지하고 다시 시작해야 합니다. 호스트 이름과 CORS 출처를 비롯한 목록은 여러 소스의 값을 추가합니다.
 
 ## 예
 
@@ -51,7 +46,19 @@ Paseo는 다음 순서로 구성을 병합합니다.
 
 ## 변경 사항 적용
 
-`config.json`을 저장한 후 다시 로드합니다.
+CLI를 통해 선택한 파일을 편집하세요.
+
+```bash
+paseo daemon config get daemon.listen --home ~/paseo-test
+paseo daemon config set daemon.listen 127.0.0.1:6800 --home ~/paseo-test
+paseo daemon config unset features.webUi.enabled --home ~/paseo-test
+```
+
+`get [path]`는 구성된 값을 보고하고 누락된 필드를 설정되지 않음으로 표시합니다. 홈을 생성하지는 않습니다. `set`은 JSON을 파싱하고, 그렇지 않으면 입력을 문자열로 처리합니다. `--string`은 리터럴 문자열을 강제합니다. `--json`은 출력 형식을 선택합니다. 점이 포함된 동적 키에는 전체 객체 JSON을 사용하세요. 알 수 없는 경로, 잘못된 값, 유효하지 않은 기존 파일은 쓰지 않고 거부됩니다. 비밀번호에는 `set-password`를 사용하세요.
+
+편집에 성공하면 검증된 파일을 저장하고 인스턴스에 도달할 수 있는 경우 한 번 다시 로드합니다. 출력은 적용된 변경, 재시작 요구 사항, 배포 재정의를 구분합니다. 중지되었거나 바인딩되지 않았거나 도달할 수 없는 인스턴스는 **저장됨, 적용되지 않음**을 보고합니다. 다시 로드에 실패하면 0이 아닌 종료 코드와 함께 **저장됨, 다시 로드 실패**를 보고하며 파일은 저장된 상태로 남습니다. 편집은 암시적으로 재시작하지 않습니다.
+
+`config.json`을 직접 편집한 뒤에는 다시 로드하세요.
 
 ```bash
 paseo reload
@@ -69,7 +76,7 @@ paseo daemon restart
 
 수신 주소, 인증, 릴레이 엔드포인트와 TLS, 작업 트리 할당, 서비스 프록시 주소, 번들 웹 UI, 로깅, 음성 인식, 음성, 자격 증명, 로컬 모델 설정은 재시작해야 합니다. 다시 로드는 같은 파일의 다른 유효한 변경을 적용한 후 이 경로들을 보고합니다.
 
-환경 변수와 데몬 시작 플래그가 항상 우선합니다. 시작 시 재정의 때문에 변경된 파일 설정이 적용되지 않으면 다시 로드 결과의 `overrideControlledPaths`에 보고됩니다. 수신 주소, 비밀번호, 릴레이 엔드포인트와 TLS, 서비스 프록시와 웹 UI 설정, 로깅, 음성 인식, 음성 구성이 여기에 포함됩니다. 호스트 이름과 CORS 출처 같은 목록 설정은 여러 소스의 값을 계속 추가하므로 `config.json` 값도 적용됩니다. 파일 값을 우선하려면 재정의를 제거하고 데몬을 다시 시작하세요.
+배포 환경 변수와 레거시 슈퍼바이저 플래그가 항상 우선합니다. 실행 재정의 때문에 변경된 파일 설정이 적용되지 않으면 다시 로드 결과의 `overrideControlledPaths`에 보고됩니다. 수신 주소, 비밀번호, 릴레이 엔드포인트와 TLS, 서비스 프록시와 웹 UI 설정, 로깅, 음성 인식, 음성 구성이 여기에 포함됩니다. 호스트 이름과 CORS 출처 같은 목록 설정은 여러 소스의 값을 계속 추가하므로 `config.json` 값도 적용됩니다. 파일 값을 우선하려면 재정의 없이 배포를 중지하고 다시 시작하세요.
 
 ## 에이전트 제공업체
 
@@ -104,13 +111,14 @@ Voice는 `providers` 아래에 공급자 자격 증명을 사용하여 `features
 CLI에서 활성화합니다.
 
 ```bash
-paseo daemon start --web-ui
+paseo daemon config set features.webUi.enabled true
+paseo daemon start
 ```
 
 또는 환경 변수를 설정하십시오.
 
 ```bash
-PASEO_WEB_UI_ENABLED=true paseo daemon start
+PASEO_WEB_UI_ENABLED=true paseo daemon run
 ```
 
 또는 `config.json`에 유지합니다.
@@ -225,7 +233,7 @@ URI의 `password=`은 항상 env var보다 우선하므로 `PASEO_PASSWORD`을 �
 }
 ```
 
-`PASEO_RELAY_ENABLED=true|false`은 해당 데몬 실행에 대한 지속 값을 재정의합니다. 일치하는 `paseo daemon start --relay` 및 `--no-relay` 플래그는 동일한 권한을 갖습니다. Paseo Desktop 또는 `paseo daemon pair --relay`에서 릴레이를 변경하기 전에 실행 재정의를 제거하세요.
+`PASEO_RELAY_ENABLED=true|false`는 포그라운드 배포에서 파일을 재정의합니다. 관리형 `start`는 파일을 사용합니다. 앱 또는 `paseo daemon pair --relay`에서 릴레이를 변경하기 전에 배포를 종료하고 재정의 없이 다시 시작하세요.
 
 ## 공통 환경 변수
 

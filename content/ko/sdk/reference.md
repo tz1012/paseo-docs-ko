@@ -53,7 +53,9 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `list(options?)` | `PaseoAgentListResult` | 에이전트 페이지를 나열합니다. `scope`, `filter`, `sort`, `page` 및 `subscribe`은 데몬 디렉터리 쿼리와 일치합니다. |
 | `create(options)` | `PaseoAgentHandle` | `cwd`에 대한 에이전트와 새로운 작업 영역을 만듭니다. `config`이 필요합니다.                                         |
 | `ref(agentOrId)` | `PaseoAgentHandle` | 가져오지 않고 로컬 핸들을 만듭니다.                                                                     |
-| `subscribe(handler)` | 구독 취소 기능 | 연결-로컬 에이전트 디렉터리 업데이트를 수신합니다. 먼저 `list({ subscribe })`에 호출하세요.                      |
+| `subscribe(handler)` | 구독 취소 기능 | 이 API 인스턴스의 로컬 리스너입니다. 소유된 `list({ subscribe: {} })` 관찰이 필요합니다.                      |
+
+`list({ subscribe: {} })`는 `subscriptionId`와 소유된 `subscription`도 반환합니다. `subscribe({ snapshot, update, error? })` 콜백은 범위가 지정된 유선 업데이트보다 먼저 스냅샷을 받습니다. `release()`는 해당 관찰을 종료합니다. 기능을 지원하는 데몬은 ID를 할당하고 관찰을 서로 독립적으로 유지합니다. 이전 데몬은 로컬 ID와 기존 공유 전달 동작을 사용합니다. 일반 목록은 관찰을 만들지 않습니다. 같은 계약이 작업공간 목록에도 적용됩니다. [이벤트](./events.md)를 참조하세요.
 
 생성 옵션에는 `config`, `cwd`, `parent`, `title`, `prompt`, `env`, `outputSchema`, `images`, `attachments`, `git`, `worktree`, `autoArchive` 및 `labels`.
 
@@ -108,16 +110,16 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 
 `agent.timeline.refetch(options?)`이 페이지를 가져옵니다. 옵션은 `direction`, `cursor`, `limit`, `projection` 및 `requestId`입니다.
 
-`agent.timeline.subscribe(handler)`은 이 에이전트에 대한 네트워크 수요를 설정하고 재연결 후 복원합니다. 구독 취소 함수는 해당 수요를 해제합니다. 작업을 시작하기 전에 초기 데몬 확인을 위해 `unsubscribe.ready`를 기다리세요. 기록이 교체되면 핸들러는 `{ agentId, event: { type: "replacement", epoch } }`도 수신합니다. 필요한 페이지를 다시 가져오세요. [이벤트](./events.md#follow-timeline-events)를 확인하세요.
+`agent.timeline.subscribe(handler)`은 이 에이전트에 대한 네트워크 수요를 설정하고 재연결 후 복원합니다. 구독 취소 함수는 해당 수요를 해제합니다. 작업을 시작하기 전에 초기 데몬 확인을 위해 `unsubscribe.ready`를 기다리세요. 전달은 라이브 전용입니다. 재연결하면 로컬 `subscription_restored` 이벤트가 발생하며 놓친 기록은 `refetch()`로 명시적으로 요청해야 합니다. 라이브 교체는 이전 epoch를 무효화합니다. 콜백 형태, 페이징, 실패 동작은 [타임라인 이벤트](./events.md#follow-timeline-events)를 참조하세요.
 
 ## `client.projects`
 
 | 메서드 | 결과 | 동작 |
 | ---------------- | ------------------------ | ----------------------------------------------------------------------------- |
 | `list(options?)` | `PaseoProjectListResult` | 활성 작업공간이 없는 프로젝트를 포함해 등록된 모든 프로젝트를 나열합니다. |
-| `subscribe(handler)` | 구독 취소 기능 | 향후 프로젝트 추가/갱신 및 제거만 수신합니다. 초기 상태는 `list()`와 함께 구성하세요. |
+| `subscribe(handler)` | 구독 취소 기능 | 향후 프로젝트 업데이트를 요청하며 구독 취소 시 수요를 해제합니다. `list()`가 초기 상태를 제공합니다. |
 
-초기화 누락 없이 완전한 프로젝트 캐시를 만들려면 `list()`를 기다리기 전에 구독하고 업데이트를 버퍼링하세요. 목록 결과로 캐시를 초기화한 다음 버퍼링된 업데이트를 도착 순서대로 적용합니다.
+[이벤트](./events.md#follow-provider-catalog-changes)에서 명시적인 이벤트 관찰과 정리 방법을 참조하세요.
 
 ## `client.workspaces`
 
@@ -128,7 +130,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `create(options)` | `PaseoWorkspaceHandle` | 항상 새로운 디렉터리 지원 또는 Paseo-worktree 작업 공간을 만듭니다.              |
 | `ref(workspaceOrId)` | `PaseoWorkspaceHandle` | 로컬 핸들을 만듭니다.                                                           |
 | `archive(workspaceOrId)` | `PaseoWorkspaceArchiveResult` | 먼저 핸들을 만들지 않고 보관합니다.                                         |
-| `subscribe(handler)` | 구독 취소 기능 | 연결-로컬 작업공간 업데이트를 수신합니다. `list({ subscribe })`에 먼저 호출하세요. |
+| `subscribe(handler)` | 구독 취소 기능 | 이 API 인스턴스의 로컬 리스너입니다. 소유된 `list({ subscribe: {} })` 관찰이 필요합니다. |
 
 작업 영역 핸들은 `id`, `projectId`, `directory`, `name`, `status`, `current()`, `refresh()`, `setTitle(title)`, `archive()` 및 `subscribe()`을 노출합니다. 파생된 작업공간 이름으로 복원하려면 `setTitle`에 `null`을 전달하세요. 작업공간 ID나 디렉터리를 반복하지 않고 에이전트를 생성하려면 `workspace.agents.create(options)`을 사용하세요.
 
@@ -185,7 +187,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `listFeatures(draftConfig)` | 기능 결과 | 현재 초안 공급자 구성의 기능을 검색합니다.                                                                                         |
 | `diagnostic(provider)` | 진단 결과 | 사람이 읽을 수 있는 설정 진단을 반환합니다.                                                                                                                |
 | `listUsage(options?)` | `PaseoProviderUsageResult` | 정규화된 구독 기간, 잔액 및 공급자 세부 정보를 반환합니다. 지원하지 않는 경우 호스트 업데이트 오류로 거부됩니다. 옵션은 `requestId`입니다. |
-| `subscribe(handler)` | 구독 취소 기능 | 카탈로그 업데이트를 수신합니다.                                                                                                                             |
+| `subscribe(handler)` | 구독 취소 기능 | 향후 카탈로그 업데이트를 요청하며 구독 취소 시 수요를 해제합니다.                                                                                            |
 
 ## `client.config`
 

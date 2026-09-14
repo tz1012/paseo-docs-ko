@@ -1221,6 +1221,9 @@ const pill = client.addComposerPill({
 });
 ```
 
+에이전트 디렉터리를 따르는 필에는 명시적인 [소유된 목록 구독](/docs/sdk/events#follow-one-agents-status)을 사용하세요.
+[로컬 플러그인 예제](https://github.com/getpaseo/paseo/blob/main/plugin-examples/local-plugin/client/main.tsx)는 각 스냅샷에서 등록을 교체하고, 대기 중인 부트스트랩을 포함해 진입점 정리 중에 관찰을 중단합니다.
+
 ## 버튼 설명자
 
 다음 계약은 `@getpaseo/plugin/client`에서 내보냅니다.
