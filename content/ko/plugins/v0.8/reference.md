@@ -776,7 +776,7 @@ export default function contribute(client: PluginClientContext) {
 }
 ```
 
-`query.itemType`은 안정적인 대분류 선택자입니다. 제공자나 도구에 따른 세부 판별은 `transform` 안에서 선택한 항목을 살펴보며 수행하세요. `undefined`를 반환하면 원래 항목을 유지합니다. `items`를 반환하면 해당 항목을 대체하고, 빈 배열을 반환하면 제거합니다. 항목의 `data`는 JSON과 호환되어야 합니다. `phase` 입력은 실행 중인 도구 호출과 로드 중인 추론에 대해 `"streaming"`이며, 그 외에는 `"complete"`입니다. 각 대체 항목에 선택적으로 플러그인 로컬 `id`를 설정할 수 있습니다. 설정하지 않으면 Paseo는 원본 항목의 출력 내 인덱스를 사용합니다.
+`query.itemType`은 안정적인 대분류 선택자입니다. 제공자나 도구에 따른 세부 판별은 `transform` 안에서 선택한 항목을 살펴보며 수행하세요. `undefined`를 반환하면 원래 항목을 유지합니다. `items`를 반환하면 해당 항목을 대체하고, 빈 배열을 반환하면 제거합니다. 항목의 `data`는 JSON과 호환되어야 합니다. `phase` 입력은 실시간 어시스턴트 메시지, 실행 중인 도구 호출, 로드 중인 추론에 대해 `"streaming"`이며, 커밋되었거나 가져온 메시지와 완료된 도구 또는 추론에 대해서는 `"complete"`입니다. 어시스턴트 및 추론 콜백은 문단 구분자를 포함해 갱신할 때마다 지금까지 누적된 전체 텍스트를 전달받습니다. Paseo는 네이티브 Markdown을 분할하거나 Overview에서 도구를 그룹화하기 전에 변환기를 호출합니다. 변환기가 맡은 어시스턴트 메시지는 스트리밍 내내 하나의 원본 항목으로 유지됩니다. 첫 텍스트만으로 판별하기 어렵다면 알아볼 수 있을 때까지 `undefined`를 반환하세요. 각 대체 항목에 선택적으로 플러그인 로컬 `id`를 설정할 수 있습니다. 설정하지 않으면 Paseo는 원본 항목의 출력 내 인덱스를 사용합니다.
 
 렌더러는 `agentId`, `item`, `timestamp`, `theme`, `host`, `layout`을 전달받습니다. Paseo는 렌더링 전에 등록된 스키마로 `item.data`를 검증합니다. 변환기는 동기적이고 결정적으로 동작하도록 작성하세요. Paseo는 원본 항목의 참조를 기준으로 결과를 메모이제이션하고 원본 행에서 대체 항목의 식별자를 도출하므로, 스트리밍 항목 하나가 갱신되어도 해당 렌더러를 다시 마운트하지 않습니다. 렌더러가 Paseo의 기본 어시스턴트 행처럼 스트리밍 텍스트의 표시 속도를 조절해야 한다면 내보내진 `useRevealedText(text, phase)` 훅을 사용하세요.
 
@@ -936,7 +936,21 @@ export const preferences = defineSettings({
 });
 ```
 
-정리 함수를 반환하기 전에 `index.server.ts`에서 `server.registerSettings(preferences)`로 등록하세요. 내장 지속성을 사용하려면 이 서버 진입점이 필요합니다. 자체 데이터를 사용하는 화면은 클라이언트 전용으로 둘 수 있습니다.
+정리 함수를 반환하기 전에 `index.server.ts`에서 등록하세요. 반환된 핸들을 사용하면 서버 코드가 문서를 읽고 변경에 반응할 수 있습니다. 자체 데이터를 사용하는 화면은 클라이언트 전용으로 둘 수 있습니다.
+
+```ts
+export default function contribute(server: PluginServerContext) {
+  const settings = server.registerSettings(preferences);
+
+  settings.subscribe((next) => {
+    if (next.status === "ready") {
+      console.log("Settings changed", next.revision);
+    }
+  });
+
+  return () => {};
+}
+```
 
 | 정의 필드 | 계약 |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -954,6 +968,15 @@ export const preferences = defineSettings({
 | `ready` | 타입이 지정된 `values`와 불투명한 `revision`. |
 | `invalid` | `error`와 `revision`. 저장된 데이터는 보존됩니다. |
 | `error` | 읽기 또는 연결에서 발생한 `error`. |
+
+서버 핸들은 `read()`와 `subscribe()`를 노출합니다. `read()`는 불투명한 리비전을 포함해 클라이언트 훅과 동일한 `ready` 또는 `invalid` 상태를 반환합니다. `subscribe()`는 정리 함수를 반환하며 저장, 재설정 또는 마이그레이션이 성공하면 새 `ready` 상태를 전달받습니다. 잘못된 쓰기와 리비전 충돌은 구독자에게 알리지 않습니다. 리스너 실패는 기록되지만 커밋된 쓰기를 실패한 저장으로 바꾸지는 않습니다.
+
+```ts
+const current = await settings.read();
+if (current.status === "ready") {
+  // Use current.values and current.revision.
+}
+```
 
 모든 상태는 `saving`, `saveError`와 다음 동작도 노출합니다.
 
