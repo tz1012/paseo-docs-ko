@@ -144,26 +144,101 @@ Paseo는 클라이언트 코드에 다음 모듈을 제공합니다.
 | `onPress` | `onClick`, `onMouseEnter` 또는 다른 DOM 핸들러 |
 | `Linking`, `Clipboard` 방식의 React Native API | 구성 요소 내의 `window`, `document`, `localStorage`, `navigator`, `location` |
 
-스캐폴드의 `tsconfig.json`은 DOM 라이브러리를 제외하므로 기본적으로 어디에서든 `document`와 `window`를 사용하면 타입 오류가 발생합니다. 브라우저 API가 허용되는 유일한 곳은 `client/web.ts`입니다. 이 모듈에서는 사용하는 전역 객체마다 필요한 부분만 타입으로 선언하고, 내보내는 모든 항목에 `Platform.OS` 조건을 적용하며, 네이티브용 대안을 제공합니다.
+스캐폴드의 `tsconfig.json`은 DOM 라이브러리를 제외합니다. 크로스 플랫폼 구성 요소에서 DOM 전역 객체를 사용하지 마세요. `/// <reference lib="dom" />`를 추가하거나 `lib`에 `"DOM"`을 추가하지 마세요.
+`layout.platform`은 렌더링 결정을 위해 React Native의 `Platform.OS`와 같은 값을 전달합니다.
 
-`client/web.ts`:
+### 외부 링크와 작업공간 브라우저
 
-```ts
-import { Linking, Platform } from "react-native";
+Paseo 외부에서 문서를 열려면 `ExternalLink`를 사용하세요.
 
-// This plugin typechecks without the DOM library. Declare only what this module uses.
-declare const window: { open(url: string, target: string, features: string): unknown };
+```tsx
+import { ExternalLink } from "@getpaseo/plugin/client/ui";
 
-export async function openExternal(url: string): Promise<void> {
-  if (Platform.OS === "web") {
-    window.open(url, "_blank", "noopener,noreferrer");
-    return;
-  }
-  await Linking.openURL(url);
+export function DocumentationLink() {
+  return <ExternalLink href="https://paseo.sh/docs">Open documentation</ExternalLink>;
 }
 ```
 
-`/// <reference lib="dom" />`를 추가하거나 `lib`에 `"DOM"`을 추가하지 마세요. 어느 쪽이든 프로젝트 전체에서 DOM 타입을 다시 활성화해 다음 실수를 놓치게 만듭니다. 구성 요소는 `openExternal`을 가져오며 직접 `window`에 접근하지 않습니다. 표면과 패널 props의 `layout.platform`은 렌더링 결정에 사용할 수 있도록 `Platform.OS`와 같은 값을 전달합니다.
+이 구성 요소는 접근 가능한 링크 의미 체계를 제공하며
+`openExternalUrl(url: string): Promise<void>`와 같은 열기 기능을 사용합니다.
+
+```ts
+import { openExternalUrl } from "@getpaseo/plugin/client";
+
+export async function openDocumentation() {
+  await openExternalUrl("https://paseo.sh/docs");
+}
+```
+
+브라우저에서 새 탭을 허용하도록 사용자 상호 작용에서 함수를 직접 호출하세요.
+
+| 플랫폼 | 외부 링크 | `navigation.openBrowser` |
+| ------------- | ---------------------------------- | ------------------------------------------------ |
+| Electron | 시스템 브라우저 | 사용 가능. 로컬 작업공간 브라우저 탭을 생성함 |
+| 브라우저 웹 | `noopener,noreferrer`를 적용한 새 탭 | `undefined` |
+| iOS / Android | OS URL 처리기 | `undefined` |
+
+#### ExternalLink props
+
+| 속성 | 필수 | 동작 / 기본값 |
+| ------------------------------- | -------- | ------------------------------------------------------ |
+| `href: string` | 예 | 절대 HTTP(S) 대상 |
+| `children: ReactNode` | 예 | 링크 텍스트 또는 인라인 React Native 콘텐츠 |
+| `accessibilityLabel: string` | 아니요 | 콘텐츠에서 파생한 접근성 이름을 재정의함 |
+| `testID: string` | 아니요 | 테스트 식별자. 기본값은 설정되지 않음 |
+| `onError(error: unknown): void` | 아니요 | 열기 오류를 받음. 기본 동작은 오류 기록 |
+
+#### 작업공간 브라우저 열기
+
+표면 또는 패널에서 `navigation.openBrowser`를 사용하세요. 작업을 렌더링하기 전에 사용 가능 여부를 확인하세요. 다음 작업공간 패널은 다른 플랫폼에서 외부 링크를 선택합니다.
+
+```tsx
+import type { PluginWorkspacePanelProps } from "@getpaseo/plugin/client";
+import { ExternalLink } from "@getpaseo/plugin/client/ui";
+import { Pressable, Text } from "react-native";
+
+export function DocumentationPanel({ navigation, workspaceId, theme }: PluginWorkspacePanelProps) {
+  const openBrowser = navigation?.openBrowser;
+  const url = "https://paseo.sh/docs";
+
+  if (!openBrowser) {
+    return <ExternalLink href={url}>Open documentation</ExternalLink>;
+  }
+
+  return (
+    <Pressable accessibilityRole="button" onPress={() => openBrowser({ url, workspaceId })}>
+      <Text style={{ color: theme.colors.foreground }}>Open in workspace browser</Text>
+    </Pressable>
+  );
+}
+```
+
+`navigation.openBrowser({ url, workspaceId, serverId? }): void`는 새 탭을 만들고 포커스를 이동합니다. 자동 대체 동작으로 외부에서 여는 일은 없습니다.
+
+| 옵션 | 필수 | 동작 / 기본값 |
+| --------------------- | -------- | ----------------------------------------------------------------- |
+| `url: string` | 예 | 절대 HTTP(S) 대상 |
+| `workspaceId: string` | 예 | 대상 호스트의 앱 작업공간 목록에 이미 있는 작업공간 |
+| `serverId: string` | 아니요 | 기본값은 표면 또는 패널에서 선택한 호스트 |
+
+다른 호스트를 대상으로 지정하려면 해당 호스트의 작업공간 ID와 함께 호스트 ID를 전달하세요.
+
+```ts
+openBrowser({ url, workspaceId: remoteWorkspaceId, serverId: remoteServerId });
+```
+
+`serverId`는 작업공간의 소유 호스트를 선택합니다. 원격 작업공간에서도 페이지는 로컬 데스크톱에서 실행되므로 `localhost` URL은 해당 데스크톱을 가리킵니다.
+
+#### 오류와 거부
+
+| 조건 | 결과 |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 외부 URL 형식이 잘못되었거나 HTTP(S)가 아닌 스킴을 사용함 | 무시함. `openExternalUrl`은 아무것도 열지 않고 resolve됨 |
+| OS 열기 기능이 실패함 | `openExternalUrl`이 reject됨. `ExternalLink`는 `onError`를 호출하거나 오류를 기록함 |
+| 브라우저가 새 외부 탭을 차단함 | 성공한 `noopener` 열기와 구분할 수 없음 |
+| 인앱 브라우저 URL 형식이 잘못되었거나 HTTP(S)가 아닌 스킴을 사용함 | 탭을 만들기 전에 `Only absolute HTTP(S) URLs are supported.` 오류를 발생시킴 |
+| 인앱 브라우저 작업공간 ID가 비어 있음 | 탭을 만들기 전에 `workspaceId is required.` 오류를 발생시킴 |
+| 대상 호스트/작업공간을 알 수 없거나 작업공간 목록이 아직 로드되지 않음 | 탭을 만들기 전에 `Workspace is unavailable on the requested host.` 오류를 발생시킴 |
 
 [설정 API](#settings-screens)를 사용하면 클라이언트 간에 타입이 지정된 호스트 범위 값을 유지할 수 있습니다. 직접 등록한 기여를 열 때는 `openSettings`, `openSurface`, `openPanel`을 사용하세요.
 
@@ -574,7 +649,7 @@ export default function contribute(client: PluginClientContext) {
 | `theme` | 활성 Paseo 테마의 타입이 지정된 `PluginTheme` 색상 토큰. |
 | `host` | 선택한 호스트의 `id`와 표시용 `label`. |
 | `layout` | `compact`와 `ios`, `android` 또는 `web` 플랫폼. |
-| `navigation` | 선택적 클라이언트 탐색 기능. `openAgent({ agentId })`와 `openWorkspace({ workspaceId })`는 선택한 호스트에서 대상을 엽니다. |
+| `navigation` | 선택적 클라이언트 탐색 기능. `openAgent({ agentId, serverId? })`와 `openWorkspace({ workspaceId, serverId? })`는 `serverId`의 대상을 열며, 생략하면 선택한 호스트에서 엽니다. `openBrowser({ url, workspaceId, serverId? })`는 Electron에서만 사용할 수 있습니다. [링크와 브라우저](#external-links-and-workspace-browsers)를 참고하세요. |
 
 Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계, 쿼리 클라이언트를 관리합니다. 플러그인은 표면 본문을 관리합니다.
 
@@ -1360,6 +1435,76 @@ function PullRequestAction({ theme }: PluginSurfaceProps) {
 ```
 
 반환되는 API는 프로젝트, 작업공간, 에이전트, 터미널, 공급자, 데몬 설정을 다룹니다. 메서드는 [SDK API 참조](/docs/sdk/reference)를 확인하세요. Paseo가 연결을 관리하므로 연결 수명 주기 메서드는 의도적으로 제외되어 있습니다.
+
+### 호스트 검색과 다른 호스트 지정
+
+구성된 호스트를 표시하려면 `useHosts()`를 사용하고, 그중 하나에서 SDK 작업을 실행하려면 작업 콜백 안에서 `getPaseoClient(serverId)`를 사용하세요.
+
+```tsx
+import { getPaseoClient, useHosts, type PluginSurfaceProps } from "@getpaseo/plugin/client";
+import { useMemo, useState, type ReactElement } from "react";
+import { Pressable, Text, View } from "react-native";
+
+export function HostAgents({ theme }: Pick<PluginSurfaceProps, "theme">): ReactElement {
+  const hosts = useHosts();
+  const textStyle = useMemo(() => ({ color: theme.colors.foreground }), [theme]);
+  const [result, setResult] = useState("");
+
+  async function listAgents(serverId: string): Promise<void> {
+    try {
+      const { entries } = await getPaseoClient(serverId).agents.list();
+      setResult(`${entries.length} agents`);
+    } catch (error) {
+      setResult(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  const rows = hosts.map((host) => ({
+    host,
+    onPress() {
+      void listAgents(host.serverId);
+    },
+  }));
+
+  return (
+    <View>
+      {rows.map(({ host, onPress }) => (
+        <Pressable key={host.serverId} accessibilityRole="button" onPress={onPress}>
+          <Text style={textStyle}>
+            {host.label}: {host.status}
+          </Text>
+        </Pressable>
+      ))}
+      <Text style={textStyle}>{result}</Text>
+    </View>
+  );
+}
+```
+
+`useHosts(): readonly PluginHostSummary[]`에는 오프라인 호스트도 포함되며 호스트, 레이블 또는 상태가 변경되면 업데이트됩니다.
+
+| 요약 필드 | 타입 또는 값 | 의미 |
+| ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `serverId` | `string` | `getPaseoClient`에 전달할 ID. |
+| `label` | `string` | 호스트의 표시 이름. |
+| `status` | `"idle"`, `"connecting"`, `"online"`, `"offline"`, `"error"` | 현재 앱 연결 상태. SDK 호출에는 `"online"`이 필요함. |
+
+`getPaseoClient(serverId: string): PaseoApi`는 호스트의 인증된 앱 연결을 빌려 씁니다. 클라이언트 진입점 코드 또는 콜백에서 호출하세요. 소켓을 열지 않으며 대상 데몬에 플러그인이 없어도 됩니다. 현재 연결을 사용하도록 작업을 수행할 때 API를 가져오세요.
+
+| 이벤트 또는 조건 | 결과와 호출자의 조치 |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 알 수 없는 호스트 ID | `Unknown Paseo host: <id>` 오류를 발생시키며 다른 호스트로 대체하지 않음. |
+| 호스트가 온라인이 아님 | 보관한 API를 통한 호출을 포함해 `Paseo host is disconnected: <id>` 오류를 발생시킴. 온라인이 되면 다시 시도함. |
+| 같은 연결이 다시 연결됨 | 보관한 API를 다시 사용할 수 있으며 관찰이 자동으로 재개됨. |
+| 자동 장애 조치를 포함해 연결 설정이 변경되거나 앱이 연결을 전환함 | 이전 API가 해제됨. `getPaseoClient(serverId)`를 다시 호출하고 구독을 다시 생성함. |
+| 호스트가 제거됨 | 해당 API가 해제되고 제거된 ID는 알 수 없는 ID가 됨. |
+| `client.dispose()` | 해당 API와 관찰을 해제함. 이후 getter 호출은 앱 연결을 통한 새 API를 반환함. 이전 API를 다시 폐기해도 새 API는 계속 사용할 수 있음. |
+| 원래 플러그인이 언로드됨 | 다른 호스트를 대상으로 하는 API를 포함해 빌려 온 모든 API와 관찰이 해제됨. 보관한 핸들은 설치 수명보다 오래 유지될 수 없음. |
+| 표면의 호스트 선택이 변경됨 | `usePaseo()`는 선택한 호스트를 따름. 명시적으로 가져온 API는 원래 대상을 유지함. |
+
+일반 SDK API를 통해 개별 구독도 해제할 수 있습니다.
+
+플러그인은 신뢰할 수 있는 앱 코드이며 교차 호스트 접근은 의도된 동작입니다. 요약에는 연결 URL이나 자격 증명이 없고, 빌려 온 API는 연결 수명 주기 제어 기능을 제공하지 않습니다. [호스트 에이전트 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/hosts)를 참고하세요.
 
 ## 플러그인 전용 백엔드 동작 추가
 
