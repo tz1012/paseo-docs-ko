@@ -2,16 +2,17 @@
 title: Build a provider plugin
 description: Add a coding agent to Paseo directly or adapt an ACP agent.
 nav: Provider plugins
-order: 47
+order: 46
 category: Plugins
 ---
 
 # 공급자 플러그인 만들기
 
-> **Paseo v0.8 베타용 문서입니다.** Paseo 플러그인을 만들어 본 적이 없다면
-> [플러그인 빠른 시작](/docs/plugins/v0.8)부터 확인하세요.
+Paseo 플러그인을 만들어 본 적이 없다면 [플러그인 빠른 시작](/docs/plugins)부터 확인하세요.
 
-공급자 플러그인은 코딩 에이전트를 Paseo 코어에 추가하지 않고 Paseo에 연결합니다. 플러그인을 Git 저장소에 게시하면 사용자가 `paseo plugin add`와 `paseo plugin update`로 설치하고 업데이트할 수 있습니다.
+공급자 플러그인은 코딩 에이전트를 Paseo 코어에 추가하지 않고 Paseo에 연결합니다.
+[플러그인을 게시](/docs/plugins/publishing)하여 npm 또는 Git 저장소에서 공유하면 사용자가
+`paseo plugin install`로 설치할 수 있습니다.
 
 구현 경로 하나를 선택하세요.
 
@@ -362,13 +363,7 @@ export const vendorEdits: AcpTransformer = {
 5. 모든 사용자 지정 타임라인 항목을 데스크톱 및 모바일 너비 레이아웃에서 렌더링합니다.
 6. 세션이 활성 상태일 때 플러그인을 다시 로드하고 제거하여 세션이 종료되는지 확인합니다.
 
-플러그인을 Git 저장소에 푸시하세요. 사용자는 다음 명령으로 설치합니다.
+[플러그인 게시하기](/docs/plugins/publishing)에 따라 npm 또는 Git을 통해 공급자를 배포하세요.
+에이전트 호환성과 릴리스는 플러그인 프로젝트에서 유지하세요.
 
-```bash
-paseo plugin add owner/repository
-paseo plugin update my-provider-plugin
-```
-
-공급업체 호환성과 릴리스는 해당 저장소에서 유지하세요. Paseo 코어는 둘 이상의 공급자가 공유하는 사용자 대상 기능을 공급자 경계로 표현할 수 없을 때만 변경해야 합니다.
-
-정확한 런타임 및 SVG 규칙은 [플러그인 참조](/docs/plugins/v0.8/reference#providers)를 확인하세요.
+정확한 런타임 및 SVG 규칙은 [플러그인 참조](/docs/plugins/reference#providers)를 확인하세요.

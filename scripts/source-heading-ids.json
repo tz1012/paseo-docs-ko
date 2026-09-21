@@ -1,0 +1,682 @@
+{
+  "agent-profiles": [
+    "agent-profiles",
+    "create-a-profile",
+    "apply-settings-in-one-click",
+    "guide-delegation-with-notes"
+  ],
+  "browser-tools": [
+    "browser-tools",
+    "tabs",
+    "reading-the-page",
+    "interacting",
+    "navigation",
+    "scripting",
+    "errors"
+  ],
+  "browser-when": [
+    "when-to-use"
+  ],
+  "browser": [
+    "browser-automation",
+    "enabling",
+    "desktop-only-for-now",
+    "how-an-agent-sees-a-page",
+    "architecture",
+    "security"
+  ],
+  "claude-code": [
+    "claude-code",
+    "does-claude-code-cost-extra-in-paseo",
+    "getting-started",
+    "use-claude-code-in-the-paseo-terminal",
+    "see-also"
+  ],
+  "cli": [
+    "cli-reference",
+    "quick-reference",
+    "provider-diagnostics",
+    "running-agents",
+    "projects",
+    "workspaces",
+    "terminals",
+    "workspace-scripts",
+    "plugins",
+    "listing-agents",
+    "streaming-output",
+    "sending-messages",
+    "viewing-logs",
+    "waiting-for-agents",
+    "schedules",
+    "permissions",
+    "agent-modes",
+    "daemon-management",
+    "foreground-deployments-and-migration",
+    "select-one-daemon",
+    "hub",
+    "connecting-to-a-remote-daemon",
+    "multi-agent-workflows",
+    "agent-a-spawns-agent-b-and-waits-for-it",
+    "requires-jq",
+    "output-formats",
+    "global-options"
+  ],
+  "codex": [
+    "codex",
+    "does-codex-cost-extra-in-paseo",
+    "getting-started",
+    "macos-or-linux",
+    "windows-powershell",
+    "codex-is-missing-in-paseo",
+    "macos-or-linux-1",
+    "windows",
+    "use-codex-in-the-paseo-terminal",
+    "see-also"
+  ],
+  "community": [
+    "related-projects",
+    "plugin-directory",
+    "tools-and-integrations",
+    "hosting-and-infrastructure"
+  ],
+  "configuration": [
+    "configuration",
+    "where-config-lives",
+    "precedence",
+    "example",
+    "apply-changes",
+    "agent-providers",
+    "worktrees",
+    "voice",
+    "bundled-web-ui",
+    "logging",
+    "password-authentication",
+    "connecting-with-a-password",
+    "relay",
+    "common-env-vars",
+    "schema"
+  ],
+  "connectivity": [
+    "connectivity",
+    "ssh",
+    "paseo-relay",
+    "enable-relay-from-paseo-desktop",
+    "enable-relay-from-the-cli",
+    "tailscale",
+    "1-find-the-daemon-machines-tailscale-ip",
+    "2-configure-the-daemon",
+    "3-connect-the-phone-app",
+    "troubleshooting"
+  ],
+  "custom-providers": [
+    "custom-providers",
+    "extending-a-first-class-provider",
+    "zai-glm-coding-plan",
+    "alibaba-cloud-qwen-coding-plan",
+    "multiple-profiles",
+    "custom-binary",
+    "acp-providers",
+    "adding-or-relabeling-models",
+    "disabling-a-provider",
+    "full-reference"
+  ],
+  "docker": [
+    "docker",
+    "what-the-image-includes",
+    "docker-compose",
+    "install-agent-clis",
+    "volumes",
+    "reverse-proxy",
+    "security",
+    "troubleshooting"
+  ],
+  "hub/activity": [
+    "hub-activity",
+    "where-to-look",
+    "nothing-happened-when-i-mentioned-the-bot",
+    "sync-failures",
+    "nothing-is-retried"
+  ],
+  "hub/api": [
+    "hub-public-api",
+    "api-reference",
+    "authentication",
+    "trigger-validation-and-installation",
+    "project-list",
+    "legacy-configuration-validation",
+    "legacy-configuration-install",
+    "manual-run-dispatch",
+    "daemon-enrollment",
+    "keys-scopes-and-audit-information"
+  ],
+  "hub/concepts": [
+    "how-hub-works",
+    "the-pieces",
+    "from-event-to-agent",
+    "activation",
+    "security-boundaries"
+  ],
+  "hub/configuration/hub-yml": [
+    "hub-configuration-reference",
+    "hubyml",
+    "environments",
+    "named-agents",
+    "workflow-files",
+    "github-events-and-filters",
+    "inputs-and-values",
+    "steps",
+    "prompt-semantics",
+    "output-capabilities",
+    "migrating-a-monolithic-file",
+    "agent-continuation",
+    "upgrading"
+  ],
+  "hub/configuration/index": [
+    "hub-configuration",
+    "generated-starter-trigger",
+    "paseotriggersslack-helpyml",
+    "startup-timeout",
+    "deploy-from-the-cli",
+    "legacy-project-bundles",
+    "github-sync",
+    "revisions-and-source-changes"
+  ],
+  "hub/daemons": [
+    "daemons-in-hub",
+    "connect",
+    "reference-it-from-configuration",
+    "what-hub-owns",
+    "status"
+  ],
+  "hub/faq": [
+    "hub-faq",
+    "do-i-need-hub-to-use-paseo",
+    "can-one-organization-connect-several-github-organizations",
+    "how-should-i-split-my-work-into-projects",
+    "can-two-projects-watch-the-same-repository",
+    "can-the-configuration-live-somewhere-other-than-the-repository-being-watched",
+    "where-do-triggers-go-now",
+    "can-i-edit-configuration-in-the-dashboard",
+    "who-can-trigger-an-agent",
+    "what-happens-if-the-daemon-is-offline",
+    "does-logging-out-disconnect-my-daemon",
+    "can-an-agent-reply-back-to-slack-or-discord",
+    "can-i-use-it-without-github"
+  ],
+  "hub/github": [
+    "github-access",
+    "fields",
+    "agent-environment",
+    "keep-authority-on-the-worker"
+  ],
+  "hub/hosted": [
+    "hosted-hub"
+  ],
+  "hub/index": [
+    "hub",
+    "what-lives-in-your-repository",
+    "reading-order",
+    "run-hub-yourself"
+  ],
+  "hub/quickstart": [
+    "hub-quickstart",
+    "1-start-hub",
+    "2-connect-slack",
+    "3-connect-the-machine-your-code-is-on",
+    "4-create-the-starter-trigger",
+    "5-mention-the-bot",
+    "next"
+  ],
+  "hub/security": [
+    "hub-security",
+    "choose-daemon-authority",
+    "treat-requests-as-untrusted",
+    "protect-configuration-authority",
+    "keep-authority-on-the-step-that-needs-it",
+    "use-a-finite-classifier-boundary",
+    "provider-native-controls",
+    "review-checklist"
+  ],
+  "hub/self-hosting/discord-app": [
+    "discord-for-hub",
+    "configure-from-environment"
+  ],
+  "hub/self-hosting/github-app": [
+    "github-for-hub",
+    "public-url-requirements",
+    "subscribe-to-github-events",
+    "connect-repositories",
+    "what-the-connection-provides",
+    "configure-from-environment"
+  ],
+  "hub/self-hosting/index": [
+    "self-hosting-hub",
+    "local-data",
+    "public-addresses",
+    "postgresql",
+    "app-configuration",
+    "github",
+    "slack-socket-mode",
+    "slack-webhooks-instead-of-socket-mode",
+    "discord",
+    "bootstrap-from-environment",
+    "docker-compose",
+    "https-with-caddy",
+    "fly",
+    "upgrades"
+  ],
+  "hub/self-hosting/slack-app": [
+    "slack-for-hub",
+    "set-up-socket-mode",
+    "use-webhooks",
+    "configure-from-environment"
+  ],
+  "hub/triggers/discord": [
+    "discord-triggers",
+    "find-your-discord-ids"
+  ],
+  "hub/triggers/github": [
+    "github-triggers",
+    "triage-new-issues",
+    "review-new-pull-requests",
+    "respond-to-new-comments",
+    "start-work-when-an-issue-becomes-ready",
+    "choose-the-event",
+    "filter-github-events",
+    "legacy-event-compatibility"
+  ],
+  "hub/triggers/index": [
+    "triggers",
+    "choose-the-agent-in-hub",
+    "continue-the-same-agent",
+    "events",
+    "filters",
+    "which-connection-an-event-comes-from",
+    "when-two-triggers-match",
+    "replying"
+  ],
+  "hub/triggers/slack": [
+    "slack-triggers",
+    "find-your-slack-ids"
+  ],
+  "hub/workflows": [
+    "hub-workflows",
+    "your-first-workflow",
+    "choose-where-a-step-runs",
+    "choose-an-agent",
+    "route-from-a-classifier",
+    "prompt-and-context",
+    "conditions-and-ordered-output",
+    "tell-the-agent-which-tool-to-call",
+    "deadlines"
+  ],
+  "index": [
+    "getting-started",
+    "desktop-app-recommended",
+    "linux",
+    "server-cli",
+    "docker",
+    "where-next",
+    "prerequisites"
+  ],
+  "mcp": [
+    "mcp-reference",
+    "configuration",
+    "limit-paseo-tools-by-provider",
+    "mental-model",
+    "tools",
+    "agents",
+    "workspaces",
+    "workspace-scripts",
+    "terminals",
+    "schedules-and-heartbeats",
+    "agent-profiles",
+    "providers",
+    "permissions",
+    "browser",
+    "voice"
+  ],
+  "metadata-generation": [
+    "metadata-generation",
+    "how-a-model-is-chosen",
+    "choose-a-model",
+    "configure-a-custom-fallback-order",
+    "per-project-instructions"
+  ],
+  "orchestration-workflows": [
+    "common-orchestration-workflows",
+    "send-work-to-a-different-model",
+    "fan-out-research",
+    "parallelize-edits-without-collisions",
+    "implement-then-review",
+    "send-a-prompt-to-another-agent",
+    "check-redirect-or-continue-work",
+    "work-on-another-machine",
+    "keep-an-agent-working-with-a-heartbeat",
+    "where-the-work-appears"
+  ],
+  "orchestration": [
+    "orchestration",
+    "what-your-agents-can-do",
+    "get-started",
+    "built-in-paseo-tools-mcp",
+    "cli",
+    "pick-settings-once-with-profiles",
+    "go-further"
+  ],
+  "plugins/index": [
+    "plugin-quickstart",
+    "create-a-plugin",
+    "install-and-try-it",
+    "add-a-workspace-panel",
+    "edit-and-reload",
+    "install-a-published-plugin",
+    "read-backend-logs",
+    "next"
+  ],
+  "plugins/migration": [
+    "migrate-a-plugin-to-runtime-entries",
+    "1-classify-the-existing-code",
+    "2-rename-files-and-directories",
+    "3-move-every-registration",
+    "composer-pills",
+    "4-separate-imports",
+    "5-recognize-half-migration-errors",
+    "6-worked-example-plugin-exampleslocal-plugin",
+    "7-declare-the-paseo-requirement",
+    "8-verify-the-migration"
+  ],
+  "plugins/providers": [
+    "build-a-provider-plugin",
+    "register-a-direct-provider",
+    "return-models-modes-and-thinking-options",
+    "open-a-session",
+    "complete-the-first-prompt",
+    "add-session-specific-composer-controls",
+    "add-persistence-and-replay",
+    "add-commands-and-steering",
+    "publish-timeline-items",
+    "adapt-an-acp-agent",
+    "test-and-publish"
+  ],
+  "plugins/publishing": [
+    "publish-a-plugin",
+    "publish-on-npm",
+    "1-set-your-package-name-and-version",
+    "2-check-and-publish",
+    "3-test-the-published-plugin",
+    "plugins-with-a-build-step",
+    "share-through-github-or-git"
+  ],
+  "plugins/reference": [
+    "plugin-reference",
+    "project-files",
+    "requirements",
+    "runtime-entries",
+    "runtime-modules",
+    "client-runtime",
+    "cross-platform-rules",
+    "external-links-and-workspace-browsers",
+    "externallink-props",
+    "open-a-workspace-browser",
+    "errors-and-refusal",
+    "server-runtime",
+    "providers",
+    "entry-point-and-cleanup",
+    "lifecycle-hooks",
+    "change-configuration-and-inject-an-mcp-server",
+    "inject-environment-variables-on-every-session-opening",
+    "choose-workspace-isolation",
+    "send-a-follow-up-when-a-turn-ends",
+    "answer-a-permission-request",
+    "events",
+    "before-hooks",
+    "ordering-and-returned-values",
+    "context-and-cleanup",
+    "complete-examples",
+    "surfaces-and-sidebar-items",
+    "host-ui",
+    "modal",
+    "scrolling",
+    "copy-and-paste",
+    "toasts",
+    "icons",
+    "timeline-items",
+    "append-a-timeline-row-from-the-daemon",
+    "theme-and-layout",
+    "contribute-a-theme",
+    "settings-screens",
+    "named-ui-components",
+    "persisted-values",
+    "workspace-panels",
+    "command-center-items",
+    "slash-commands",
+    "header-buttons",
+    "composer-pills",
+    "button-descriptor",
+    "menu-entries",
+    "custom-icons-and-popover-content",
+    "updates-and-lifecycle",
+    "use-the-paseo-sdk",
+    "discover-hosts-and-target-another-host",
+    "add-plugin-specific-backend-behavior",
+    "debug-backend-output",
+    "add-a-composer-attachment-source",
+    "hosts-and-lifecycle",
+    "plugin-sources",
+    "npm-installation-and-publishing",
+    "cli-reference",
+    "load-failures"
+  ],
+  "providers": [
+    "providers",
+    "mental-model",
+    "two-tiers",
+    "where-to-go-next"
+  ],
+  "schedules-chat": [
+    "schedules-from-chat"
+  ],
+  "schedules-cli": [
+    "schedules-from-the-cli",
+    "create",
+    "heartbeats",
+    "manage",
+    "cadence"
+  ],
+  "schedules": [
+    "schedules",
+    "what-its-for",
+    "ways-to-create-one"
+  ],
+  "sdk/agents": [
+    "agents-with-the-sdk",
+    "run-an-initial-prompt",
+    "keep-a-session-alive-for-follow-ups",
+    "find-agents-by-label",
+    "continue-an-agent-by-id",
+    "create-a-subagent",
+    "request-structured-output",
+    "read-the-current-state-of-an-agent",
+    "list-the-commands-a-session-loaded",
+    "archive-or-detach"
+  ],
+  "sdk/events": [
+    "sdk-events",
+    "follow-one-agents-status",
+    "follow-timeline-events",
+    "fetch-timeline-history",
+    "follow-workspace-updates",
+    "follow-provider-catalog-changes",
+    "older-daemons"
+  ],
+  "sdk/index": [
+    "typescript-sdk",
+    "start-a-daemon",
+    "run-an-agent"
+  ],
+  "sdk/provider-options": [
+    "provider-options",
+    "codex",
+    "claude",
+    "opencode",
+    "modes-and-options"
+  ],
+  "sdk/providers": [
+    "providers-with-the-sdk",
+    "configure-a-session",
+    "discover-installed-providers-and-models",
+    "select-a-discovered-model",
+    "discover-modes-thinking-levels-and-features",
+    "diagnose-an-unavailable-provider"
+  ],
+  "sdk/quickstart": [
+    "sdk-quickstart",
+    "connect",
+    "create-an-agent",
+    "wait-for-the-reply",
+    "disconnect",
+    "next"
+  ],
+  "sdk/recipes": [
+    "sdk-recipes",
+    "turn-an-issue-into-visible-work",
+    "run-parallel-reviewers",
+    "keep-a-resident-role-across-process-restarts",
+    "clean-up-temporary-agents"
+  ],
+  "sdk/reference": [
+    "sdk-api-reference",
+    "createpaseoclientconfig",
+    "client-lifecycle",
+    "clientagents",
+    "agent-handle",
+    "timeline-handle",
+    "clientprojects",
+    "clientworkspaces",
+    "clientterminals",
+    "clientproviders",
+    "clientconfig",
+    "errors-and-cleanup"
+  ],
+  "sdk/workspaces": [
+    "workspaces-with-the-sdk",
+    "open-a-directory",
+    "create-a-fresh-workspace",
+    "start-an-agent-in-a-workspace",
+    "start-a-terminal-in-a-workspace",
+    "list-workspaces",
+    "refresh-and-archive-a-handle"
+  ],
+  "security": [
+    "security",
+    "architecture",
+    "relay-connections-recommended",
+    "how-it-works",
+    "why-the-relay-cant-attack-you",
+    "trust-model",
+    "direct-connections",
+    "socket-file-cli-only",
+    "vpn-access",
+    "binding-to-0000",
+    "dns-rebinding-protection",
+    "password-authentication",
+    "what-password-auth-does-and-does-not-do",
+    "when-to-use-it",
+    "docker-self-hosting",
+    "agent-authentication",
+    "hub-identities-and-credentials",
+    "recommendations"
+  ],
+  "skills": [
+    "orchestration-skills",
+    "installation",
+    "paseo-paseo-reference",
+    "paseo-handoff-task-handoff",
+    "paseo-committee-committee-planning",
+    "paseo-advisor-advisor"
+  ],
+  "supported-providers": [
+    "supported-providers",
+    "native-support",
+    "acp-catalog"
+  ],
+  "troubleshooting": [
+    "troubleshooting",
+    "paseo-cant-find-my-provider",
+    "see-what-paseo-sees",
+    "fix-it",
+    "why-paseos-environment-can-differ-from-your-terminal",
+    "reading-the-logs",
+    "i-changed-configjson-but-nothing-happened",
+    "still-stuck"
+  ],
+  "updates": [
+    "updates",
+    "version-numbers",
+    "stable-channel",
+    "beta-channel",
+    "how-to-join-the-beta-channel",
+    "app-stores",
+    "what-to-do-if-something-breaks"
+  ],
+  "voice": [
+    "voice",
+    "philosophy",
+    "architecture",
+    "local-speech",
+    "local-stt-models-and-language-support",
+    "openai-voice-option",
+    "environment-variables",
+    "operational-notes"
+  ],
+  "web-ui": [
+    "self-hosting-the-web-ui",
+    "enable-it",
+    "how-the-connection-works",
+    "topologies",
+    "exposing-beyond-localhost",
+    "reverse-proxy",
+    "nginx",
+    "caddy",
+    "https-and-tls",
+    "tunnels",
+    "security",
+    "troubleshooting",
+    "see-also"
+  ],
+  "why": [
+    "why-paseo",
+    "architecture",
+    "providers",
+    "where-agents-run",
+    "parallel-work",
+    "automation",
+    "what-it-isnt"
+  ],
+  "workspaces": [
+    "workspaces",
+    "projects-contain-workspaces",
+    "workspaces-contain-sessions",
+    "choose-the-isolation",
+    "creating-a-workspace",
+    "worktrees"
+  ],
+  "worktrees": [
+    "git-worktrees",
+    "layout-and-workflow",
+    "create-a-worktree-backed-workspace",
+    "paseojson",
+    "setup-and-teardown",
+    "scripts-and-services",
+    "plain-scripts",
+    "services",
+    "dynamic-port-allocation",
+    "reverse-proxy",
+    "on-the-default-branch-the-branch-label-is-dropped",
+    "service-to-service",
+    "terminals",
+    "environment-variables",
+    "manage-the-workspace"
+  ]
+}

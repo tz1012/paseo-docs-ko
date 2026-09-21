@@ -2,13 +2,14 @@
 title: Migrate a plugin to runtime entries
 description: Mechanical migration from a mixed plugin entry to explicit client and server entries.
 nav: Migration
-order: 48
+order: 47
 category: Plugins
 ---
 
 # 플러그인을 런타임 진입점으로 마이그레이션하기
 
-> **Paseo v0.8 베타용 문서입니다.** Paseo v0.7에서는 이 마이그레이션이 필요하지 않습니다.
+이 가이드를 사용하여 Paseo 0.7 이하 버전용으로 작성된 플러그인을 0.8에서 도입된 현재의
+클라이언트/서버 진입점 형식으로 업데이트하세요.
 
 플러그인 디렉터리를 작업 디렉터리로 사용하는 코딩 에이전트에게 이 페이지를 전달하세요. 단계를
 순서대로 실행하세요. 호환성 진입점은 남겨 두지 마세요.
@@ -289,10 +290,9 @@ export default function contribute(server: PluginServerContext) {
 ```
 
 기존 ID와 빌드 명령은 유지하세요. `requirements.paseo`가 없으면 `<0.8.0`을 의미하므로 파일을 옮겼더라도
-Paseo 0.8은 플러그인을 거부합니다. 필드만 추가한다고 코드가 마이그레이션되는 것은 아닙니다. 로컬
+Paseo 0.8 이상은 플러그인을 거부합니다. 필드만 추가한다고 코드가 마이그레이션되는 것은 아닙니다. 로컬
 `@getpaseo/plugin` 개발 종속성을 대상 버전으로 업데이트하고 타입 검사 전에 종속성을 다시 설치하세요.
 
-0.8 베타에서는 SDK 종속성에 명시적인 베타 버전을 사용하고 매니페스트에는 `>=0.8.0`을 사용하세요.
 범위와 시험판 의미는 [요구 사항](reference#requirements)을 확인하세요.
 
 ## 8. 마이그레이션 검증하기

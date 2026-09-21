@@ -15,15 +15,15 @@ function frontmatter(markdown) {
   const data = Object.fromEntries((match?.[1] || '').split(/\r?\n/).map((line) => { const i = line.indexOf(':'); return i < 0 ? [] : [line.slice(0, i).trim(), line.slice(i + 1).trim()]; }).filter(Boolean));
   return { data, body: match ? match[2] : markdown };
 }
-function inline(text) {
+function inline(text, currentSlug = 'index', pageSlugs) {
   let html = escape(text);
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-  html = html.replace(/\[([^\]]+)\]\(([^\s)]+)(?:\s+[^)]*)?\)/g, (_, label, href) => `<a href="${rewriteInternalLink(href)}">${label}</a>`);
+  html = html.replace(/\[([^\]]+)\]\(([^\s)]+)(?:\s+[^)]*)?\)/g, (_, label, href) => `<a href="${rewriteInternalLink(href, currentSlug, pageSlugs)}">${label}</a>`);
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   return html;
 }
-export function renderMarkdown(markdown) {
-  const lines = markdown.split(/\r?\n/); let html = ''; let code = false; let list = false;
+export function renderMarkdown(markdown, currentSlug = 'index', pageSlugs, sourceHeadingIds, headingAliases = {}) {
+  const lines = markdown.split(/\r?\n/); let html = ''; let code = false; let list = false; let headingIndex = 0;
   const closeList = () => { if (list) { html += '</ul>'; list = false; } };
   const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim());
   for (let index = 0; index < lines.length; index++) {
@@ -31,24 +31,35 @@ export function renderMarkdown(markdown) {
     if (line.startsWith('```')) { closeList(); html += code ? '</code></pre>' : `<pre><code class="language-${line.slice(3)}">`; code = !code; continue; }
     if (code) { html += `${escape(line)}\n`; continue; }
     const separator = lines[index + 1]?.match(/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/);
-    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
     const item = line.match(/^[-*]\s+(.+)$/);
     if (line.startsWith('|') && separator) {
       closeList(); const header = cells(line); index += 2; const rows = [];
       while (index < lines.length && lines[index].startsWith('|')) { rows.push(cells(lines[index])); index++; }
-      index--; html += `<table><thead><tr>${header.map((cell) => `<th>${inline(cell)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${inline(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      index--; html += `<table><thead><tr>${header.map((cell) => `<th>${inline(cell, currentSlug, pageSlugs)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${inline(cell, currentSlug, pageSlugs)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     }
-    else if (heading) { closeList(); const level = heading[1].length; const id = heading[2].toLowerCase().replace(/[^\w가-힣]+/g, '-'); html += `<h${level} id="${id}">${inline(heading[2])}</h${level}>`; }
-    else if (item) { if (!list) { html += '<ul>'; list = true; } html += `<li>${inline(item[1])}</li>`; }
+    else if (heading) { closeList(); const level = heading[1].length; const id = sourceHeadingIds?.[headingIndex++] || heading[2].toLowerCase().replace(/[^\w가-힣]+/g, '-'); const aliases = (headingAliases[id] || []).map((alias) => `<span id="${escape(alias)}"></span>`).join(''); html += `${aliases}<h${level} id="${escape(id)}">${inline(heading[2], currentSlug, pageSlugs)}</h${level}>`; }
+    else if (item) { if (!list) { html += '<ul>'; list = true; } html += `<li>${inline(item[1], currentSlug, pageSlugs)}</li>`; }
     else if (!line.trim()) { closeList(); }
-    else { closeList(); html += `<p>${inline(line)}</p>`; }
+    else { closeList(); html += `<p>${inline(line, currentSlug, pageSlugs)}</p>`; }
   }
   closeList(); return html;
 }
 const docs = (await files(contentDir)).filter((file) => file.endsWith('.md'));
+const headingIdsBySlug = JSON.parse(await readFile('scripts/source-heading-ids.json', 'utf8'));
 const pages = [];
 for (const file of docs) { const parsed = frontmatter(await readFile(file, 'utf8')); const label = parsed.body.match(/^#\s+(.+)$/m)?.[1] || parsed.data.nav || parsed.data.title; pages.push({ file, slug: relative(contentDir, file).replace(/\\/g, '/').replace(/\.md$/, '').replace(/\/index$/, '/index'), label, ...parsed }); }
 pages.sort((a, b) => (a.data.category || '').localeCompare(b.data.category || '') || Number(a.data.order || 999) - Number(b.data.order || 999));
+const pageSlugs = new Set(pages.map((page) => page.slug));
+const headingAliasesBySlug = {
+  'hub/configuration/hub-yml': { 'output-capabilities': ['output-capability'] },
+};
+for (const page of pages) {
+  const headingCount = [...page.body.matchAll(/^#{1,6}\s+/gm)].length;
+  if (!headingIdsBySlug[page.slug] || headingIdsBySlug[page.slug].length !== headingCount) {
+    throw new Error(`Source heading IDs are out of date for ${page.slug}`);
+  }
+}
 const categoryLabels = { Browser:'브라우저', Configuration:'설정', 'Getting started':'시작하기', Hub:'허브', Orchestration:'오케스트레이션', Providers:'프로바이더', Schedules:'일정', Troubleshooting:'문제 해결', 'TypeScript SDK':'TypeScript SDK', Workspaces:'작업공간' };
 const labelOverrides = { 'hub/triggers/discord':'Discord 트리거', 'hub/self-hosting/discord-app':'Hub용 Discord', 'hub/triggers/slack':'Slack 트리거', 'hub/self-hosting/slack-app':'Hub용 Slack', 'hub/triggers/github':'GitHub 트리거', 'hub/self-hosting/github-app':'Hub용 GitHub' };
 const groups = new Map(); for (const page of pages) { const category = page.data.category || '문서'; groups.set(category, [...(groups.get(category) || []), page]); }
@@ -58,6 +69,6 @@ await rm(outputDir, { recursive: true, force: true });
 for (const page of pages) {
   const out = join(outputDir, `${page.slug}.html`); await mkdir(dirname(out), { recursive: true });
   const original = `https://paseo.sh/docs${page.slug === 'index' ? '' : `/${page.slug.replace(/\/index$/, '')}`}`;
-  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(page.label || 'Paseo 문서')} | Paseo 한국어 문서</title><style>${style}</style></head><body><header><a href="${relativePageLink(page.slug, 'index')}">Paseo</a><span>비공식 한국어 문서</span></header><div class="layout"><nav>${navFor(page)}</nav><main><div class="notice">이 문서는 Paseo 공식 문서의 비공식 한국어 번역입니다. 내용이 다를 경우 <a href="${original}">원문</a>이 우선합니다.</div>${renderMarkdown(page.body)}</main></div></body></html>`;
+  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(page.label || 'Paseo 문서')} | Paseo 한국어 문서</title><style>${style}</style></head><body><header><a href="${relativePageLink(page.slug, 'index')}">Paseo</a><span>비공식 한국어 문서</span></header><div class="layout"><nav>${navFor(page)}</nav><main><div class="notice">이 문서는 Paseo 공식 문서의 비공식 한국어 번역입니다. 내용이 다를 경우 <a href="${original}">원문</a>이 우선합니다.</div>${renderMarkdown(page.body, page.slug, pageSlugs, headingIdsBySlug[page.slug], headingAliasesBySlug[page.slug])}</main></div></body></html>`;
   await writeFile(out, html, 'utf8');
 }

@@ -15,11 +15,28 @@ export function restoreMarkdown(text, tokens) {
   return text.replace(/@@TOKEN_(\d+)@@/g, (_, index) => tokens[Number(index)]);
 }
 
-export function rewriteInternalLink(href) {
-  const match = href.match(/^(?:https:\/\/paseo\.sh)?\/docs(?:\/(.*))?\/?$/);
-  if (!match) return href;
-  const path = match[1] || 'index';
-  return `./${path}.html`;
+export function rewriteInternalLink(href, fromSlug = 'index', pageSlugs) {
+  const match = href.match(/^(?:https:\/\/paseo\.sh)?\/docs(?:\/([^?#]*?))?\/?([?#].*)?$/);
+  if (match) {
+    const path = (match[1] || 'index').replace(/\/$/, '') || 'index';
+    const target = pageSlugs?.has(`${path}/index`) && !pageSlugs.has(path) ? `${path}/index` : path;
+    return `${relativePageLink(fromSlug, target)}${match[2] || ''}`;
+  }
+
+  const relativeMatch = href.match(/^([^?#]+)([?#].*)?$/);
+  if (!relativeMatch || relativeMatch[1].startsWith('/') || /^[a-z][a-z+.-]*:/i.test(relativeMatch[1])) return href;
+  const targetParts = fromSlug.split('/');
+  targetParts.pop();
+  for (const part of relativeMatch[1].replace(/\.md$/, '').split('/')) {
+    if (!part || part === '.') continue;
+    if (part === '..') targetParts.pop();
+    else targetParts.push(part);
+  }
+  let target = targetParts.join('/');
+  if (pageSlugs?.has(`${target}/index`) && !pageSlugs.has(target)) target = `${target}/index`;
+  if (pageSlugs && !pageSlugs.has(target)) return href;
+  if (!pageSlugs) return href;
+  return `${relativePageLink(fromSlug, target)}${relativeMatch[2] || ''}`;
 }
 
 export function relativePageLink(fromSlug, toSlug) {

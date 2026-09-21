@@ -8,9 +8,9 @@ category: Plugins
 
 # 플러그인 참조
 
-> **Paseo v0.8 베타용 문서입니다.** [v0.8 빠른 시작](/docs/plugins/v0.8)으로 돌아가세요.
+첫 플러그인을 만들려면 [플러그인 빠른 시작](/docs/plugins)부터 시작하세요.
 
-기존 플러그인을 마이그레이션하려면 별도의 [런타임 진입점 마이그레이션 가이드](/docs/plugins/v0.8/migration)를 따르세요.
+기존 플러그인을 마이그레이션하려면 별도의 [런타임 진입점 마이그레이션 가이드](/docs/plugins/migration)를 따르세요.
 
 로컬 플러그인은 하나의 Paseo 데몬에 설치되는 디렉토리 소스입니다. 플러그인은 다음 기능을 제공할 수 있습니다.
 
@@ -42,11 +42,22 @@ my-plugin/
   tsconfig.json
 ```
 
-필수 루트 매니페스트는 `paseo-plugin.json`입니다. 여기에는 기본 플러그인 ID와 지원되는 Paseo 버전이 들어 있습니다.
+필수 루트 매니페스트는 `paseo-plugin.json`입니다.
 
 ```json
-{ "id": "my-plugin", "requirements": { "paseo": ">=0.8.0" } }
+{
+  "id": "my-plugin",
+  "description": "Reviews changes before merge",
+  "requirements": { "paseo": ">=0.8.0" }
+}
 ```
+
+| 필드 | 필수 여부 | 동작 |
+| -------------- | -------- | ---------------------------------------------------------------------- |
+| `id` | 예 | 기본 설치 ID입니다. |
+| `description` | 아니요 | **설정 → 플러그인**에서 플러그인 ID 아래에 표시되는 비어 있지 않은 요약입니다. |
+| `requirements` | 아니요 | 아래에서 설명하는 지원 Paseo 버전입니다. |
+| `build` | 아니요 | CLI 참조에서 설명하는 준비 명령입니다. |
 
 ### 요구 사항
 
@@ -68,8 +79,8 @@ Paseo 시험판 버전은 안정화 핵심 버전(`major.minor.patch`)이 만족
 고정합니다. 새 API를 채택할 때는 최소 버전을 올리세요. 새 릴리스가 호환되지 않으면 상한을 추가하세요.
 최소 버전만으로는 향후 호환성을 깨는 변경으로부터 보호된다고 보장할 수 없습니다.
 
-데몬은 플러그인을 설치하거나 Git 빌드 명령을 실행하거나 로드하기 전에 버전을 확인하며, 시작·활성화·다시
-로드할 때도 확인합니다. 거부된 Git 업데이트에서는 설치된 리비전을 유지합니다. 연결된 각 앱은 클라이언트
+데몬은 플러그인을 설치하거나 준비 명령을 실행하거나 로드하기 전에 버전을 확인하며, 시작·활성화·다시
+로드할 때도 확인합니다. 거부된 업데이트에서는 설치된 리비전을 유지합니다. 연결된 각 앱은 클라이언트
 코드를 평가하기 전에 자체 버전을 확인하고 **설정 → 플러그인**에 비호환 상태를 표시합니다. 데몬이 호환된다고
 해서 오래된 앱도 호환되는 것은 아닙니다. 클라이언트 진입점이 없는 플러그인은 연결된 앱 버전과 일치하지 않아도 됩니다.
 
@@ -84,7 +95,7 @@ Paseo 시험판 버전은 안정화 핵심 버전(`major.minor.patch`)이 만족
 | `index.client.tsx` | Paseo 앱, 클라이언트별 실행 | `PluginClientContext` | 플러그인에 UI, 콜백, 테마 또는 첨부 소스가 있는 경우 |
 | `index.server.ts` | 데몬 하위 프로세스 | `PluginServerContext` | 플러그인이 핸들러, 훅, 설정 지속성 또는 공급자를 제공하는 경우 |
 
-진입점이 하나 이상 필요하며, 두 진입점 모두 `.ts` 또는 `.tsx`를 사용할 수 있습니다. 기존 `index.ts`만 있는 디렉토리는 로드에 실패하며 [마이그레이션 가이드](/docs/plugins/v0.8/migration)를 안내합니다.
+진입점이 하나 이상 필요하며, 두 진입점 모두 `.ts` 또는 `.tsx`를 사용할 수 있습니다. 기존 `index.ts`만 있는 디렉토리는 로드에 실패하며 [마이그레이션 가이드](/docs/plugins/migration)를 안내합니다.
 
 플러그인, 표면, 사이드바 항목, 작업공간 패널, Command Center 항목, 첨부 소스, 슬래시 명령의 ID는 소문자로 시작하며 소문자, 숫자 또는 하이픈으로 구성됩니다.
 
@@ -248,7 +259,7 @@ Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpa
 
 ### 공급자
 
-직접 구현과 ACP 구현, 세션 수명 주기, 작성기 설정, 타임라인 렌더러, 테스트, 배포는 [공급자 플러그인 만들기](/docs/plugins/v0.8/providers)를 따르세요.
+직접 구현과 ACP 구현, 세션 수명 주기, 작성기 설정, 타임라인 렌더러, 테스트, 배포는 [공급자 플러그인 만들기](/docs/plugins/providers)를 따르세요.
 
 `@getpaseo/plugin/server/provider`의 `ProviderRegistration`을 `server.registerProvider()`에 전달하세요. 연결은 `send()`로 입력을 받고 `onEvent()`를 통해 완전한 상태 스냅샷을 내보냅니다. `send()`는 수락 여부만 보고합니다. 프롬프트 처리 결과, 턴, 구성, 지속성, 권한, 실패는 이벤트로 전달됩니다.
 
@@ -1687,6 +1698,87 @@ Paseo는 작성기 메뉴, 검색 선택기, 선택된 필, 초안 상태, 제�
 
 작업공간 패널과 Command Center 항목의 범위는 활성 호스트와 정확히 일치하는 캐시된 컨텍스트로 제한됩니다. 다시 로드하면 등록이 교체됩니다. 비활성화, 제거, 호스트 연결 해제, 평가 실패가 발생하면 Command Center 항목이 제거되고 설치본의 쿼리 상태가 지워집니다. 이미 복원된 패널 탭은 해당 기여가 다시 제공되거나 사용자가 닫을 때까지 사용 불가 상태로 남습니다. 패널 렌더링 실패는 플러그인 오류 경계 안에서 처리됩니다.
 
+## 플러그인 소스
+
+다음 소스 식별자 중 하나를 **설정 → 플러그인**에 붙여 넣거나 `paseo plugin install`에
+전달하세요. `paseo plugin add <source>`와 `paseo plugin install <source>`는 서로 별칭입니다.
+상대 경로는 데몬의 작업 디렉터리를 기준으로 해석되므로 절대 호스트 경로를 권장합니다. 앱은 `~`를
+확장하지 않지만, CLI를 실행하기 전에 셸에서 확장할 수는 있습니다.
+
+| 소스 | 허용되는 형식 | 예시 |
+| -------------------------- | -------------------------------------------------------------------------- | --------------------------------------------- |
+| 호스트 디렉터리 | 데몬 호스트의 절대 또는 상대 경로 | `/srv/paseo/plugins/review` |
+| GitHub 저장소 | `github:owner/repository` 또는 `owner/repository` | `github:acme/paseo-review` |
+| Git 저장소 | `git:<URL or SCP source>`; URL 및 SCP 소스에서는 접두사 생략 가능 | `git:https://git.example.com/acme/review.git` |
+| npm 패키지 | `npm:<name>[@<version, tag, or range>]`; `npm:` 생략 가능 | `npm:@acme/paseo-review@^1.2.0` |
+| 소스 루트 아래의 플러그인 | 모든 소스에 `:relative/plugin/path` 추가 | `github:acme/monorepo:plugins/review` |
+
+Git URL에는 `https://`, `http://`, `ssh://`, `git://`, `file://`를 사용합니다. SCP 소스에는
+`user@host:path`를 사용합니다. `file://`는 디렉터리 설치가 아니라 Git 가져오기를 선택합니다.
+
+npm 이름은 소문자로 된 범위 없는 `name` 또는 범위가 있는 `@scope/name`입니다. 각 구성 요소는
+문자나 숫자로 시작하며 이후에는 문자, 숫자, `.`, `_`, `-`를 포함할 수 있습니다. 패키지 이름 뒤의
+선택적 `@`는 정확한 버전, 배포 태그 또는 npm semver 범위를 도입합니다. 생략하면 `latest`입니다.
+공백이나 비교 연산자가 포함된 셸 인수는 따옴표로 묶으세요. npm 별칭, tarball URL, npm의 `file:`
+명세는 플러그인 소스 식별자가 아닙니다. 해당 위치에는 디렉터리 또는 Git 소스를 사용하세요. 선택자와
+하위 디렉터리를 모두 지정하는 범위 없는 패키지(`npm:review@1.2.0:nested`)에는 `npm:` 접두사를
+사용하세요. 접두사가 없으면 `user@host:path`는 SCP Git 소스입니다. 패키지 레지스트리가 선택한 버전,
+태그 또는 범위를 검증합니다.
+
+Paseo는 다음 순서로 식별자를 해석합니다.
+
+1. 데몬 호스트에서 전체 식별자와 일치하는 기존 디렉터리가 우선합니다. 이름에 리터럴 `:`이 있는
+   디렉터리도 포함됩니다.
+2. 그 외에는 하위 디렉터리 접미사를 해석하기 전에 `npm:`, `github:`, `git:`를 인식합니다.
+   `git://`는 Git URL 스킴입니다. 명시적 접두사는 해당 유형의 가져오기를 선택합니다.
+3. 마지막 `:relative/plugin/path`는 접미사에 비어 있거나 `.` 또는 `..`인 세그먼트가 없을 때만
+   인식합니다. `.` 하나는 소스 루트를 선택합니다. `/`와 `\`는 모두 접미사 세그먼트를 구분하며,
+   호스트 간에는 `/`를 사용하세요. URL 포트와 SCP 소스의 구분자는 소스에 그대로 남습니다. 이 규칙을
+   만족하지 않는 접미사는 식별자의 일부로 유지됩니다.
+4. 명시적 접두사가 없으면 나머지 소스와 일치하는 기존 디렉터리가 우선합니다.
+5. Git URL과 SCP 소스는 Git으로 해석하고, 정확한 `owner/repository` 축약 표기는 GitHub HTTPS로
+   확장합니다. `github:`는 해당 축약 표기만 허용하며, `git:`는 URL과 SCP 소스도 허용합니다.
+6. 나머지 npm 패키지 이름과 선택적 선택자는 호스트 레지스트리를 통해 해석합니다. 그 밖의 값은
+   거부합니다.
+
+디렉터리 조회는 데몬 호스트에서 수행됩니다. 앱은 `paseo-plugin.json`의 ID를 사용하고, CLI에서는
+`--id <runtime-id>`로 이를 재정의할 수 있습니다. 기존 설치 ID를 지정하면 활성화 상태나 파일을
+변경하지 않고 거부합니다.
+
+```bash
+paseo plugin install /srv/paseo/plugins/review
+paseo plugin install github:acme/paseo-review
+paseo plugin install git:https://git.example.com:8443/acme/monorepo.git:plugins/review --ref main
+paseo plugin install git@git.example.com:acme/review.git
+paseo plugin install file:///srv/repos/monorepo:plugins/review
+paseo plugin install npm:paseo-review@1.2.0
+paseo plugin install npm:@acme/paseo-review@next
+paseo plugin install 'npm:@acme/paseo-review@>=1.2.0 <2.0.0' --id review-staging
+paseo plugin install npm:@acme/plugins@^1.2.0:plugins/review
+```
+
+`--ref`는 Git에만 적용되며 이 설치에 사용할 브랜치, 태그 또는 커밋을 받습니다. 생략하면 원격의 기본
+HEAD를 설치합니다. 설치 선택자는 이후 업데이트를 제한하지 않습니다. 기존
+`--path relative/plugin/path` 옵션은 npm을 포함해 하위 디렉터리 접미사와 같은 의미입니다.
+
+### npm 설치와 게시
+
+**데몬 호스트**에 npm과 함께 Node.js를 설치하고 데몬의 `PATH`에서 `npm`을 사용할 수 있게 하세요.
+데몬은 범위별 레지스트리를 포함해 해당 호스트의 npm 사용자/전역 구성과 환경을 레지스트리 선택 및
+인증에 사용합니다. 클라이언트는 패키지를 다운로드하거나 npm을 실행하지 않습니다. 설치된 플러그인을
+로드하거나 활성화하거나 다시 로드할 때는 npm이 필요하지 않습니다.
+
+데몬은 각 후보와 그 프로덕션 종속성을 격리된 디렉터리에 설치합니다. 활성화할 때 전체 종속성 트리와
+`package-lock.json`을 유지합니다. 설치된 패키지와 잠금 파일이 현재 버전과 아티팩트 무결성을
+제공합니다. 버전, 태그 또는 범위는 이 설치에서만 사용할 콘텐츠를 선택합니다.
+
+패키지 내용, 종속성, 준비 작업, 비공개 레지스트리는
+[플러그인 게시하기](/docs/plugins/publishing)를 참조하세요.
+
+다운로드, 종속성 설치, 매니페스트 검사, 준비 명령, 컴파일 또는 활성화에 실패하면 후보를 폐기합니다.
+다른 설치된 플러그인은 계속 실행됩니다. npm 플러그인을 제거하면 관리되는 파일이 삭제되고, 디렉터리
+플러그인을 제거해도 소스 디렉터리는 유지됩니다.
+
 ## CLI 참조
 
 ```bash
@@ -1698,7 +1790,10 @@ paseo plugin add https://git.example.com/owner/repository.git --ref main
 paseo plugin add owner/monorepo:plugins/review
 paseo plugin ls [id]
 paseo plugin update <id>
-paseo plugin update --all
+paseo plugin update --all --check
+paseo plugin update --all --yes
+paseo plugin update my-plugin --version 1.2.0
+paseo plugin update my-plugin --ref v2
 paseo plugin reload my-plugin
 paseo plugin logs my-plugin
 paseo plugin disable my-plugin
@@ -1706,13 +1801,35 @@ paseo plugin enable my-plugin
 paseo plugin remove my-plugin
 ```
 
-`ls`는 원격에 연결하지 않고 런타임 상태, 소스 세부정보, 설치된 커밋을 보고합니다. Paseo가 추적 중인 Git 원격에 연결하여 사용 가능한 업데이트를 설치하게 하려면 `update`를 사용하세요.
+`ls`와 설정은 원격에 연결하지 않고 소스 식별 정보와 현재 설치된 리비전을 보여줍니다. 식별 정보에는
+선택한 하위 디렉터리가 포함되고 설치 선택자는 제외됩니다.
 
-대상이 CLI의 기본 데몬이 아니라면 관리 명령 앞에 `--host <url>`을 넣으세요. `remove`는 디렉토리 소스를 삭제하지 않으며, Git 소스의 경우 관리형 체크아웃을 삭제합니다. 설치 시 지정하는 `--id`는 런타임 ID이며, 같은 디렉토리나 저장소를 여러 번 설치할 수 있게 합니다.
+`update <id>`는 업데이트를 확인하고 현재 및 제안된 리비전과 가능한 검토 링크를 보여준 뒤 승인을
+요청합니다. 거부하면 설치된 콘텐츠는 변경되지 않습니다.
 
-> **추가하는 모든 플러그인을 신뢰할 수 있어야 합니다.** `paseo plugin add`와 `paseo plugin install`은 “이 코드베이스를 신뢰한다”는 뜻입니다. 서버 코드와 Git 준비 명령은 데몬 호스트에서 데몬 사용자의 접근 권한으로 샌드박스 없이 실행되며, 클라이언트 기여는 Paseo 내부에서 실행됩니다. 종속성과 향후 업데이트도 이 판단에 포함됩니다. 전역 `--host` 옵션을 사용하면 명령은 원격 데몬 호스트에서 실행됩니다.
+- npm은 패키지의 `latest` 버전을 확인합니다. 더 최신 버전만 제안하며, 설치된 버전이 latest보다
+  새 버전이면 그대로 유지됩니다. 호스트의 npm 레지스트리/인증 구성이 해석을 제어합니다.
+- Git은 설치할 때 선택한 브랜치, 태그 또는 커밋과 관계없이 원격의 현재 기본 HEAD를 확인합니다.
+- 디렉터리 플러그인은 건너뜁니다. 디렉터리를 편집한 뒤 `reload`를 사용하세요.
 
-기존 디렉토리는 `owner/repository` GitHub 축약 표기보다 우선합니다. 플러그인이 저장소 루트 아래에 있으면 `:relative/path`를 덧붙이세요. 기본 브랜치를 추적하려면 `--ref`를 생략하세요. 명시한 브랜치는 업데이트를 추적하며, 태그와 커밋은 고정된 상태로 유지됩니다.
+`--check`는 명시적 대상이나 `--yes`와 함께 사용해도 미리 보기만 합니다. `--yes`는 질문을
+건너뜁니다. `--all`은 설정된 각 플러그인을 확인하고 독립적인 결과를 보고하므로 하나가 실패해도 다른
+플러그인의 처리를 중단하지 않습니다. 두 플래그 모두 일반적인 npm 다운그레이드를 허용하지 않습니다.
+
+`--version <version|tag|range>` 또는 `--ref <branch|tag|commit>`은 일치하는 플러그인 하나의
+업데이트 콘텐츠를 선택하고 추가 질문 없이 적용합니다. 명시적 npm 버전은 더 오래된 버전일 수 있습니다.
+다음 일반 업데이트에서는 latest를 다시 확인합니다. 명시적 대상은 `--all`과 함께 사용할 수 없습니다.
+JSON 및 비대화형 일반 업데이트에는 `--yes`가 필요합니다.
+
+승인하면 검토한 정확한 커밋 또는 npm 아티팩트를 가져옵니다. 이를 사용할 수 없거나 검토 중 설치된
+플러그인이 변경되면 업데이트가 실패하고 다시 확인하라고 안내합니다. 준비 또는 활성화 실패 시 이전
+설치본을 유지합니다. 앱에서 수동으로 업데이트를 검토하는 기능은 아직 제공되지 않습니다.
+
+대상이 CLI의 기본 데몬이 아니라면 관리 명령 앞에 `--host <url>`을 넣으세요. `remove`는 디렉터리
+소스를 삭제하지 않으며 Git 및 npm 소스의 관리되는 파일을 삭제합니다. 설치 시 지정하는 `--id`는
+런타임 ID이며, 같은 디렉터리나 저장소를 여러 번 설치할 수 있게 합니다.
+
+> **추가하는 모든 플러그인을 신뢰할 수 있어야 합니다.** `paseo plugin add`와 `paseo plugin install`은 “이 코드베이스를 신뢰한다”는 뜻입니다. 서버 코드와 준비 명령은 데몬 호스트에서 데몬 사용자의 접근 권한으로 샌드박스 없이 실행되며, 클라이언트 기여는 Paseo 내부에서 실행됩니다. 종속성과 향후 업데이트도 이 판단에 포함됩니다. 전역 `--host` 옵션을 사용하면 명령은 원격 데몬 호스트에서 실행됩니다.
 
 대부분의 플러그인은 `build`를 생략해야 합니다. 준비 중인 체크아웃에서 Paseo가 제공하지 않는 종속성을 설치하거나, 소스 또는 자산을 생성하거나, 다른 필수 준비 단계를 수행해야 할 때만 사용하세요.
 
@@ -1720,16 +1837,14 @@ paseo plugin remove my-plugin
 {
   "id": "review",
   "requirements": { "paseo": ">=0.8.0" },
-  "build": [
-    ["npm", "ci"],
-    ["npm", "run", "build"]
-  ]
+  "build": [["npm", "ci", "--omit=dev"]]
 }
 ```
 
 `build`는 비어 있지 않은 argv 배열의 목록입니다. Paseo는 정확한 커밋과 매니페스트를 확인한 뒤 준비 중인 플러그인 디렉토리에서 셸 없이 각 실행 파일을 직접 실행합니다. 잠금 파일에서 패키지 관리자나 명령을 추론하지 않습니다. 설치와 업데이트 모두 검증, 컴파일, 활성화 또는 교체 전에 `build`를 실행합니다. 명령이 실패하면 출력을 보고하고 후보 버전을 폐기하며, 설치되어 실행 중인 버전은 그대로 유지합니다. 데몬 로그에는 각 명령과 출력이 기록됩니다. 전역 `--host` 옵션을 사용하면 해당 데몬 호스트에서 실행됩니다.
 
-설치하거나 다시 로드하기 전에 `npm run typecheck`를 실행하세요. 플러그인 소스 항목은 CLI 또는 설정에서 관리하세요.
+설치하거나 다시 로드하기 전에 `npm run typecheck`를 실행하세요. 플러그인 소스 항목은 CLI 또는
+설정에서 관리하세요. 설치 구문은 [플러그인 소스](#plugin-sources)를 참조하세요.
 
 데몬 전체에 적용되는 **Enable plugins** 스위치는 **Settings → Plugins**에 있습니다. 이 스위치와 플러그인 자체의 활성화 상태가 모두 켜지기 전까지 설정된 플러그인은 `disabled` 상태로 유지됩니다.
 
@@ -1741,7 +1856,7 @@ paseo plugin remove my-plugin
 
 | 증상 | 확인 사항 |
 | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `This plugin was made for an older version of Paseo` | 디렉토리에 `index.ts` 진입점만 있습니다. [마이그레이션 가이드](/docs/plugins/v0.8/migration)를 따르세요. |
+| `This plugin was made for an older version of Paseo` | 디렉토리에 `index.ts` 진입점만 있습니다. [마이그레이션 가이드](/docs/plugins/migration)를 따르세요. |
 | `Plugin entry points are missing` | `index.client.tsx`와 `index.server.ts` 중 정확히 해당 이름으로 존재하는 파일이 없습니다. |
 | `server-only module cannot be imported into the plugin client bundle` | 클라이언트 코드가 `server/`를 가져옵니다. 해당 작업을 RPC 뒤로 옮기고 계약을 `shared/`에서 가져오세요. |
 | `client-only module cannot be imported into the plugin server bundle` | 서버 코드가 `client/`를 가져옵니다. 해당 기여를 `index.client.tsx`에서 등록하세요. |
