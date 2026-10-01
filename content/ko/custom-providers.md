@@ -18,9 +18,26 @@ category: Providers
 
 파일을 편집한 후 `paseo reload`를 실행하세요. 공급자 변경은 데몬을 다시 시작하지 않아도 이후 실행에 적용됩니다.
 
-공급자 ID는 하이픈이 포함된 소문자 영숫자(`/^[a-z][a-z0-9-]*$/`)여야 합니다. 모든 사용자 정의 항목에는 `extends`(1급 공급자 ID 또는 `"acp"`) 및 `label`이 필요합니다.
+공급자 ID는 하이픈이 포함된 소문자 영숫자(`/^[a-z][a-z0-9-]*$/`)여야 합니다. 새 사용자 정의 공급자에는 `extends`(1급 공급자 ID 또는 `"acp"`) 및 `label`이 필요합니다.
+번들된 공급자 플러그인을 재정의하려면 해당 공급자 ID를 사용하고 `extends`는 생략하세요. [Muse Code](/docs/muse-code)의 경우 명령 또는 환경 재정의를 `agents.providers.muse` 아래에 설정하세요.
 
 아래 예는 간략한 둘러보기입니다. 전체 최신 참조는 GitHub: [docs/custom-providers.md](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)에 있습니다.
+
+## 공급자 옵션
+
+`agents.providers.<id>.options`에 기본값을 설정하세요.
+
+```json
+{
+  "agents": {
+    "providers": {
+      "pi": { "options": { "rpcTimeoutMs": 90000 } }
+    }
+  }
+}
+```
+
+하나의 에이전트에서만 기본값을 재정의하려면 SDK `config.options`(와이어 필드는 `providerOptions`)를 사용하세요. 공급자가 결과 레코드를 검증하고 적용합니다. 두 계층, 깊은 병합 규칙, 영구 저장 동작, 공급자별 예제는 [공급자 옵션](/docs/sdk/provider-options)을 참조하세요.
 
 ## 일류 공급자 확장
 
@@ -192,4 +209,4 @@ stdio를 통해 [ACP](https://agentclientprotocol.com)를 사용하는 에이전
 
 ## 전체 참조
 
-전체 필드 참조(`extends`, `label`, `command`, `env`, `models`, `additionalModels`, `disallowedTools`, `paseoTools`, `enabled`, `order`), 모델 및 사고 옵션 스키마, 각 구성 방식의 자세한 예시는 GitHub의 [docs/custom-providers.md](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)를 참조하세요. `paseoTools` 구성은 [공급자별 Paseo 도구 제한](/docs/mcp#limit-paseo-tools-by-provider)을 참조하세요.
+전체 필드 참조(`extends`, `label`, `command`, `env`, `options`, `models`, `additionalModels`, `disallowedTools`, `paseoTools`, `enabled`, `order`), 모델 및 사고 옵션 스키마, 각 구성 방식의 자세한 예시는 GitHub의 [docs/custom-providers.md](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)를 참조하세요. `paseoTools` 구성은 [공급자별 Paseo 도구 제한](/docs/mcp#limit-paseo-tools-by-provider)을 참조하세요.

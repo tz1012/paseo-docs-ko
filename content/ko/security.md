@@ -123,7 +123,7 @@ Compose 및 역방향 프록시 예시는 [Docker](/docs/docker)를 참조하세
 
 ## 에이전트 인증
 
-Paseo는 에이전트 CLI(Claude Code, Codex, OpenCode)를 래핑하지만 인증을 관리하지는 않습니다. 각 에이전트 공급자는 자체 자격 증명을 처리합니다.
+Paseo는 에이전트 CLI(Claude Code, Codex, OpenCode, Muse Code)를 래핑하지만 인증을 관리하지는 않습니다. 각 에이전트 공급자는 자체 자격 증명을 처리합니다.
 
 - **Claude Code**는 `~/.claude/`에 저장된 Anthropic의 OAuth 흐름을 통해 인증합니다.
 - **Codex**, OpenAI API 키 또는 OAuth 세션을 사용합니다.

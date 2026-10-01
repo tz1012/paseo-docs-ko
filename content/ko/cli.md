@@ -329,6 +329,9 @@ paseo hub init                 # Create and optionally deploy a starter trigger 
 paseo hub connect [url]        # Enroll this daemon using CLI access
 paseo hub projects             # List legacy projects in the authenticated organization
 paseo hub status               # Show the current Hub relationship
+paseo hub permissions list     # Show what this Hub may do on this daemon
+paseo hub permissions grant hub.execute    # Let Hub automations run agents here
+paseo hub permissions revoke hub.execute   # Take it back
 paseo hub disconnect           # End it
 paseo hub deploy               # Validate and install .paseo/triggers/*.yml
 paseo hub deploy --dry-run     # Validate without installing
@@ -344,7 +347,7 @@ paseo hub logout               # Remove the active stored CLI login
 
 `init`에는 TTY가 필요합니다. 필요에 따라 로그인하고 데몬을 연결한 다음 시작용 트리거의 기반으로 사용할 수 있는 조직의 앱 연결을 나열합니다. 사용할 수 있는 연결이 하나면 자동으로 선택하고, 여러 개면 **Trigger connection**을 선택합니다. 준비된 연결이 없으면 **Hub → Apps**로 안내하고 에이전트를 선택하거나 파일을 쓰기 전에 중지합니다.
 
-설정은 실행할 에이전트 공급자, 모델, 모드를 묻습니다. 공급자는 활성화되어 있고 선택 가능한 모델과 실행 모드를 모두 제공해야 합니다. 제안되는 모델과 모드 항목은 데몬의 기본값이며, 기본 모드가 없을 때도 모드를 명시적으로 선택합니다. 그런 다음 봇을 트리거할 수 있는 ID, 즉 GitHub 사용자 이름, Slack 멤버 ID 또는 Discord 사용자 ID를 묻습니다. 트리거를 검증하고 `.paseo/triggers/<provider>-help.yml`에 쓴 뒤 배포할지 묻습니다. 해당 파일을 교체하려면 확인이 필요하며 기존 레거시 번들과 다른 트리거 파일은 보존됩니다. [생성된 시작용 트리거](/docs/hub/configuration#generated-starter-trigger)를 참조하세요.
+설정은 실행할 에이전트 공급자, 모델, 모드를 묻습니다. 공급자는 활성화되어 있고 선택 가능한 모델과 실행 모드를 모두 제공해야 합니다. 제안되는 모델과 모드 항목은 데몬의 기본값이며, 기본 모드가 없을 때도 모드를 명시적으로 선택합니다. Hub는 배포 전에 데몬을 통해 선택을 검증하며, 무인 실행에는 Claude, Codex, OpenCode만 허용합니다. `deploy`도 같은 검사를 적용하므로 지정한 데몬이 연결되어 있어야 합니다. 그런 다음 봇을 트리거할 수 있는 ID, 즉 GitHub 사용자 이름, Slack 멤버 ID 또는 Discord 사용자 ID를 묻습니다. 트리거를 검증하고 `.paseo/triggers/<provider>-help.yml`에 쓴 뒤 배포할지 묻습니다. 해당 파일을 교체하려면 확인이 필요하며 기존 레거시 번들과 다른 트리거 파일은 보존됩니다. [생성된 시작용 트리거](/docs/hub/configuration#generated-starter-trigger)를 참조하세요.
 
 대화형 로그아웃은 동일 출처 데몬 관계를 확인하고 로그인을 삭제하기 전에 연결을 끊을지 묻습니다. 거부하면 로그인만 제거됩니다. JSON 및 비대화형 로그아웃은 암시적으로 메시지를 표시하거나 연결을 끊지 않습니다. `--disconnect-daemon`은 명시적 자동화 경로이고 `--force`은 해당 데몬 연결 해제에 적용됩니다. 요청된 연결 해제가 실패하면 로그인이 유지됩니다.
 

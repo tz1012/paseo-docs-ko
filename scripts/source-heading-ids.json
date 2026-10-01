@@ -110,6 +110,7 @@
   ],
   "custom-providers": [
     "custom-providers",
+    "provider-options",
     "extending-a-first-class-provider",
     "zai-glm-coding-plan",
     "alibaba-cloud-qwen-coding-plan",
@@ -184,6 +185,7 @@
   "hub/daemons": [
     "daemons-in-hub",
     "connect",
+    "let-hub-run-agents-on-it",
     "reference-it-from-configuration",
     "what-hub-owns",
     "status"
@@ -288,6 +290,7 @@
   "hub/triggers/index": [
     "triggers",
     "choose-the-agent-in-hub",
+    "saving-checks-the-agent-against-the-daemon",
     "continue-the-same-agent",
     "events",
     "filters",
@@ -342,6 +345,12 @@
     "choose-a-model",
     "configure-a-custom-fallback-order",
     "per-project-instructions"
+  ],
+  "muse-code": [
+    "muse-code",
+    "getting-started",
+    "provider-options",
+    "limitations-in-muse-141"
   ],
   "orchestration-workflows": [
     "common-orchestration-workflows",
@@ -422,6 +431,7 @@
     "errors-and-refusal",
     "server-runtime",
     "providers",
+    "usage-sources",
     "entry-point-and-cleanup",
     "lifecycle-hooks",
     "change-configuration-and-inject-an-mcp-server",
@@ -434,7 +444,10 @@
     "ordering-and-returned-values",
     "context-and-cleanup",
     "complete-examples",
-    "surfaces-and-sidebar-items",
+    "screens-and-sidebar-items",
+    "sidebar-items",
+    "several-rows-in-one-item",
+    "add-and-remove-items-at-runtime",
     "host-ui",
     "modal",
     "scrolling",
@@ -599,6 +612,7 @@
   "supported-providers": [
     "supported-providers",
     "native-support",
+    "antigravity",
     "acp-catalog"
   ],
   "troubleshooting": [

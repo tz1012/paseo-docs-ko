@@ -92,7 +92,7 @@ environments:
 
 | 필드 | 필수 | 메모 |
 | ------------------ | -------- | ---------------------------------------------------------------- |
-| `provider` | 예 | 제공자 ID.                                                     |
+| `provider` | 예 | 공급자 ID. Hub는 무인으로 실행하므로 `claude`, `codex`, `opencode`만 허용합니다. |
 | `model` | 아니 | 공급자 모델 ID.                                               |
 | `mode` | 아니 | Paseo 모드 ID.                                                   |
 | `thinkingOptionId` | 아니 | 공급자 사고 옵션.                                        |
@@ -100,7 +100,7 @@ environments:
 
 명명된 선택은 구조화된 옵션을 포함하여 전체 개체를 유지합니다. 명명된 에이전트에는 상위, 패치 또는 단계별 재정의가 없습니다.
 
-Hub는 공급자 필드의 이름을 바꾸거나 평면화하지 않고 `model`, `mode`, `thinkingOptionId` 및 `options`을 Paseo 데몬에 전달합니다. 선택한 데몬은 현재 공급자 스키마에 대해 유효성을 검사합니다. 허브는 공급자 기본 옵션을 번역하지 않습니다.
+Hub는 공급자 필드의 이름을 바꾸거나 평면화하지 않고 `model`, `mode`, `thinkingOptionId` 및 `options`을 Paseo 데몬에 전달합니다. 선택한 데몬은 트리거를 저장하거나 배포할 때 현재 공급자 스키마에 대해 이 값을 검증합니다. 데몬이 제공하지 않는 값은 첫 실행이 아니라 이 시점에 거부됩니다. Hub는 공급자 고유 옵션을 변환하지 않습니다. [저장 시 데몬을 통해 에이전트 검사](/docs/hub/triggers#saving-checks-the-agent-against-the-daemon)를 참조하세요.
 
 ## 워크플로 파일
 

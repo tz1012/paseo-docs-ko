@@ -71,8 +71,9 @@ my-plugin/
 | 기존 등록 및 위치                                                                 | 새 등록 및 위치                                                              |
 | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 기존 루트 진입점의 `plugin.handle(contract, handler)`                                      | `index.server.ts`의 `server.handle(contract, handler)`                                    |
-| 기존 루트 진입점의 `plugin.addSurface(id, Component)`                                      | `index.client.tsx`의 `client.addSurface(id, Component)`                                   |
-| 기존 루트 진입점의 `plugin.addSidebarItem(item)`                                           | `index.client.tsx`의 `client.addSidebarItem(item)`                                        |
+| 기존 루트 진입점의 `plugin.addSurface(id, Component)`                                      | `index.client.tsx`의 `client.addScreen({ id, title, Component })`                          |
+| 기존 루트 진입점의 `plugin.addSidebarItem({ id, title, icon, surface })`                    | `index.client.tsx`의 `client.addSidebarHeaderItem({ id, title, Component })`; [사이드바 항목](reference#sidebar-items) 참조 |
+| 새 사이드바 푸터 기여                                                               | `index.client.tsx`의 `client.addSidebarFooterItem({ id, title, Component })`              |
 | 기존 루트 진입점의 `plugin.addWorkspacePanel(panel)`                                       | `index.client.tsx`의 `client.addWorkspacePanel(panel)`                                    |
 | 기존 루트 진입점의 `plugin.addCommandCenterItem(item)`                                     | `index.client.tsx`의 `client.addCommandCenterItem(item)`                                  |
 | 기존 루트 진입점의 `plugin.addClientSlashCommand(command)`                                 | `index.client.tsx`의 `client.addSlashCommand(command)`                                    |
@@ -86,6 +87,8 @@ my-plugin/
 | 기존 루트 진입점의 `plugin.addTimelineRenderer(renderer)`                                  | `index.client.tsx`의 `client.addTimelineRenderer(renderer)`                               |
 | 공유 파일의 `import { defineRpc, defineAttachmentSource } from "@getpaseo/plugin/server"` | `import { defineRpc, defineAttachmentSource } from "@getpaseo/plugin"`                     |
 | `ZodOutput<typeof contract.input>` 핸들러 매개변수 유형                                    | `@getpaseo/plugin`의 `RpcInput<typeof contract>`, 반환 유형에는 `RpcOutput` 사용          |
+
+`addSidebarItem`를 대체하는 화면을 해당 항목의 `id`로 등록해 저장된 링크가 계속 작동하도록 하세요. `/plugin/<plugin>/sidebar/<id>` 링크와 이전 `/plugin/<plugin>/<id>` 링크는 해당 `id`의 `addSidebarItem`을 열고, 없으면 해당 `id`의 화면을 엽니다.
 
 클라이언트 진입점에서는 `@getpaseo/plugin/client`의 `PluginClientContext`를, 서버 진입점에서는
 `@getpaseo/plugin/server`의 `PluginServerContext`를 가져오세요. 기존 컨텍스트 유형의 가져오기는

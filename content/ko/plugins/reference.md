@@ -14,7 +14,7 @@ category: Plugins
 
 로컬 플러그인은 하나의 Paseo 데몬에 설치되는 디렉토리 소스입니다. 플러그인은 다음 기능을 제공할 수 있습니다.
 
-- Paseo 클라이언트의 React Native 표면과 사이드바 항목
+- Paseo 클라이언트의 React Native 화면과 사이드바 헤더/푸터 항목
 - 작업공간 탭으로 열리는 작업공간 및 에이전트 패널
 - Command Center의 전역, 작업공간 및 에이전트 작업
 - 메시지 작성기의 슬래시 명령
@@ -97,7 +97,7 @@ Paseo 시험판 버전은 안정화 핵심 버전(`major.minor.patch`)이 만족
 
 진입점이 하나 이상 필요하며, 두 진입점 모두 `.ts` 또는 `.tsx`를 사용할 수 있습니다. 기존 `index.ts`만 있는 디렉토리는 로드에 실패하며 [마이그레이션 가이드](/docs/plugins/migration)를 안내합니다.
 
-플러그인, 표면, 사이드바 항목, 작업공간 패널, Command Center 항목, 첨부 소스, 슬래시 명령의 ID는 소문자로 시작하며 소문자, 숫자 또는 하이픈으로 구성됩니다.
+플러그인, 화면, 사이드바 항목, 작업공간 패널, Command Center 항목, 첨부 소스, 슬래시 명령의 ID는 소문자로 시작하며 소문자, 숫자 또는 하이픈으로 구성됩니다.
 
 생성된 `package.json`은 로컬 타입 검사와 테스트를 위해 `@getpaseo/plugin` 및 다른 호스트 모듈을 개발 종속성으로 설치합니다. Paseo가 해당 런타임 인스턴스를 제공합니다. 사용자가 플러그인을 추가할 때는 이러한 모듈을 설치하지 않습니다.
 
@@ -251,7 +251,7 @@ openBrowser({ url, workspaceId: remoteWorkspaceId, serverId: remoteServerId });
 | 인앱 브라우저 작업공간 ID가 비어 있음 | 탭을 만들기 전에 `workspaceId is required.` 오류를 발생시킴 |
 | 대상 호스트/작업공간을 알 수 없거나 작업공간 목록이 아직 로드되지 않음 | 탭을 만들기 전에 `Workspace is unavailable on the requested host.` 오류를 발생시킴 |
 
-[설정 API](#settings-screens)를 사용하면 클라이언트 간에 타입이 지정된 호스트 범위 값을 유지할 수 있습니다. 직접 등록한 기여를 열 때는 `openSettings`, `openSurface`, `openPanel`을 사용하세요.
+[설정 API](#settings-screens)를 사용하면 클라이언트 간에 타입이 지정된 호스트 범위 값을 유지할 수 있습니다. 직접 등록한 기여를 열 때는 `openSettings`, `openScreen`, `openPanel`을 사용하세요.
 
 ### 서버 런타임
 
@@ -265,13 +265,44 @@ Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpa
 
 메시지, 구조화된 명령, 방향 조정, 명령 부수 효과에는 하나의 `session.prompt` 입력을 사용하세요. 실시간 사용자 타임라인 항목에 `clientMessageId`를 반복하고 정확히 하나의 일치하는 `session.prompt_result`를 게시합니다. 공급자가 만든 하위 항목은 `parentSessionId`가 있는 세션으로 게시하세요.
 
-공급자 설정은 Paseo가 작성기에 렌더링하는 토글/선택 설명자입니다. 공급자 전용 JSON은 `providerOptions`에 두세요. 호스트 도구는 전체 세션 구성의 MCP 서버로 전달됩니다.
+공급자 설정은 Paseo가 작성기에 렌더링하는 토글/선택 설명자입니다. 공급자 전용 옵션은 `session.open`의 `ProviderSessionConfig.providerOptions`에 두세요. 이 레코드는 구성된 기본값과 에이전트별 재정의를 포함하며, 공급자에서 검증하고 적용해야 합니다. 구성 및 병합 규칙은 [공급자 옵션](/docs/sdk/provider-options)을 참조하세요. 호스트 도구는 전체 세션 구성의 MCP 서버로 전달됩니다.
 
 Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용해 다시 여는 방식으로 에이전트를 새로 고칩니다. 공급자는 `session.open` 중에 외부 상태를 다시 읽습니다.
 
 명령 기반 ACP를 연동하려면 `@getpaseo/plugin/server/acp`의 `runAcpProvider()`를 사용하세요. 공급업체별 검색, 구성, 알림 또는 도구 호출 차이에만 변환기 훅을 추가합니다.
 
 `ProviderRegistration.icon`은 `icon.svg`처럼 플러그인 디렉터리를 기준으로 한 파일 경로입니다. 해당 디렉터리 안에 있는 64KiB 이하의 일반 SVG 파일이어야 합니다. SVG는 자체 완결형이어야 하며 스크립트, 스타일, `foreignObject`, 이벤트 핸들러 속성, JavaScript URL, 외부 `href` 또는 `xlink:href` 참조는 거부됩니다. `#mark` 같은 프래그먼트 참조는 허용됩니다. Paseo는 플러그인을 시작할 때 파일을 읽고 정제합니다. 문자열 자체를 인라인 SVG나 URL로 사용하지 않습니다.
+
+### 사용량 소스
+
+**Paseo 0.9.3 이상이 필요합니다.** 서버 플러그인은 `server.registerUsageSource()`로 사용량 소스를 등록하고 `@getpaseo/plugin/server/usage`에서 유형과 도우미를 가져옵니다.
+
+```ts
+import { z } from "zod";
+import type { PluginServerContext } from "@getpaseo/plugin/server";
+
+const input = z.object({ account: z.string() });
+
+export default function contribute(server: PluginServerContext) {
+  server.registerUsageSource({
+    id: "example-usage",
+    label: "Example",
+    icon: "icon.svg",
+    input,
+    discover: async () => [{ account: "default" }],
+    identify: async (value) => {
+      const { account } = input.parse(value);
+      return { key: account };
+    },
+    fetch: async () => ({ status: "available", windows: [] }),
+  });
+  return () => {};
+}
+```
+
+`discover()`는 필수이며 구성된 입력값을 제공합니다. 구성된 계정이 없으면 `[]`를 반환하세요. `identify(input)`은 사용량을 가져오지 않고 안정적인 계정 키와 선택적 표시 레이블을 반환하며, 자격 증명이 없으면 `null`을 반환합니다. 데몬은 소스 ID와 키를 `<sourceId>:<accountKey>`로 결합합니다. 키는 `[A-Za-z0-9._-]`의 1~128자로, 토큰이 교체되어도 안정적으로 유지되며 할당량이 측정되는 계정이나 조직을 식별해야 합니다. 자격 증명이나 원본 이메일을 키로 사용하지 마세요. 유일한 안정적 식별자가 민감하면 `hashAccountKey(value)`를 사용하세요.
+
+`usage.list_reports`는 ID 없이 호출하면 보고서를 발견하고, ID를 제공하면 요청한 알려진 ID만 읽습니다. 각 보고서를 5분간 캐시하며 `forceRefresh`는 반환된 ID만 새로 고칩니다. 각 항목은 `id`, `account.label`, `fetchedAt`을 포함합니다. `fetch()`는 `status`(`available`, `unavailable`, `error`), 선택적 `planLabel`, 일반 `windows`, `balances`, `details`를 포함한 `UsageReport`를 반환합니다. 아이콘은 플러그인 디렉터리 아래의 자체 완결형 SVG 경로이며 위의 공급자 아이콘 제한을 따릅니다.
 
 ## 진입점과 정리
 
@@ -282,7 +313,7 @@ import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { Main } from "./client/main";
 
 export default function contribute(client: PluginClientContext) {
-  client.addSurface("main", Main);
+  client.addScreen({ id: "main", title: "My plugin", Component: Main });
   return () => {};
 }
 ```
@@ -530,7 +561,7 @@ type PluginTurnOutcome =
 | `provider`, `model` | 별도 필드; 공급자를 바꾸면 모델/모드/옵션도 바꿔야 할 수 있음 |
 | `modeId`, `thinkingOptionId`, `featureValues` | 공급자별 선택 사항 |
 | `title`, `systemPrompt` | 에이전트 구성 |
-| `providerOptions` | 공급자별로 검증되는 옵션 |
+| `providerOptions` | 불투명한 공급자 고유 옵션 |
 | `mcpServers`, `toolPolicy` | MCP 구성과 정확한 도구 사전 승인 |
 | `cwd` | 변경할 수 없음 |
 | `internal` | 데몬 소유이며 이 훅에서 변경할 수 없음 |
@@ -602,18 +633,18 @@ Creation request
 
 로거 출력은 `paseo plugin logs lifecycle-logger` 또는 호스트의 `daemon.log`에서 확인하세요.
 
-## 표면과 사이드바 항목
+## 화면과 사이드바 항목
 
-구성 요소를 등록한 뒤 사이드바 항목이 해당 표면 ID를 가리키도록 설정하세요.
+화면은 플러그인 UI의 전체 페이지입니다. 사이드바 항목은 Paseo가 사이드바 헤더나 푸터에 렌더링하는 구성 요소이며, 누르면 무엇을 할지 자체적으로 결정합니다. 화면을 등록한 뒤 그 화면을 여는 항목을 등록하세요.
 
 `client/main.tsx`:
 
 ```tsx
-import type { PluginSurfaceProps } from "@getpaseo/plugin/client";
+import type { PluginScreenProps } from "@getpaseo/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
-export function Main({ theme, host, layout }: PluginSurfaceProps) {
+export function Main({ theme, host, layout }: PluginScreenProps) {
   const styles = useMemo(
     () => ({
       screen: {
@@ -637,32 +668,161 @@ export function Main({ theme, host, layout }: PluginSurfaceProps) {
 
 `index.client.tsx`:
 
-```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+```tsx
+import type { PluginClientContext, PluginSidebarItemProps } from "@getpaseo/plugin/client";
+import { SidebarRow } from "@getpaseo/plugin/client/ui";
 import { Main } from "./client/main";
 
+function MainItem({ currentScreen, openScreen }: PluginSidebarItemProps) {
+  return (
+    <SidebarRow
+      icon="Blocks"
+      active={currentScreen?.screenId === "main"}
+      onPress={() => openScreen({ screenId: "main" })}
+    />
+  );
+}
+
 export default function contribute(client: PluginClientContext) {
-  client.addSurface("main", Main);
-  client.addSidebarItem({
-    id: "main",
-    title: "My plugin",
-    icon: "Blocks",
-    surface: "main",
-  });
+  client.addScreen({ id: "main", title: "My plugin", Component: Main });
+  client.addSidebarHeaderItem({ id: "main", title: "My plugin", Component: MainItem });
   return () => {};
 }
 ```
 
-`PluginSurfaceProps`에는 다음 필드가 있습니다.
+`PluginScreenProps`에는 다음 필드가 있습니다.
 
 | 필드 | 의미 |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | `theme` | 활성 Paseo 테마의 타입이 지정된 `PluginTheme` 색상 토큰. |
 | `host` | 선택한 호스트의 `id`와 표시용 `label`. |
 | `layout` | `compact`와 `ios`, `android` 또는 `web` 플랫폼. |
+| `params` | 화면을 열 때 전달한 매개변수. 문자열 키와 값으로 구성되며 없으면 `{}`. |
 | `navigation` | 선택적 클라이언트 탐색 기능. `openAgent({ agentId, serverId? })`와 `openWorkspace({ workspaceId, serverId? })`는 `serverId`의 대상을 열며, 생략하면 선택한 호스트에서 엽니다. `openBrowser({ url, workspaceId, serverId? })`는 Electron에서만 사용할 수 있습니다. [링크와 브라우저](#external-links-and-workspace-browsers)를 참고하세요. |
 
-Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계, 쿼리 클라이언트를 관리합니다. 플러그인은 표면 본문을 관리합니다.
+Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계, 쿼리 클라이언트를 관리합니다. 플러그인은 화면 본문을 관리합니다.
+
+`addScreen({ id, title, Component })`는 화면을 등록합니다. `title`은 화면 헤더의 제목으로, 문자열이거나 화면 매개변수를 받아 문자열을 반환하는 함수입니다. 예를 들면 봇 화면에 봇 이름을 표시할 수 있습니다. 매개변수가 바뀌면 함수가 다시 실행됩니다. 제목이 비어 있거나 문자열이나 함수가 아니면 등록이 오류를 일으킵니다. 제목 함수가 오류를 일으키거나 빈 문자열을 반환하면 화면 ID가 표시되고 화면은 계속 렌더링됩니다.
+
+`openScreen({ screenId, params })`은 봇 화면에 표시할 봇과 같은 매개변수와 함께 화면을 엽니다. 매개변수는 화면 URL의 쿼리에 저장되므로 새로 고침, 뒤로/앞으로 이동, 화면 링크에서도 유지됩니다. 문자열 키는 어떤 것이든 사용할 수 있지만 값은 문자열이어야 하며, 다른 유형은 오류를 일으킵니다. 같은 화면을 다른 매개변수로 열면 새 매개변수가 표시됩니다.
+
+### 사이드바 항목
+
+`addSidebarHeaderItem`은 사이드바 위쪽 목록에 행을 추가합니다. `addSidebarFooterItem`은 **Add project**와 푸터 아이콘 행 사이의 푸터에 행을 추가합니다. 아이콘 행은 고정되어 있으며 플러그인은 그곳에 추가할 수 없습니다. 두 메서드 모두 `{ id, title, Component }`를 받습니다. `title`은 사용자가 항목을 재배치하고 숨기는 **Settings > Sidebar**에서 항목 레이블로 사용되며, `SidebarRow`의 기본 레이블과 접근성 레이블이기도 합니다. 설정에서는 이런 항목에 일반 플러그인 아이콘을 표시하며, 더 이상 사용하지 않는 `addSidebarItem`의 행은 등록된 아이콘을 유지합니다.
+
+플러그인이 여러 호스트에 설치되어 있으면 항목은 앱에 표시된 화면의 호스트에서 렌더링됩니다. 해당 호스트의 화면 밖에서는 플러그인 화면에서 마지막으로 선택했거나 항목에서 마지막으로 연 호스트를 사용하고, 그런 호스트가 없으면 첫 번째 호스트를 사용합니다.
+
+`Component`는 `PluginSidebarItemProps`를 받습니다.
+
+| 필드 | 의미 |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| `theme`, `host`, `layout` | `PluginScreenProps`와 동일. |
+| `currentScreen` | 항목의 호스트에서 열린 이 플러그인 화면의 `{ screenId, params }` 또는 `null`. |
+| `openScreen(input)` | 이 플러그인의 화면 중 하나를 `{ screenId, params? }`로 염. 알 수 없는 화면 ID는 오류를 일으킴. |
+| `openPopover(Content)` | 넓은 레이아웃에서는 누른 행에 고정된 팝오버로, 컴팩트 레이아웃에서는 하단 시트로 `Content`를 염. |
+
+`Content`는 `theme`, `host`, `layout`, `close()`, `openScreen(input)`을 받습니다. 화면을 열면 팝오버가 닫힙니다.
+
+`@getpaseo/plugin/client/ui`의 사이드바 키트로 항목을 렌더링하세요.
+
+| 구성 요소 | props 및 동작 |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SidebarRow` | 필수 `onPress`; 선택적 `icon`(Lucide 이름 또는 `{ size, color }` 구성 요소), `label`, `active`, `trailing`, `id`. 전체 너비 행. `trailing`은 행의 pressable 옆에 렌더링되므로 그 안의 버튼은 독립적으로 눌리고 나머지 영역은 행을 누름. `id`는 테스트 ID에서 한 항목의 여러 행을 구분함. |
+| `SidebarSeparator` | props 없음. 행 그룹 사이에 표시하는 사이드바 구분선. |
+
+누름이 행에서 발생했든 `trailing` 콘텐츠에서 발생했든 팝오버는 눌린 행에 고정됩니다. 따라서 행별 "More" 버튼은 해당 행 옆에 팝오버를 엽니다.
+
+```tsx
+import type { PluginSidebarItemProps, PluginPopoverProps } from "@getpaseo/plugin/client";
+import { SidebarRow } from "@getpaseo/plugin/client/ui";
+import { Pressable, Text } from "react-native";
+
+function SyncDetails({ theme, close, openScreen }: PluginPopoverProps) {
+  return (
+    <Pressable onPress={() => openScreen({ screenId: "sync" })}>
+      <Text style={{ color: theme.colors.foreground }}>Open sync history</Text>
+    </Pressable>
+  );
+}
+
+function SyncItem({ openPopover }: PluginSidebarItemProps) {
+  return <SidebarRow icon="RefreshCw" onPress={() => openPopover(SyncDetails)} />;
+}
+
+client.addSidebarFooterItem({ id: "sync", title: "Sync", Component: SyncItem });
+```
+
+오류를 일으키는 항목은 아무것도 렌더링하지 않고, 나머지 사이드바는 계속 작동합니다.
+
+#### 항목 하나에 여러 행 두기
+
+항목의 `Component`는 프래그먼트, 배열, `null`을 반환할 수 있으므로 항목 하나가 런타임에 변하는 목록을 렌더링할 수 있습니다. 설정에는 항목이 한 번만 표시되며, 하나의 블록으로 이동하고 숨김 처리됩니다. 다음 항목은 봇별로 행을 표시하고 봇 ID를 매개변수로 전달해 해당 봇의 화면을 엽니다.
+
+```tsx
+import type {
+  PluginClientContext,
+  PluginScreenProps,
+  PluginSidebarItemProps,
+} from "@getpaseo/plugin/client";
+import { SidebarRow, SidebarSeparator } from "@getpaseo/plugin/client/ui";
+import { Text } from "react-native";
+import { botName, useBots } from "./client/bots";
+
+function BotScreen({ theme, params }: PluginScreenProps) {
+  return <Text style={{ color: theme.colors.foreground }}>Bot {params.botId}</Text>;
+}
+
+function BotsItem({ currentScreen, openScreen }: PluginSidebarItemProps) {
+  const bots = useBots();
+  const openBotId = currentScreen?.screenId === "bot" ? currentScreen.params.botId : null;
+  return (
+    <>
+      <SidebarSeparator />
+      {bots.map((bot) => (
+        <SidebarRow
+          key={bot.id}
+          id={bot.id}
+          icon="Bot"
+          label={bot.name}
+          active={bot.id === openBotId}
+          onPress={() => openScreen({ screenId: "bot", params: { botId: bot.id } })}
+        />
+      ))}
+    </>
+  );
+}
+
+export default function contribute(client: PluginClientContext) {
+  client.addScreen({
+    id: "bot",
+    title: (params) => botName(params.botId) ?? "Bot",
+    Component: BotScreen,
+  });
+  client.addSidebarHeaderItem({ id: "bots", title: "Bots", Component: BotsItem });
+  return () => {};
+}
+```
+
+#### 런타임에 항목 추가 및 제거
+
+`addSidebarHeaderItem`과 `addSidebarFooterItem`은 진입점이 반환된 후에도 작동합니다. 각각 제거 함수를 반환하며, 항목은 다시 불러오지 않고도 나타나거나 사라집니다.
+
+```tsx
+let removeAlerts: (() => void) | null = null;
+
+function showAlerts(client: PluginClientContext) {
+  removeAlerts ??= client.addSidebarFooterItem({
+    id: "alerts",
+    title: "Alerts",
+    Component: AlertsItem,
+  });
+}
+
+function hideAlerts() {
+  removeAlerts?.();
+  removeAlerts = null;
+}
+```
 
 ## 호스트 UI
 
@@ -1240,12 +1400,12 @@ client.addCommandCenterItem({
 | `context` | 전체 | 해당 컨텍스트를 구분하는 값. |
 | `paseo` | 전체 | 선택한 호스트의 기존 `PaseoApi`. |
 | `rpc(contract, input)` | 전체 | 이 설치본의 데몬 측 플러그인 핸들러를 호출하는 타입 지정 함수. |
-| `openSurface(id)` | 전체 | 이 플러그인이 등록한 전역 표면 중 하나를 엽니다. |
+| `openScreen(input)` | 전체 | 이 플러그인이 등록한 화면 중 하나를 `{ screenId, params? }`로 엽니다. |
 | `workspace` | 작업공간 및 에이전트 | 동기적 작업공간 스냅샷. |
 | `agent` | 에이전트 | 해당 에이전트의 동기적 스냅샷. |
 | `openPanel(id, options?)` | 작업공간 및 에이전트 | 콜백의 현재 컨텍스트에서 등록된 패널을 엽니다. Explorer를 대상으로 하려면 `{ location: "explorer" }`를 전달하세요. |
 
-에이전트 콜백은 에이전트 패널이나 작업공간 패널을 열 수 있습니다. 작업공간 콜백은 작업공간 패널만 열 수 있습니다. 알 수 없는 표면 및 패널 ID는 사용자에게 보이는 오류로 실패합니다. 일반 작업공간, 에이전트, 제공자, 데몬 설정 작업에는 `paseo`를 사용하세요. 플러그인별 파일 시스템, 자격 증명, 공급업체 또는 데몬 로컬 작업에는 `rpc`를 사용하세요.
+에이전트 콜백은 에이전트 패널이나 작업공간 패널을 열 수 있습니다. 작업공간 콜백은 작업공간 패널만 열 수 있습니다. 알 수 없는 화면 및 패널 ID는 사용자에게 보이는 오류로 실패합니다. 일반 작업공간, 에이전트, 공급자, 데몬 설정 작업에는 `paseo`를 사용하세요. 플러그인별 파일 시스템, 자격 증명, 공급자 또는 데몬 로컬 작업에는 `rpc`를 사용하세요.
 
 ## 슬래시 명령
 
@@ -1414,6 +1574,25 @@ const behavior: PluginButtonBehavior = {
 
 표면에서 일반 Paseo 작업을 수행하려면 `usePaseo()`를 사용하세요. 선택한 호스트의 기존 연결을 빌려 쓰므로 클라이언트를 새로 만들지 마세요.
 
+`usePaseo()`는 모든 화면에서 플러그인이 사용하는 하나의 Paseo 클라이언트이며, 설정에서 받는 `client.paseo`와 같습니다. 정리 시 구독한 대상을 해제하세요. 플러그인을 비활성화하거나 다시 불러오거나 제거하거나 호스트 연결이 끊기면 Paseo는 클라이언트를 폐기하고 아직 열려 있는 모든 구독을 종료합니다.
+
+```tsx
+import { usePaseo } from "@getpaseo/plugin/client";
+import { useEffect, useState } from "react";
+import { Text } from "react-native";
+
+function ProjectChanges() {
+  const paseo = usePaseo();
+  const [changes, setChanges] = useState(0);
+  useEffect(() => {
+    const observation = paseo.observeEvents(["project.update"]);
+    observation.subscribe({ snapshot() {}, update: () => setChanges((count) => count + 1) });
+    return () => void observation.release();
+  }, [paseo]);
+  return <Text>{changes} project changes</Text>;
+}
+```
+
 ```tsx
 import { type PluginSurfaceProps, usePaseo } from "@getpaseo/plugin/client";
 import { Pressable, Text } from "react-native";
@@ -1567,7 +1746,7 @@ import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { GreetingButton } from "./client/greeting";
 
 export default function contribute(client: PluginClientContext) {
-  client.addSurface("main", GreetingButton);
+  client.addScreen({ id: "main", title: "Greeting", Component: GreetingButton });
   return () => {};
 }
 ```
@@ -1861,7 +2040,7 @@ JSON 및 비대화형 일반 업데이트에는 `--yes`가 필요합니다.
 | `server-only module cannot be imported into the plugin client bundle` | 클라이언트 코드가 `server/`를 가져옵니다. 해당 작업을 RPC 뒤로 옮기고 계약을 `shared/`에서 가져오세요. |
 | `client-only module cannot be imported into the plugin server bundle` | 서버 코드가 `client/`를 가져옵니다. 해당 기여를 `index.client.tsx`에서 등록하세요. |
 | `Node module cannot be imported into the plugin client bundle` | 클라이언트 코드가 `node:*`를 가져옵니다. 작업을 `server/`로 옮기고 RPC를 통해 호출하세요. |
-| 사이드바 항목이 없음 | 플러그인이 `running` 상태인지, 항목이 기존 표면을 참조하는지, 아이콘 이름이 유효한지, 클라이언트가 설치본의 호스트에 연결되어 있는지 확인하세요. |
+| 사이드바 항목이 없음 | 플러그인이 `running` 상태인지, 항목이 **Settings > Sidebar**에서 숨겨지지 않았는지, 구성 요소가 오류를 일으키지 않는지, 클라이언트가 설치본의 호스트에 연결되어 있는지 확인하세요. |
 | 클라이언트 모듈을 사용할 수 없음 | 위에 나열된 호스트 제공 클라이언트 모듈만 가져오세요. |
 | RPC가 거부됨 | 양쪽 Zod 스키마와 데몬 측 핸들러 오류를 확인하세요. |
 | 편집한 코드가 표시되지 않음 | `npm run typecheck`를 실행한 다음 `paseo plugin reload <id>`를 실행하세요. |

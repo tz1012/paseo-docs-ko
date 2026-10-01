@@ -22,6 +22,8 @@ npx @getpaseo/hub
 
 처음 실행할 때 데이터베이스, Docker, 환경 변수, API 키가 필요하지 않습니다. Hub가 임베디드 데이터베이스와 조직을 만듭니다.
 
+Hub는 멘션이 에이전트를 시작하기 전에 반드시 충족해야 하는 네 가지, 즉 앱 연결, 데몬 연결, 트리거 생성, 실행을 나타내는 체크리스트 **Home**을 엽니다. 아래 단계는 이 네 가지 항목에 해당합니다. Home은 조직의 실제 상태에서 각 항목을 파악하고, 다음 단계에 필요한 명령을 표시하며, 네 가지가 모두 완료되면 접힙니다.
+
 ## 2. Slack 연결
 
 **Set up your apps**에서 Slack 앱을 만드는 방법을 설명하고 Slack에 붙여 넣을 매니페스트를 제공합니다. **Socket Mode**를 선택한 상태로 두세요. Hub에서 외부로 연결하므로 공개 주소나 HTTPS가 필요하지 않습니다.
@@ -48,7 +50,7 @@ paseo hub login http://localhost:3000
 
 ## 4. 시작용 트리거 만들기
 
-로그인을 승인한 뒤 **Connect this daemon to Paseo Hub?**와 **Allow Hub automations to run agents on this daemon?**에 **Yes**라고 답하세요. 실행 권한의 기본값은 아니요이므로 이 설정에서는 명시적으로 활성화해야 합니다.
+로그인을 승인한 뒤 **Connect this daemon to Paseo Hub?**와 **Allow Hub automations to run agents on this daemon?**에 **Yes**라고 답하세요. 실행 권한의 기본값은 아니요이므로 이 설정에서는 명시적으로 활성화해야 합니다. 아니요라고 답했다면 Home에 데몬이 연결되었지만 에이전트를 실행할 수 없는 것으로 표시되며, 이를 해결하는 `paseo hub permissions grant hub.execute` 명령이 함께 표시됩니다.
 
 그런 다음 다음 명령을 실행하세요.
 
@@ -60,11 +62,13 @@ paseo hub init
 
 | 질문 | 필요한 답변 |
 | --------------------------------------- | -------------------------------------------------------------------------------------- |
-| Starter agent provider, model, and mode | 데몬에서 사용할 수 있는 런타임입니다. 제안되는 모델과 모드는 데몬의 기본값입니다. |
+| Starter agent provider, model, and mode | 데몬의 Claude, Codex 또는 OpenCode입니다. 제안되는 모델과 모드는 데몬의 기본값입니다. |
 | Your Slack member ID | `U01234567`, 봇을 트리거하도록 허용할 유일한 계정입니다. |
 | Deploy now? | 예. 이 트리거를 Hub에서 활성화합니다. |
 
-공급자는 선택 가능한 모델과 실행 모드를 제공해야 합니다. 기본 모드가 없으면 에이전트에서 사용할 모드를 선택하세요. [Slack ID 찾기](/docs/hub/triggers/slack#find-your-slack-ids)에서 멤버 ID를 복사하는 방법을 확인할 수 있습니다. Slack 워크스페이스는 선택한 앱 연결에서 가져옵니다.
+공급자는 선택 가능한 모델과 실행 모드를 제공해야 합니다. 기본 모드가 없으면 에이전트에서 사용할 모드를 선택하세요. Hub는 에이전트를 무인으로 실행하므로 Claude, Codex, OpenCode만 허용하며, 배포 전에 데몬을 통해 모델, 모드, 옵션을 검사합니다. 다른 공급자나 데몬이 제공하지 않는 값은 첫 실행 시점이 아니라 여기서 거부됩니다.
+
+[Slack ID 찾기](/docs/hub/triggers/slack#find-your-slack-ids)에서 멤버 ID를 복사하는 방법을 확인할 수 있습니다. Slack 워크스페이스는 선택한 앱 연결에서 가져옵니다.
 
 설정은 트리거를 검증하고 다음 파일을 작성합니다.
 

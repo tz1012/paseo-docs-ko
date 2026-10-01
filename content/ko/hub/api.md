@@ -75,7 +75,7 @@ API 오류에는 RFC 9457 문제 세부 정보가 사용됩니다. 누락되거�
 }
 ```
 
-조직에서 사용할 수 있는 데몬 슬러그와 에이전트 런타임을 사용하세요. 검증에는 `configuration:validate`가 필요하며, 성공하면 `{ "name": "manual-task", "valid": true }`와 함께 `200`을 반환합니다.
+조직에서 사용할 수 있는 데몬 슬러그와 에이전트 런타임을 사용하세요. 두 작업 모두 지정한 데몬에 에이전트 검사를 요청하므로, 해당 데몬은 연결되어 있고 `hub.execute`를 보유해야 합니다. 데몬이 실행할 수 없는 에이전트는 첫 실행의 실패가 아니라 필드 문제로 반환됩니다. [저장 시 데몬을 통해 에이전트 검사](/docs/hub/triggers#saving-checks-the-agent-against-the-daemon)를 참조하세요. 검증에는 `configuration:validate`가 필요하며, 성공하면 `{ "name": "manual-task", "valid": true }`와 함께 `200`을 반환합니다.
 
 설치에는 `configuration:install`이 필요합니다. YAML의 `name`을 기준으로 조직의 트리거를 생성하거나 업데이트하며 `201`을 반환합니다.
 

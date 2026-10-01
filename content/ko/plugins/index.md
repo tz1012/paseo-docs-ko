@@ -9,7 +9,7 @@ category: Plugins
 # 플러그인 빠른 시작
 
 플러그인은 하나의 Paseo 데몬에 설치되는 TypeScript 프로젝트입니다.
-[표면 및 사이드바 항목](/docs/plugins/reference#surfaces-and-sidebar-items),
+[화면 및 사이드바 항목](/docs/plugins/reference#screens-and-sidebar-items),
 [작업공간 패널](/docs/plugins/reference#workspace-panels),
 [Command Center 항목](/docs/plugins/reference#command-center-items),
 [슬래시 명령](/docs/plugins/reference#slash-commands),
@@ -36,15 +36,14 @@ npm install
 유형 검사와 테스트에만 필요한 개발 종속성을 추가합니다. Paseo는 플러그인 SDK, React,
 React Native, TanStack Query, Zod를 런타임에 제공합니다.
 
-생성된 기본 구조는 바로 작동하는 플러그인입니다. 사이드바 표면에 있는 버튼을 누르면
-RPC를 통해 데몬에 인사 메시지를 요청합니다.
+생성된 기본 구조는 바로 작동하는 플러그인입니다. 사이드바에서 여는 화면에 있는 버튼을 누르면 RPC를 통해 데몬에 인사 메시지를 요청합니다.
 
 ```text
 workspace-plugin/
   paseo-plugin.json      # plugin ID and supported Paseo versions
   index.client.tsx       # runs in the Paseo app
   index.server.ts        # runs in a daemon subprocess
-  client/greeting.tsx    # the surface component
+  client/greeting.tsx    # the screen component
   client/web.ts          # the only file allowed to touch browser APIs
   server/greeting.ts     # the RPC handler
   shared/greeting.ts     # the RPC contract, imported by both
@@ -53,20 +52,26 @@ workspace-plugin/
 ```
 
 각 진입점은 기여를 등록하고 정리 함수를 반환하는 함수 하나를 기본 내보내기합니다.
-`index.client.tsx`는 표면과 이를 여는 사이드바 항목을 등록합니다.
+`index.client.tsx`는 화면과 이를 여는 사이드바 항목을 등록합니다.
 
 ```tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
-import { GreetingSurface } from "./client/greeting";
+import type { PluginClientContext, PluginSidebarItemProps } from "@getpaseo/plugin/client";
+import { SidebarRow } from "@getpaseo/plugin/client/ui";
+import { GreetingScreen } from "./client/greeting";
+
+function GreetingItem({ currentScreen, openScreen }: PluginSidebarItemProps) {
+  return (
+    <SidebarRow
+      icon="MessageCircle"
+      active={currentScreen?.screenId === "greeting"}
+      onPress={() => openScreen({ screenId: "greeting" })}
+    />
+  );
+}
 
 export default function contribute(client: PluginClientContext) {
-  client.addSurface("greeting", GreetingSurface);
-  client.addSidebarItem({
-    id: "greeting",
-    title: "Greeting",
-    icon: "MessageCircle",
-    surface: "greeting",
-  });
+  client.addScreen({ id: "greeting", title: "Greeting", Component: GreetingScreen });
+  client.addSidebarHeaderItem({ id: "greeting", title: "Greeting", Component: GreetingItem });
   return () => {};
 }
 ```

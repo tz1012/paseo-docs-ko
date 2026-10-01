@@ -65,6 +65,18 @@ paseo hub logout --disconnect-daemon           # remove both identities
 paseo hub logout --disconnect-daemon --force   # drop local authority when Hub is unreachable
 ```
 
+## Hub가 이 데몬에서 에이전트를 실행하도록 허용하기
+
+데몬을 등록했다고 해서 Hub가 그 데몬에서 에이전트를 시작할 수 있는 것은 아닙니다. 이는 별도의 `hub.execute` 권한이며, 로그인 시 이 권한을 허용할지 묻고 기본값은 아니요입니다. 언제든지 해당 머신에서 권한을 부여할 수 있습니다.
+
+```sh
+paseo hub permissions list
+paseo hub permissions grant hub.execute
+paseo hub permissions revoke hub.execute
+```
+
+권한을 부여하기 전까지 Hub는 데몬을 식별과 존재 상태에만 사용합니다. **Daemons** 페이지에는 권한 부여 명령과 함께 **Connected only**로 표시되고, **Home** 체크리스트에는 **Cannot run agents**로 표시됩니다. 권한을 부여했을 때 허용되는 범위는 [Hub 보안](/docs/hub/security#choose-daemon-authority)에서 다룹니다.
+
 ## 구성에서 참조하세요.
 
 ```yaml
@@ -107,6 +119,6 @@ Hub가 생성 응답을 잃거나 데몬이 실행 중에 다시 시작되면 Hu
 | 오프라인 | 등록되었지만 현재 연결되어 있지 않음 |
 | 취소됨 | 허브에서 액세스가 제거됨 |
 
-데몬이 오프라인일 때 도착하는 이벤트는 `daemon_not_connected`을 사용하여 전달에 실패합니다. 나중에 대기할 항목이 없습니다. 이벤트가 프로젝트 활동에 있으며 트리거가 다시 실행되어야 합니다.
+데몬이 오프라인일 때 도착하는 이벤트는 `daemon_not_connected`을 사용하여 전달에 실패합니다. 나중에 대기할 항목이 없습니다. 이벤트가 프로젝트 활동에 있으며 트리거가 다시 실행되어야 합니다. 오프라인 데몬은 Hub가 해당 데몬을 통해 에이전트를 검사하므로, 대상이나 에이전트를 변경한 트리거를 저장하는 것도 차단합니다. [저장 시 데몬을 통해 에이전트 검사](/docs/hub/triggers#saving-checks-the-agent-against-the-daemon)를 참조하세요.
 
 **데몬 → 데몬 취소**에서 취소하면 허브 측의 관계가 종료됩니다. 데몬은 로컬 에이전트를 계속 실행합니다.

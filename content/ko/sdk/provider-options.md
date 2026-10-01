@@ -8,9 +8,34 @@ category: TypeScript SDK
 
 # 제공자 옵션
 
-`config.options`은 설정을 공급자 CLI에 직접 전달합니다. Paseo는 에이전트를 시작하기 전에 해당 공급자의 엄격한 스키마에 대해 개체의 유효성을 검사하므로 알 수 없거나 철자가 틀린 키는 자동으로 아무것도 하지 않는 대신 에이전트 생성에 실패합니다.
+공급자 옵션은 공급자에 전달되는 불투명한 `Record<string, unknown>`입니다. 공급자가 이를 검증하고 적용하는 방법을 결정합니다. Claude, Codex, OpenCode는 엄격한 스키마를 사용하므로 알 수 없거나 철자가 틀린 키가 있으면 잘못된 키를 알려 주는 메시지와 함께 에이전트 생성에 실패합니다. 옵션 처리가 없는 공급자는 레코드를 무시합니다. Pi, OMP, ACP, 플러그인 공급자는 각각 고유한 키를 해석합니다.
 
-옵션은 공급자 고유입니다. Codex 샌드박스 키는 Claude 샌드박스 키가 아닙니다. Codex, Claude 및 OpenCode는 옵션을 허용합니다. 다른 모든 공급자는 비어 있지 않은 `options`을 거부합니다.
+옵션은 두 곳에서 설정합니다.
+
+- **공급자 기본값:** `config.json` → `agents.providers.<id>.options`.
+- **에이전트 하나:** `client.agents.create()`의 `config.options`. 와이어 이름은 `providerOptions`입니다.
+
+데몬은 세션을 시작하거나 재개할 때 에이전트의 옵션을 공급자 기본값 위에 깊게 병합합니다. 일반 개체는 재귀적으로 병합하고, 배열, 스칼라, `null`은 기본값을 대체합니다. 에이전트 자체 옵션만 저장됩니다. `config.json` 기본값 변경은 다음 시작 또는 재개에 적용됩니다.
+
+예를 들어 Codex 기본값을 한 번 설정할 수 있습니다.
+
+```json
+{
+  "agents": {
+    "providers": {
+      "codex": {
+        "options": {
+          "sandbox_mode": "read-only",
+          "approval_policy": "never",
+          "sandbox_workspace_write": { "network_access": false }
+        }
+      }
+    }
+  }
+}
+```
+
+그런 다음 `config.options: { sandbox_mode: "workspace-write" }`로 에이전트 하나를 생성하세요. 이 에이전트는 `workspace-write`를 받고, `approval_policy: "never"`와 `sandbox_workspace_write.network_access: false`는 유지합니다. 에이전트별 옵션이 없으면 위 기본값을 받습니다. 키는 공급자 고유입니다. 각 공급자가 허용하는 옵션은 아래 섹션을 참조하세요.
 
 공급자 옵션은 호스트 경계가 아닙니다. 이는 머신에서 사용자로 실행되는 에이전트 CLI를 제한합니다. 신뢰할 수 없는 작업의 경우 컨테이너나 별도의 머신에서 데몬을 실행하세요. [보안](/docs/security)을 참조하세요.
 

@@ -18,6 +18,37 @@ category: Providers
 - [코덱스](/docs/codex). 샌드박스 제어 및 선택적 네트워크 액세스 기능을 갖춘 OpenAI의 작업 공간 에이전트입니다.
 - [오픈코드](https://opencode.ai/). 다중 공급자 모델을 지원하는 오픈 소스 코딩 도우미입니다.
 - [파이](https://pi.dev). 다중 공급자 LLM을 지원하는 최소 터미널 기반 코딩 에이전트입니다.
+- [Antigravity](#antigravity). 번들된 공급자 플러그인을 통해 설치된 `agy` CLI를 사용합니다.
+- [Muse Code](/docs/muse-code). 공급자 플러그인으로 번들된 Meta의 터미널 코딩 에이전트입니다.
+
+### Antigravity
+
+데몬 호스트에 Antigravity CLI(`agy`)를 설치한 뒤 `agy`를 한 번 실행해 로그인하세요. Paseo에서 **Antigravity**를 선택하세요. 공급자는 Paseo와 함께 제공되므로 별도의 플러그인 설치가 필요하지 않습니다.
+
+권한 모드는 **Full access**뿐입니다. 다른 앱이 Antigravity를 제어할 때는 권한을 요청할 수 없으므로 Paseo는 `--dangerously-skip-permissions`로 `agy`를 시작합니다. 셀 명령을 포함한 모든 도구 호출이 질문 없이 실행됩니다. 채팅을 다시 열 때를 포함해 모든 세션이 이 사실을 설명하는 경고로 시작합니다. Antigravity 자체 정책은 여전히 작업을 거부할 수 있습니다.
+
+데몬을 재시작한 뒤에도 Antigravity는 대화를 기억하지만, `agy`가 기록을 다시 재생하지 않으므로 Paseo의 트랜스크립트는 새로 시작합니다.
+
+이 통합은 설치된 CLI와 로그인을 사용하며 Google의 지지를 받지 않습니다.
+
+Paseo MCP 도구와 스티어링은 사용할 수 없습니다. 사용자의 `agy` MCP 서버는 계속 작동합니다. 첨부한 이미지는 에이전트가 읽을 수 있도록 파일 참조로 전달됩니다.
+
+`agy`가 데몬의 PATH 밖에 있다면 `~/.paseo/config.json`에서 명령을 재정의하세요. 공급자 고유 환경 변수에는 `env`를 사용하세요.
+
+```json
+{
+  "agents": {
+    "providers": {
+      "antigravity": {
+        "command": ["/absolute/path/to/agy"],
+        "env": { "EXAMPLE_VARIABLE": "value" }
+      }
+    }
+  }
+}
+```
+
+명령 및 환경 재정의는 [사용자 정의 공급자](/docs/custom-providers)를 참조하세요.
 
 ## ACP 카탈로그
 

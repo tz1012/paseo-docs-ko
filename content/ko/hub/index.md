@@ -55,4 +55,4 @@ category: Hub
 
 먼저 임베디드 데이터베이스를 사용해 로컬 머신에서 시작하고, 필요할 때만 PostgreSQL이나 공개 배포를 추가하세요. [자체 호스팅](/docs/hub/self-hosting)에서 각 단계를 설명합니다.
 
-[호스팅 Hub](/docs/hub/hosted)도 같은 트리거, 데몬, 활동 모델을 사용합니다. [로그인하여 무료 체험을 시작하세요](https://hub.paseo.sh).
+[호스팅 Hub](/docs/hub/hosted)도 같은 트리거, 데몬, 활동 모델을 사용합니다. [무료 계정을 만드세요](https://hub.paseo.sh). 카드가 필요 없고 계정은 만료되지 않습니다.
