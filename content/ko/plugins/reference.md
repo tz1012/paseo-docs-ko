@@ -275,13 +275,60 @@ Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용�
 
 ### 사용량 소스
 
-**Paseo 0.9.3 이상이 필요합니다.** 서버 플러그인은 `server.registerUsageSource()`로 사용량 소스를 등록하고 `@getpaseo/plugin/server/usage`에서 유형과 도우미를 가져옵니다.
+**Paseo 0.11이 필요합니다.** 서버 진입점에서 `server.registerUsageSource()`로 소스를 등록하세요. 계약과 도우미는 `@getpaseo/plugin/server/usage`에서 가져옵니다.
+
+소스는 두 가지 호출을 구현합니다.
+
+```ts
+interface UsageAccount {
+  key: string;
+  label?: string;
+  input: JsonValue;
+}
+
+interface UsageSourceRegistration {
+  id: string;
+  label: string;
+  icon?: string;
+  input: ZodType;
+  discover(): Promise<UsageAccount[]>;
+  fetch(input: unknown): Promise<UsageReport>;
+}
+
+type UsageReport =
+  | {
+      status: "available";
+      planLabel?: string;
+      windows: UsageWindow[];
+      balances?: UsageBalance[];
+      details?: UsageDetail[];
+    }
+  | { status: "unavailable"; problem: UsageProblem }
+  | { status: "error"; error: string };
+
+type UsageProblem =
+  | { kind: "expired"; expiresAt: string; refreshedBy?: string }
+  | { kind: "rejected"; status: number; refreshedBy?: string }
+  | { kind: "no_quota"; detail: string };
+```
+
+만료된 로그인을 포함해 머신에 로그인이 존재하는 모든 계정을 `discover()`에서 반환하세요. 로그인이 없으면 `[]`를 반환합니다. 검색은 인자를 받지 않으며 에이전트 세션과 공급자 이름에 관계없이 작동해야 합니다. 입력값은 자격 증명 저장소를 지정하며, 입력값이나 보고서에 자격 증명을 넣어서는 안 됩니다. Paseo는 `fetch()`를 호출하기 전에 각 입력값을 스키마로 검증합니다.
+
+안정적인 계정 키를 사용하세요. 키는 `[A-Za-z0-9._-]`의 1~128자로, 할당량이 측정되는 계정이나 조직을 식별하고 토큰 교체 후에도 유지되어야 합니다. 자격 증명이나 원본 이메일을 키로 사용하지 마세요. 민감한 안정적 식별자에는 `hashAccountKey()`를 사용하고, 계정 메타데이터를 사용할 수 없으면 저장소 위치 식별자를 사용하세요. 레이블은 계정 이름을 표시할 수 있지만 계정의 식별자가 되지는 않습니다.
+
+로그인은 선호 순서대로 반환하세요. 키가 같은 여러 항목은 하나의 카드로 합쳐지며, 보고서가 `available`이 될 때까지 입력값을 순서대로 시도합니다. unavailable 보고서, error 보고서 또는 예외가 발생한 가져오기는 다음 입력값으로 넘어갑니다. 모두 성공하지 못하면 카드에는 마지막 보고서가 표시됩니다. 검색 실패는 데몬에 기록되며 카드를 만들지 않습니다.
+
+CLI의 토큰 교체가 반영되도록 `fetch()`에서 선택된 저장소를 다시 읽으세요. 새로 고침 토큰을 교환하거나 자격 증명 저장소에 쓰지 마세요. 다른 곳에서 새로 고치면 CLI의 사본이 무효화될 수 있고, 파싱한 파일을 다시 쓰면 모델링하지 않은 필드가 유실될 수 있습니다. 검색 후 저장소가 사라졌다면 예외를 발생시키세요. 다음 검색에서 카드가 제거될 때까지 카드에 오류가 표시됩니다.
+
+기존 로그인이 할당량을 제공할 수 없는 이유는 `unavailable(problem)`으로 설명하세요. 문제 인자가 필수이며 인자가 없는 형식은 없습니다. `expiresAt`은 ISO 타임스탬프입니다. 거부된 로그인에는 업스트림 HTTP 상태가 포함됩니다. `refreshedBy`는 `claude`, `codex`, `opencode`, `omp`, `pi` 같은 CLI 이름입니다. 해결 안내 문장은 Paseo가 제공합니다. 이 필드에 지침이나 사용자 대상 문장을 넣지 마세요. `no_quota`의 `detail`은 그대로 표시됩니다.
 
 ```ts
 import { z } from "zod";
 import type { PluginServerContext } from "@getpaseo/plugin/server";
+import { hashAccountKey, unavailable } from "@getpaseo/plugin/server/usage";
+import { findLoginStores, readLogin, readQuota } from "./server/logins";
 
-const input = z.object({ account: z.string() });
+const input = z.object({ path: z.string() }).strict();
 
 export default function contribute(server: PluginServerContext) {
   server.registerUsageSource({
@@ -289,20 +336,32 @@ export default function contribute(server: PluginServerContext) {
     label: "Example",
     icon: "icon.svg",
     input,
-    discover: async () => [{ account: "default" }],
-    identify: async (value) => {
-      const { account } = input.parse(value);
-      return { key: account };
+    discover: async () =>
+      (await findLoginStores()).map((path) => ({
+        key: hashAccountKey(path),
+        input: { path },
+      })),
+    fetch: async (value) => {
+      const { path } = input.parse(value);
+      const login = await readLogin(path);
+      if (login.expiresAt <= Date.now())
+        return unavailable({
+          kind: "expired",
+          expiresAt: new Date(login.expiresAt).toISOString(),
+          refreshedBy: "example",
+        });
+      return readQuota(login);
     },
-    fetch: async () => ({ status: "available", windows: [] }),
   });
   return () => {};
 }
 ```
 
-`discover()`는 필수이며 구성된 입력값을 제공합니다. 구성된 계정이 없으면 `[]`를 반환하세요. `identify(input)`은 사용량을 가져오지 않고 안정적인 계정 키와 선택적 표시 레이블을 반환하며, 자격 증명이 없으면 `null`을 반환합니다. 데몬은 소스 ID와 키를 `<sourceId>:<accountKey>`로 결합합니다. 키는 `[A-Za-z0-9._-]`의 1~128자로, 토큰이 교체되어도 안정적으로 유지되며 할당량이 측정되는 계정이나 조직을 식별해야 합니다. 자격 증명이나 원본 이메일을 키로 사용하지 마세요. 유일한 안정적 식별자가 민감하면 `hashAccountKey(value)`를 사용하세요.
+내장 Claude 검색은 macOS 키체인 로그인을 우선하며, 키체인이 비어 있을 때만 Claude Code 자격 증명 파일을 사용합니다. `CLAUDE_CONFIG_DIR`은 해당 파일의 디렉터리를 선택합니다. 새 토큰은 OAuth 프로필의 계정 및 조직 ID를 사용하고, 만료되거나 거부된 프로필은 위치 식별자 해시를 사용합니다. Codex는 Codex CLI, OpenCode, Pi, OMP 순으로 우선하며 저장된 메타데이터 또는 JWT 클레임의 ChatGPT 계정 ID로 그룹화합니다. Pi와 OMP 로그인은 만료된 뒤에도 검색할 수 있습니다. OMP에는 `node:sqlite`가 필요합니다.
 
-`usage.list_reports`는 ID 없이 호출하면 보고서를 발견하고, ID를 제공하면 요청한 알려진 ID만 읽습니다. 각 보고서를 5분간 캐시하며 `forceRefresh`는 반환된 ID만 새로 고칩니다. 각 항목은 `id`, `account.label`, `fetchedAt`을 포함합니다. `fetch()`는 `status`(`available`, `unavailable`, `error`), 선택적 `planLabel`, 일반 `windows`, `balances`, `details`를 포함한 `UsageReport`를 반환합니다. 아이콘은 플러그인 디렉터리 아래의 자체 완결형 SVG 경로이며 위의 공급자 아이콘 제한을 따릅니다.
+`usage.list_reports`는 ID 없이 호출하면 계정을 검색합니다. ID를 지정하면 ID를 다시 검색하지 않고 알려진 계정을 새로 고칩니다. 저장소의 계정이 바뀌면 다음 검색 전까지 기존 카드에 새 로그인 할당량이 표시됩니다. 보고서는 5분 동안 캐시되며 `forceRefresh`는 해당 캐시를 우회합니다. 항목에는 `id`, `account.label`, `fetchedAt`이 포함됩니다. 클라이언트는 `server_info.features.usageSources`를 기준으로 이 기능을 활성화합니다. 이전 `provider.usage.list` RPC는 0.10 클라이언트를 위해 같은 보고서를 매핑하고 문제를 `error` 문자열로 렌더링합니다.
+
+소스 아이콘은 위의 공급자 SVG 제한을 따릅니다.
 
 ## 진입점과 정리
 
