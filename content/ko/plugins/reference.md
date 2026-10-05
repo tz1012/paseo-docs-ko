@@ -158,6 +158,29 @@ Paseo는 클라이언트 코드에 다음 모듈을 제공합니다.
 스캐폴드의 `tsconfig.json`은 DOM 라이브러리를 제외합니다. 크로스 플랫폼 구성 요소에서 DOM 전역 객체를 사용하지 마세요. `/// <reference lib="dom" />`를 추가하거나 `lib`에 `"DOM"`을 추가하지 마세요.
 `layout.platform`은 렌더링 결정을 위해 React Native의 `Platform.OS`와 같은 값을 전달합니다.
 
+### 오디오 재생
+
+현재 클라이언트(브라우저, Electron, iOS 또는 Android)에서 오디오 파일을 재생하려면
+`client.playAudio({ base64, mimeType }): Promise<void>`를 호출하세요. 플러그인 RPC가 반환한
+base64 파일을 전달하면 되며 브라우저 전역 객체나 플랫폼 확인은 필요하지 않습니다.
+
+```ts
+const audio = await client.rpc(renderSpeech, { text: "Your agent needs you" });
+// renderSpeech returns { base64: string, mimeType: "audio/wav" }.
+await client.playAudio(audio);
+```
+
+이 Promise는 재생이 끝나면 resolve되고 파일이 잘못되었거나 재생에 실패하거나 플러그인이 언로드되면
+reject됩니다. 호출은 Paseo의 음성 재생 대기열을 공유하며 순서대로 재생됩니다. 플러그인을 언로드하면
+해당 플러그인의 재생 중인 오디오와 대기 중인 오디오가 취소됩니다. 음성 재생 컨트롤도 이 공유 대기열을
+중단할 수 있습니다. 재생은 마이크 권한을 요청하지 않습니다.
+
+이식 가능한 파일에는 PCM WAV 또는 MP3를 사용하세요. 다른 코덱은 클라이언트의 디코더에 따라 달라집니다.
+MIME 매개변수도 허용됩니다. 완전한 오디오 파일을 전달해야 하며 원시 PCM 샘플은 지원되지 않습니다.
+브라우저는 소리를 허용하기 전에 사용자 상호 작용을 요구합니다. 거부를 처리하고 재생 버튼을 제공하세요.
+이 함수는 데몬이 아니라 플러그인 클라이언트를 실행하는 장치에서 재생하며, 앱이 일시 중단되거나 닫혀
+있을 때 전달을 보장하지 않습니다.
+
 ### 외부 링크와 작업공간 브라우저
 
 Paseo 외부에서 문서를 열려면 `ExternalLink`를 사용하세요.
@@ -286,12 +309,16 @@ interface UsageAccount {
   input: JsonValue;
 }
 
+type UsageScope =
+  | { kind: "global" }
+  | { kind: "session"; provider: string; model?: string; env: Record<string, string> };
+
 interface UsageSourceRegistration {
   id: string;
   label: string;
   icon?: string;
   input: ZodType;
-  discover(): Promise<UsageAccount[]>;
+  discover(scope: UsageScope): Promise<UsageAccount[]>;
   fetch(input: unknown): Promise<UsageReport>;
 }
 
@@ -312,11 +339,51 @@ type UsageProblem =
   | { kind: "no_quota"; detail: string };
 ```
 
-만료된 로그인을 포함해 머신에 로그인이 존재하는 모든 계정을 `discover()`에서 반환하세요. 로그인이 없으면 `[]`를 반환합니다. 검색은 인자를 받지 않으며 에이전트 세션과 공급자 이름에 관계없이 작동해야 합니다. 입력값은 자격 증명 저장소를 지정하며, 입력값이나 보고서에 자격 증명을 넣어서는 안 됩니다. Paseo는 `fetch()`를 호출하기 전에 각 입력값을 스키마로 검증합니다.
+`discover({ kind: "global" })`은 만료된 로그인을 포함해 머신의 로그인 저장소를 조회합니다. 세션 범위는
+해당 하네스의 확인된 시작 환경이 선택한 로그인 저장소만 조회합니다. 로그인이 없거나 세션에서 소스를
+사용하지 않으면 `[]`를 반환하세요. 세션 검색에서 기본 저장소를 스캔하거나 전역 검색에서 에이전트를
+스캔해서는 안 됩니다. 검색은 조회 작업이며 에이전트 수명 주기 훅은 없습니다. 닫힌 에이전트는 재개될
+때까지 세션 범위가 없습니다.
+
+입력값은 자격 증명 저장소를 지정하며, 입력값이나 보고서에 자격 증명을 넣어서는 안 됩니다. Paseo는
+`fetch()`를 호출하기 전에 각 입력값을 스키마로 검증합니다. 모든 범위에서 같은 키는 같은 보고서를
+의미하며, 계정을 공유하는 에이전트는 가져오기 캐시도 공유합니다. 가져오기 제한 시간은 20초입니다.
+
+내장 세션 경로:
+
+| 소스 | 세션 | 로그인 저장소 |
+| ------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Claude | `claude` | `CLAUDE_CONFIG_DIR` 또는 기본값. macOS에서는 해당 디렉터리의 키체인 항목이 우선함 |
+| Claude | `anthropic/…` 모델을 사용하는 `pi`, `omp` | 해당 하네스의 Anthropic 로그인 저장소 |
+| Codex | `codex` | `CODEX_HOME/auth.json` 또는 기본값 |
+| Codex | `openai/…` 모델을 사용하는 `pi`, `opencode`, `omp` | 해당 하네스의 OpenAI 로그인 저장소 |
+| 기타 소스 | 모두 | 세션 검색 없음 |
+
+Claude는 Bedrock, Vertex 및 외부 `ANTHROPIC_BASE_URL` 세션을 제외합니다. Codex는
+`OPENAI_BASE_URL`이 설정된 세션을 제외합니다.
 
 안정적인 계정 키를 사용하세요. 키는 `[A-Za-z0-9._-]`의 1~128자로, 할당량이 측정되는 계정이나 조직을 식별하고 토큰 교체 후에도 유지되어야 합니다. 자격 증명이나 원본 이메일을 키로 사용하지 마세요. 민감한 안정적 식별자에는 `hashAccountKey()`를 사용하고, 계정 메타데이터를 사용할 수 없으면 저장소 위치 식별자를 사용하세요. 레이블은 계정 이름을 표시할 수 있지만 계정의 식별자가 되지는 않습니다.
 
 로그인은 선호 순서대로 반환하세요. 키가 같은 여러 항목은 하나의 카드로 합쳐지며, 보고서가 `available`이 될 때까지 입력값을 순서대로 시도합니다. unavailable 보고서, error 보고서 또는 예외가 발생한 가져오기는 다음 입력값으로 넘어갑니다. 모두 성공하지 못하면 카드에는 마지막 보고서가 표시됩니다. 검색 실패는 데몬에 기록되며 카드를 만들지 않습니다.
+
+창 이름은 공급자 데이터에서 가져와야 합니다. 명시적 기간, `five_hour`나 `weekly` 같은 이름 있는 API 필드,
+또는 공급자가 지정한 기간 이름을 사용하세요. 응답 슬롯과 재설정 카운트다운만으로는 기간을 정할 수
+없습니다. 공급자가 기간을 생략하면 “롤링”이나 “기본 한도” 같은 중립적 이름을 사용하고 어댑터 옆에
+메타데이터가 없음을 설명하세요.
+
+숫자 기간에는 `@getpaseo/plugin/server/usage`의 `windowFromReportedDuration()`(Paseo 0.11 이상)을
+사용하세요. 보고된 초 또는 `null`, 중립적인 `unknown` ID와 이름, 선택적인 안정적 할당량 `scope`를
+전달합니다. 도우미는 ID, 레이블, 짧은 레이블을 함께 도출하며 기간 레이블 재정의를 받지 않습니다. 이름
+있는 API 기간에는 해당 필드로 이름을 정당화할 수 있는 `windowFromUsedPct()`를 사용하세요.
+
+창 ID는 응답 위치, 사용률, 재설정 시점이 아니라 할당량 범위와 기간을 식별합니다. 모델별 할당량의
+범위에는 공급자의 안정적인 기능 ID를 사용하고, ID가 없으면 보고된 한도 이름을 사용하세요. 슬롯 이동과
+표시 이름 변경에도 ID를 유지하세요. 이전의 모호한 ID를 다른 기간의 별칭으로 지정하지 마세요. 저장된
+핀은 모든 계정에서 소스 및 창 ID와 일치하므로 사용자가 수정된 창을 다시 선택해야 합니다.
+
+`summary: true`는 사용자가 핀을 맞춤 설정할 때까지 소스 기본값을 선택합니다. 앱은 카드, 사이드바,
+토글에 사용할 하나의 유효 선택을 계산합니다. 처음 편집하면 해당 기본값의 스냅샷이 만들어지며,
+명시적으로 비운 선택은 빈 상태로 유지됩니다.
 
 CLI의 토큰 교체가 반영되도록 `fetch()`에서 선택된 저장소를 다시 읽으세요. 새로 고침 토큰을 교환하거나 자격 증명 저장소에 쓰지 마세요. 다른 곳에서 새로 고치면 CLI의 사본이 무효화될 수 있고, 파싱한 파일을 다시 쓰면 모델링하지 않은 필드가 유실될 수 있습니다. 검색 후 저장소가 사라졌다면 예외를 발생시키세요. 다음 검색에서 카드가 제거될 때까지 카드에 오류가 표시됩니다.
 
@@ -561,6 +628,7 @@ export default function contribute(server: PluginServerContext) {
 | 이름 | 이벤트 필드 | 트리거 |
 | ---------------------------- | ---------------------------------------- | -------------------------------------------------- |
 | `agent.created` | `agent` | 일반 생성 완료; 가져오기/재개 제외 |
+| `agent.closed` | `agent` | 실행 중인 에이전트 런타임이 닫힘 |
 | `agent.turn_started` | `agent`, `turnId` | 실시간 턴 시작 |
 | `agent.turn_ended` | `agent`, `turnId`, `outcome`, `timeline` | 실시간 턴 완료, 실패 또는 취소 |
 | `agent.permission_requested` | `agent`, `request` | 권한 또는 질문이 대기 상태가 됨 |
@@ -569,7 +637,10 @@ export default function contribute(server: PluginServerContext) {
 | `workspace.created` | `workspace` | 레코드 생성 및 디렉터리 사용 가능 |
 | `workspace.archived` | `workspace` | 보관 상태 저장 |
 
-에이전트 이벤트는 내부 유틸리티 에이전트를 제외합니다. 보관 이벤트가 런타임/작업 트리 정리보다 먼저 발생할 수 있으며, `workspace.created`는 에이전트 시작 전 설정 장벽이 아닙니다.
+에이전트 이벤트는 내부 유틸리티 에이전트를 제외합니다. 보관 이벤트가 런타임/작업 트리 정리보다 먼저
+발생할 수 있습니다. 이미 닫힌 에이전트를 다시 닫아도 `agent.closed` 이벤트가 다시 발생하지 않습니다.
+데몬 종료 중에는 대기 중인 이벤트 훅이 플러그인 중지 전에 완료될 수 있도록 최대 5초가 주어집니다.
+`workspace.created`는 에이전트 시작 전 설정 장벽이 아닙니다.
 
 **공유 페이로드 형태** (`@getpaseo/plugin/server`):
 
@@ -1978,6 +2049,11 @@ Paseo는 다음 순서로 식별자를 해석합니다.
    확장합니다. `github:`는 해당 축약 표기만 허용하며, `git:`는 URL과 SCP 소스도 허용합니다.
 6. 나머지 npm 패키지 이름과 선택적 선택자는 호스트 레지스트리를 통해 해석합니다. 그 밖의 값은
    거부합니다.
+
+플러그인 레지스트리 설치는 기본적으로 꺼져 있습니다. 데몬에서 `pluginRegistryEnabled: true` 또는
+`PASEO_PLUGIN_REGISTRY_ENABLED=1`로 활성화하면 접두사 없는 `owner/slug`와 `host/owner/slug`가
+GitHub 대신 플러그인 레지스트리를 통해 해석되고, 레지스트리 레코드가 리비전과 플러그인 경로를 소유하며,
+GitHub 축약 표기에는 `github:`가 필요합니다.
 
 디렉터리 조회는 데몬 호스트에서 수행됩니다. 앱은 `paseo-plugin.json`의 ID를 사용하고, CLI에서는
 `--id <runtime-id>`로 이를 재정의할 수 있습니다. 기존 설치 ID를 지정하면 활성화 상태나 파일을

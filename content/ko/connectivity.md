@@ -45,7 +45,9 @@ paseo --host 'ssh://user@host?daemonPort=7777' ls -a
 
 `--host`는 명령 앞에 두세요. `paseo daemon status`는 기본 로컬 홈을 관찰합니다. 원격 데몬을 조회하려면 `paseo --host ssh://user@host daemon status`를 사용하세요. `paseo --host ssh://user@host run --cwd /path/on/remote ...`에는 원격 호스트에 존재하는 작업 디렉터리가 필요합니다.
 
-Paseo Desktop에서는 **설정 → 호스트 추가 → 원격 SSH**를 열고 같은 `ssh://` 대상을 입력합니다.
+Paseo Desktop에서는 **설정 → 호스트 추가 → 원격 SSH**를 열고 같은 `ssh://` 대상을 입력합니다. SSH 포트나 원격 데몬 포트가 기본값과 다르면 `:port` 또는 `?daemonPort=`도 포함하세요.
+
+원격 데몬에 비밀번호가 있으면 **데몬 비밀번호**에 입력하세요. 비밀번호는 호스트와 함께 저장되고 직접 연결의 비밀번호와 마찬가지로 모든 연결에서 전송됩니다. SSH 로그인 자체는 계속 키 기반이며 Paseo는 SSH 비밀번호를 묻지 않습니다.
 
 ## Paseo 릴레이
 
@@ -123,6 +125,7 @@ Paseo Desktop이 데몬을 관리하는 경우 **설정 → 호스트 → 개요
 
 - **SSH 인증 실패:** 터미널에서 `ssh user@host`를 실행하고 키, SSH 에이전트, 호스트 키 또는 `~/.ssh/config` 항목을 수정하세요. Paseo는 SSH 비밀번호를 묻지 않습니다.
 - **SSH는 연결되지만 Paseo 연결이 거부됨:** 원격 호스트에서 `paseo daemon status`를 실행하세요. SSH 전송은 데몬을 시작하지 않습니다.
+- **SSH는 연결되지만 Paseo가 "Password required"라고 보고함:** 원격 데몬이 비밀번호로 보호되어 있습니다. 호스트에서 SSH 연결을 제거하고 다시 추가하면서 이번에는 **데몬 비밀번호**에 데몬 비밀번호를 입력하세요.
 - **연결 시간 초과:** Tailscale이 두 장치 모두에 연결되어 있고 데몬 머신의 Tailscale IP를 사용했는지 확인하세요.
 - **연결 거부됨:** `paseo daemon status`을 실행하고 구성된 IP 및 포트에서 데몬이 실행되고 있는지 확인합니다.
 - **구성 변경이 적용되지 않습니다.** `paseo reload`를 실행하세요. `daemon.listen`은 시작 설정이므로 명령에서 재시작이 필요하다고 보고할 때 데몬을 다시 시작하세요.

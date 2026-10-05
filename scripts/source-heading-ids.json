@@ -425,6 +425,7 @@
     "runtime-modules",
     "client-runtime",
     "cross-platform-rules",
+    "play-audio",
     "external-links-and-workspace-browsers",
     "externallink-props",
     "open-a-workspace-browser",
