@@ -73,6 +73,32 @@ export function createProvider(): ProviderRegistration {
 
 네이티브 SDK, 프로세스, 스트림은 연결 구현 내부에 유지하세요. 출력을 게시하기 전에 `ProviderEvent` 객체로 변환합니다.
 
+## 공급자 CLI 실행하기
+
+프로세스 기반 전송과 CLI 확인에는 `@getpaseo/plugin/server`의 `spawnProcess`와 `execCommand`를
+사용하세요. 둘 다 Windows의 `.cmd`/`.bat` 실행기를 처리하고 셸 인수를 따옴표 처리합니다.
+Node의 원시 `spawn`과 `execFile`은 Windows에서 이러한 실행기를 거부합니다.
+
+데몬은 확인된 명령, 인수 접두사, 전체 환경을 `request.launch`로 제공합니다. 이 환경을 명시적으로
+전달하세요. 도우미는 데몬 환경 정책을 적용하지 않습니다. 프로세스 수명 주기와 프로토콜 제한 시간은
+공급자 내부에서 관리하세요. 정상 종료할 때는 stdin을 닫고, 강제 종료에는
+`terminateProcess(child)`를 사용합니다. 이 함수는 Windows에서 명령 스크립트 실행기 뒤의 CLI까지
+포함해 프로세스 트리를 종료합니다. 스트림이 닫히기를 마지막으로 기다리는 시간에도 제한을 두세요.
+
+```ts
+import { spawnProcess, execCommand } from "@getpaseo/plugin/server";
+
+const child = spawnProcess(launch.command, [...launch.args, "serve"], {
+  env: launch.env,
+  cwd,
+  stdio: "pipe",
+});
+const { stdout } = await execCommand(launch.command, [...launch.args, "--version"], {
+  env: launch.env,
+  timeout: 5000,
+});
+```
+
 ## 모델, 모드, 사고 옵션 반환하기
 
 Paseo는 세션을 만들기 전에 카탈로그를 요청합니다. 에이전트 양식에 필요한 선택 항목을 반환하세요.

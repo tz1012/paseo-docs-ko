@@ -398,6 +398,7 @@
   "plugins/providers": [
     "build-a-provider-plugin",
     "register-a-direct-provider",
+    "launch-the-provider-cli",
     "return-models-modes-and-thinking-options",
     "open-a-session",
     "complete-the-first-prompt",
