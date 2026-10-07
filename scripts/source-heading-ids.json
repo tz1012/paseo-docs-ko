@@ -411,11 +411,14 @@
   ],
   "plugins/publishing": [
     "publish-a-plugin",
+    "plugin-registry",
     "publish-on-npm",
     "1-set-your-package-name-and-version",
     "2-check-and-publish",
     "3-test-the-published-plugin",
     "plugins-with-a-build-step",
+    "icons-and-screenshots",
+    "your-listing-page",
     "share-through-github-or-git"
   ],
   "plugins/reference": [

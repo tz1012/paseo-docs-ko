@@ -53,11 +53,22 @@ my-plugin/
 ```
 
 | 필드 | 필수 여부 | 동작 |
-| -------------- | -------- | ---------------------------------------------------------------------- |
+| -------------- | -------- | ----------------------------------------------------------------------------------------- |
 | `id` | 예 | 기본 설치 ID입니다. |
+| `name` | 아니요 | 설치 ID와 별개인 레지스트리 및 웹사이트용 비어 있지 않은 표시 이름입니다. |
+| `icon` | 아니요 | 플러그인 패키지 안의 PNG를 가리키는 상대 경로입니다. |
+| `media` | 아니요 | 패키지 안의 이미지 또는 동영상 경로나 HTTPS URL의 배열입니다. 빈 배열도 유효합니다. |
 | `description` | 아니요 | **설정 → 플러그인**에서 플러그인 ID 아래에 표시되는 비어 있지 않은 요약입니다. |
 | `requirements` | 아니요 | 아래에서 설명하는 지원 Paseo 버전입니다. |
 | `build` | 아니요 | CLI 참조에서 설명하는 준비 명령입니다. |
+
+경로는 `paseo-plugin.json`을 기준으로 하며 정방향 슬래시를 사용하고 `..` 세그먼트를 포함할 수 없습니다.
+예시는 [아이콘과 스크린샷](/docs/plugins/publishing#icons-and-screenshots)을 확인하세요. Paseo는 로컬 자산을
+열거나 URL을 가져오지 않고 참조를 검증합니다.
+
+알 수 없는 최상위 필드는 무시됩니다. 알려진 필드는 계속 검증되며, `requirements` 안의 알 수 없는 키는
+제약 조건의 오타로 인해 호환성 검사가 조용히 건너뛰어지지 않도록 거부됩니다. `name`, `icon`, `media`를
+사용하는 매니페스트에는 Paseo 0.11.0 이상이 필요하며 이전 데몬은 설치 중 이 필드를 거부합니다.
 
 ### 요구 사항
 
@@ -372,7 +383,7 @@ Claude는 Bedrock, Vertex 및 외부 `ANTHROPIC_BASE_URL` 세션을 제외합니
 로그인은 선호 순서대로 반환하고 `harness`를 Codex, OpenCode, Pi, OMP처럼 소유 하네스의 표시 이름으로
 설정하세요. 데몬은 입력값을 불투명하게 취급하며 입력값에서 레이블을 파생하지 않습니다.
 
-호스트 전체 사용량 화면은 키가 같은 로그인을 하나의 계정 카드로 묶고 동시에 시도하며, 결과를 선택할 때
+호스트 전체 사용량 모달은 키가 같은 로그인을 하나의 계정 카드로 묶고 동시에 시도하며, 결과를 선택할 때
 검색 순서를 우선합니다. 로그인 하나라도 `available`을 반환하면 오류 없이 사용량을 표시합니다. 모두
 실패하면 각 로그인 오류를 해당 하네스 레이블 및 자체 해결 방법과 함께 별도 줄에 표시합니다. 검색 실패는
 데몬에 기록되며 카드를 만들지 않습니다.
@@ -2022,16 +2033,19 @@ Paseo는 작성기 메뉴, 검색 선택기, 선택된 필, 초안 상태, 제�
 
 다음 소스 식별자 중 하나를 **설정 → 플러그인**에 붙여 넣거나 `paseo plugin install`에
 전달하세요. `paseo plugin add <source>`와 `paseo plugin install <source>`는 서로 별칭입니다.
-상대 경로는 데몬의 작업 디렉터리를 기준으로 해석되므로 절대 호스트 경로를 권장합니다. 앱은 `~`를
-확장하지 않지만, CLI를 실행하기 전에 셸에서 확장할 수는 있습니다.
+CLI는 상대 디렉터리 경로를 현재 작업 디렉터리에서 해석하고 `~`를 로컬 홈 디렉터리로 확장하며,
+`:plugin/path` 접미사가 있으면 그대로 보존합니다. `--host`를 사용할 때는 데몬 호스트에 존재하는 절대
+경로를 사용하세요. 플러그인 파일은 데몬 호스트에서 읽으며 CLI가 업로드하지 않습니다. 설정에 입력한 경로는
+데몬의 작업 디렉터리를 기준으로 해석되고 `~`는 데몬의 홈 디렉터리로 확장됩니다.
 
 | 소스 | 허용되는 형식 | 예시 |
 | -------------------------- | -------------------------------------------------------------------------- | --------------------------------------------- |
+| 플러그인 레지스트리 | `owner/slug` 또는 `host/owner/slug` | `acme/review` |
 | 호스트 디렉터리 | 데몬 호스트의 절대 또는 상대 경로 | `/srv/paseo/plugins/review` |
-| GitHub 저장소 | `github:owner/repository` 또는 `owner/repository` | `github:acme/paseo-review` |
+| GitHub 저장소 | `git:owner/repository` 또는 `github:owner/repository` | `github:acme/paseo-review` |
 | Git 저장소 | `git:<URL or SCP source>`; URL 및 SCP 소스에서는 접두사 생략 가능 | `git:https://git.example.com/acme/review.git` |
 | npm 패키지 | `npm:<name>[@<version, tag, or range>]`; `npm:` 생략 가능 | `npm:@acme/paseo-review@^1.2.0` |
-| 소스 루트 아래의 플러그인 | 모든 소스에 `:relative/plugin/path` 추가 | `github:acme/monorepo:plugins/review` |
+| 소스 루트 아래의 플러그인 | 디렉터리, Git 또는 npm 소스에 `:relative/plugin/path` 추가 | `github:acme/monorepo:plugins/review` |
 
 Git URL에는 `https://`, `http://`, `ssh://`, `git://`, `file://`를 사용합니다. SCP 소스에는
 `user@host:path`를 사용합니다. `file://`는 디렉터리 설치가 아니라 Git 가져오기를 선택합니다.
@@ -2047,24 +2061,29 @@ npm 이름은 소문자로 된 범위 없는 `name` 또는 범위가 있는 `@sc
 
 Paseo는 다음 순서로 식별자를 해석합니다.
 
-1. 데몬 호스트에서 전체 식별자와 일치하는 기존 디렉터리가 우선합니다. 이름에 리터럴 `:`이 있는
-   디렉터리도 포함됩니다.
+1. 접두사 없는 `owner/slug`는 레지스트리 ID입니다. 로컬 디렉터리 소스는 `.` 또는 `..`이거나 `./`,
+   `../`, `.\`, `..\`, `/`, `~`, Windows 드라이브(`C:\` 또는 `C:/`), UNC(`\\server\share`) 접두사로
+   시작합니다.
 2. 그 외에는 하위 디렉터리 접미사를 해석하기 전에 `npm:`, `github:`, `git:`를 인식합니다.
    `git://`는 Git URL 스킴입니다. 명시적 접두사는 해당 유형의 가져오기를 선택합니다.
 3. 마지막 `:relative/plugin/path`는 접미사에 비어 있거나 `.` 또는 `..`인 세그먼트가 없을 때만
    인식합니다. `.` 하나는 소스 루트를 선택합니다. `/`와 `\`는 모두 접미사 세그먼트를 구분하며,
    호스트 간에는 `/`를 사용하세요. URL 포트와 SCP 소스의 구분자는 소스에 그대로 남습니다. 이 규칙을
    만족하지 않는 접미사는 식별자의 일부로 유지됩니다.
-4. 명시적 접두사가 없으면 나머지 소스와 일치하는 기존 디렉터리가 우선합니다.
-5. Git URL과 SCP 소스는 Git으로 해석하고, 정확한 `owner/repository` 축약 표기는 GitHub HTTPS로
-   확장합니다. `github:`는 해당 축약 표기만 허용하며, `git:`는 URL과 SCP 소스도 허용합니다.
-6. 나머지 npm 패키지 이름과 선택적 선택자는 호스트 레지스트리를 통해 해석합니다. 그 밖의 값은
+4. 접두사 없는 `owner/slug`는 기본 플러그인 레지스트리를 통해, `host/owner/slug`는 해당 레지스트리
+   호스트를 통해 해석합니다. Git URL과 SCP 소스는 Git으로 해석합니다. `github:`는
+   `owner/repository` 단축 표기만 허용하며, `git:`는 URL 및 SCP 소스와 함께 이 단축 표기도 허용합니다.
+5. 나머지 npm 패키지 이름과 선택적 선택자는 호스트 레지스트리를 통해 해석합니다. 그 밖의 값은
    거부합니다.
 
-플러그인 레지스트리 설치는 기본적으로 꺼져 있습니다. 데몬에서 `pluginRegistryEnabled: true` 또는
-`PASEO_PLUGIN_REGISTRY_ENABLED=1`로 활성화하면 접두사 없는 `owner/slug`와 `host/owner/slug`가
-GitHub 대신 플러그인 레지스트리를 통해 해석되고, 레지스트리 레코드가 리비전과 플러그인 경로를 소유하며,
-GitHub 축약 표기에는 `github:`가 필요합니다.
+기본 레지스트리는 `https://plugins.paseo.sh`입니다. [게시된 플러그인](https://paseo.sh/plugins)을
+찾아보고 `paseo plugin add owner/slug`로 설치하세요. 레지스트리 레코드가 리비전과 플러그인 경로를
+소유합니다. 명시적 GitHub 단축 표기에는 `git:owner/repository`를 사용하거나 전체 Git URL을 사용하세요.
+자체 호스팅 기본 URL을 사용하려면 경로 접두사를 포함해 `PASEO_PLUGIN_REGISTRY`를 설정하세요. 비공개
+레지스트리 자격 증명은 데몬 구성의
+`pluginRegistries: { "host": { "authorization": "Bearer token" } }`을 사용합니다. 이 시작 설정을
+변경한 뒤 데몬을 다시 시작하세요. 자격 증명은 해당 레지스트리에만 전송되며 아티팩트 호스트나 리디렉션에는
+절대 전송되지 않습니다. 설치된 플러그인은 기본값이 변경되어도 기록된 소스와 레지스트리 URL을 유지합니다.
 
 디렉터리 조회는 데몬 호스트에서 수행됩니다. 앱은 `paseo-plugin.json`의 ID를 사용하고, CLI에서는
 `--id <runtime-id>`로 이를 재정의할 수 있습니다. 기존 설치 ID를 지정하면 활성화 상태나 파일을
@@ -2110,9 +2129,10 @@ HEAD를 설치합니다. 설치 선택자는 이후 업데이트를 제한하지
 paseo plugin init /absolute/path/to/plugin
 paseo plugin install /absolute/path/to/plugin
 paseo plugin install /absolute/path/to/plugin --id another-runtime-id
-paseo plugin add owner/repository
+paseo plugin add owner/slug
+paseo plugin add git:owner/repository
 paseo plugin add https://git.example.com/owner/repository.git --ref main
-paseo plugin add owner/monorepo:plugins/review
+paseo plugin add git:owner/monorepo:plugins/review
 paseo plugin ls [id]
 paseo plugin update <id>
 paseo plugin update --all --check

@@ -20,6 +20,16 @@ category: Plugins
 [데몬 측 RPC](/docs/plugins/reference#add-plugin-specific-backend-behavior)를 추가할 수 있습니다. 또한 [코딩 에이전트를 공급자로 연결](/docs/plugins/providers)할 수 있습니다. 클라이언트
 기여는 모바일을 포함해 해당 데몬에 연결된 모든 Paseo 클라이언트에서 실행됩니다.
 
+[게시된 플러그인](https://paseo.sh/plugins)을 찾아본 다음 데몬에 하나를 설치하세요.
+
+```bash
+paseo plugin add owner/slug
+```
+
+또는 `owner/slug`를 **설정 → 플러그인 → 플러그인 소스**에 붙여 넣고 **플러그인 설치**를 선택하세요.
+Paseo는 레지스트리에서 검토한 아티팩트를 설치합니다. Git 저장소에서 직접 설치하려면
+`git:owner/repository` 또는 전체 Git URL을 사용하세요.
+
 이 가이드에서는 플러그인의 기본 구조를 생성하고 실행한 다음 작업공간 패널을 추가합니다.
 
 ## 플러그인 만들기
@@ -242,13 +252,13 @@ paseo plugin install npm:@acme/paseo-review@1.2.0
 식별자 구문은 [플러그인 소스](/docs/plugins/reference#plugin-sources)를 참조하세요. 자체 플러그인을
 공유하려면 [플러그인 게시하기](/docs/plugins/publishing)를 따르세요.
 
-Git 저장소에 게시된 플러그인은 단축 표기 또는 URL로 설치합니다.
+Git 저장소에 게시된 플러그인은 명시적 Git 단축 표기 또는 URL로 설치합니다.
 
 ```bash
-paseo plugin add owner/repository
+paseo plugin add git:owner/repository
 paseo plugin add https://gitlab.com/group/repository.git
-paseo plugin add owner/monorepo:plugins/workspace
-paseo plugin add owner/repository --ref main
+paseo plugin add git:owner/monorepo:plugins/workspace
+paseo plugin add git:owner/repository --ref main
 ```
 
 플러그인이 저장소 루트 아래에 있으면 `:relative/path`를 덧붙이세요. `--ref`는 처음 설치할 Git
