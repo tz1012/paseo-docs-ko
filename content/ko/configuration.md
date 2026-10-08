@@ -141,7 +141,7 @@ PASEO_WEB_UI_ENABLED=true paseo daemon run
 
 - 콘솔: `info` 이상
 - 파일(`$PASEO_HOME/daemon.log`): `trace` 이상
-- 파일 회전: `10m` 최대 파일 크기, `2` 보유 파일 총계(활성 + 1 회전)
+- 파일 회전: `10m` 최대 파일 크기, 활성 파일과 별도로 회전 파일 `3`개 보관
 
 ```json
 {
@@ -155,7 +155,7 @@ PASEO_WEB_UI_ENABLED=true paseo daemon run
       "path": "daemon.log",
       "rotate": {
         "maxSize": "10m",
-        "maxFiles": 2
+        "maxFiles": 3
       }
     }
   }

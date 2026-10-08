@@ -15,6 +15,23 @@ export function restoreMarkdown(text, tokens) {
   return text.replace(/@@TOKEN_(\d+)@@/g, (_, index) => tokens[Number(index)]);
 }
 
+export function sourceHeadingIds(markdown) {
+  const counts = new Map();
+  const prose = markdown.replace(/^(```|~~~)[^\r\n]*\r?\n[\s\S]*?^\1\s*$/gm, '');
+  return [...prose.matchAll(/^#{1,6}\s+(.+?)\s*#*\s*$/gm)].map((match) => {
+    const base = match[1]
+      .replace(/!?\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/<[^>]*>/g, '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .trim()
+      .replace(/\s+/g, '-');
+    const count = counts.get(base) || 0;
+    counts.set(base, count + 1);
+    return count ? `${base}-${count}` : base;
+  });
+}
+
 export function rewriteInternalLink(href, fromSlug = 'index', pageSlugs) {
   const match = href.match(/^(?:https:\/\/paseo\.sh)?\/docs(?:\/([^?#]*?))?\/?([?#].*)?$/);
   if (match) {

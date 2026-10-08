@@ -197,7 +197,7 @@ HTTPS를 통해 UI를 제공하지만 앱이 `ws://`을 통해 연결을 시도�
 - **Tailscale Serve**는 이를 tailnet 내부에 유지하고 공개적으로 노출되지 않으며 TLS가 자동으로 처리됩니다.
 
   ```bash
-  tailscale serve https / http://127.0.0.1:6767
+  tailscale serve --bg http://127.0.0.1:6767
   ```
 
 `https://<your-machine>.<tailnet>.ts.net/`으로 연락하세요. Tailnet에 있는 장치만 연결할 수 있습니다.

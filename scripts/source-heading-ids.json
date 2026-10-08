@@ -56,8 +56,6 @@
     "hub",
     "connecting-to-a-remote-daemon",
     "multi-agent-workflows",
-    "agent-a-spawns-agent-b-and-waits-for-it",
-    "requires-jq",
     "output-formats",
     "global-options"
   ],
@@ -65,11 +63,7 @@
     "codex",
     "does-codex-cost-extra-in-paseo",
     "getting-started",
-    "macos-or-linux",
-    "windows-powershell",
     "codex-is-missing-in-paseo",
-    "macos-or-linux-1",
-    "windows",
     "use-codex-in-the-paseo-terminal",
     "see-also"
   ],
@@ -175,7 +169,6 @@
   "hub/configuration/index": [
     "hub-configuration",
     "generated-starter-trigger",
-    "paseotriggersslack-helpyml",
     "startup-timeout",
     "deploy-from-the-cli",
     "legacy-project-bundles",
@@ -257,10 +250,6 @@
     "public-addresses",
     "postgresql",
     "app-configuration",
-    "github",
-    "slack-socket-mode",
-    "slack-webhooks-instead-of-socket-mode",
-    "discord",
     "bootstrap-from-environment",
     "docker-compose",
     "https-with-caddy",
@@ -372,6 +361,14 @@
     "cli",
     "pick-settings-once-with-profiles",
     "go-further"
+  ],
+  "parallel-development": [
+    "run-parallel-tasks",
+    "start-two-tasks",
+    "review-each-change",
+    "run-and-test-the-app",
+    "choose-what-to-merge",
+    "let-an-agent-coordinate-the-tasks"
   ],
   "plugins/index": [
     "plugin-quickstart",
@@ -666,12 +663,11 @@
   ],
   "why": [
     "why-paseo",
-    "architecture",
-    "providers",
-    "where-agents-run",
-    "parallel-work",
-    "automation",
-    "what-it-isnt"
+    "develop-in-one-workspace",
+    "run-tasks-in-parallel",
+    "use-your-agents-and-tools",
+    "continue-from-another-device",
+    "automate-and-extend-your-workflow"
   ],
   "workspaces": [
     "workspaces",
@@ -692,7 +688,6 @@
     "services",
     "dynamic-port-allocation",
     "reverse-proxy",
-    "on-the-default-branch-the-branch-label-is-dropped",
     "service-to-service",
     "terminals",
     "environment-variables",

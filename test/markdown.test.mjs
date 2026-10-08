@@ -99,6 +99,15 @@ test('renders source heading IDs and Markdown headings through level six', () =>
   assert.match(html, /<h4 id="externallink-props">ExternalLink 속성<\/h4>/);
 });
 
+test('source heading IDs ignore comments inside fenced code blocks', async () => {
+  const { sourceHeadingIds } = await import('../scripts/markdown.mjs');
+  assert.equal(typeof sourceHeadingIds, 'function');
+  assert.deepEqual(sourceHeadingIds('# Visible\n\n```bash\n# not-a-heading\n```\n\n## Next'), [
+    'visible',
+    'next',
+  ]);
+});
+
 test('all generated relative links resolve to files and fragments', () => {
   const root = resolve('dist');
   const files = [];

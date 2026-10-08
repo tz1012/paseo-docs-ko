@@ -8,7 +8,9 @@ category: Providers
 
 # 제공자
 
-Paseo는 자체 코딩 에이전트를 제공하지 않습니다. **이미 설치하고 인증한 기존 CLI**, Claude Code, Codex, OpenCode, Antigravity, Muse Code, Cursor, Gemini 등을 시작하고 감독합니다. 구독, 구성, 스킬, MCP 서버는 모두 그대로 유지됩니다. Paseo는 UI, CLI, 릴레이 및 오케스트레이션을 제공합니다.
+Paseo는 **설치하고 인증한 기존 코딩 에이전트**를 편집기, 터미널, 차이점, 데스크톱의 경우 브라우저가 포함된 작업공간에서 실행합니다. 여러 에이전트를 병렬로 실행하고, 작업마다 공급자를 선택하고, 같은 앱에서 결과를 검토하세요. 구독, 구성, 스킬 및 MCP 서버는 그대로 유지됩니다.
+
+이 워크플로를 사용해 보려면 [별도 작업 트리에서 병렬 작업을 실행하세요](/docs/parallel-development).
 
 ## 정신 모델
 

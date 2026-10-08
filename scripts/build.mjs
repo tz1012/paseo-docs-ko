@@ -1,6 +1,6 @@
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join, relative, dirname } from 'node:path';
-import { rewriteInternalLink, relativePageLink, orderNavigationCategories } from './markdown.mjs';
+import { rewriteInternalLink, relativePageLink, orderNavigationCategories, sourceHeadingIds } from './markdown.mjs';
 
 const contentDir = 'content/ko';
 const outputDir = 'dist';
@@ -55,7 +55,7 @@ const headingAliasesBySlug = {
   'hub/configuration/hub-yml': { 'output-capabilities': ['output-capability'] },
 };
 for (const page of pages) {
-  const headingCount = [...page.body.matchAll(/^#{1,6}\s+/gm)].length;
+  const headingCount = sourceHeadingIds(page.body).length;
   if (!headingIdsBySlug[page.slug] || headingIdsBySlug[page.slug].length !== headingCount) {
     throw new Error(`Source heading IDs are out of date for ${page.slug}`);
   }
