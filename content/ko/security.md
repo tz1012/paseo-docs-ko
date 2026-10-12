@@ -121,6 +121,14 @@ Docker 배포의 경우:
 
 Compose 및 역방향 프록시 예시는 [Docker](/docs/docker)를 참조하세요.
 
+## Linux 데스크톱 샌드박스
+
+Paseo는 Linux에서 데스크톱 앱이 시작될 때마다 Chromium 샌드박스 가용성을 확인합니다. 사용자 네임스페이스가 작동하거나 설치된 샌드박스 도우미를 사용할 수 있으면 샌드박스를 계속 활성화합니다. `.deb` 및 `.rpm` 설치 프로그램은 이 도우미를 구성합니다.
+
+AppImage와 압축을 푼 tar 아카이브는 둘 다 사용할 수 없을 때 Chromium 샌드박스를 비활성화한 상태로 시작합니다. Chromium 프로세스 격리가 필요하면 `.deb` 또는 `.rpm` 패키지를 사용하세요. `--no-sandbox`를 명시적으로 전달하면 샌드박스가 비활성화됩니다.
+
+샌드박스 상태와 이유를 확인하려면 **설정 → 진단 → 앱 진단**을 여세요. [데스크톱 로그](/docs/troubleshooting#reading-the-logs)에도 같은 결정이 기록됩니다.
+
 ## 에이전트 인증
 
 Paseo는 에이전트 CLI(Claude Code, Codex, OpenCode, Muse Code)를 래핑하지만 인증을 관리하지는 않습니다. 각 에이전트 공급자는 자체 자격 증명을 처리합니다.

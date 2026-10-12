@@ -35,6 +35,8 @@
   "cli": [
     "cli-reference",
     "quick-reference",
+    "account-usage",
+    "usage-in-scripts",
     "provider-diagnostics",
     "running-agents",
     "projects",
@@ -305,7 +307,6 @@
   "index": [
     "getting-started",
     "desktop-app-recommended",
-    "linux",
     "server-cli",
     "docker",
     "where-next",
@@ -511,6 +512,7 @@
     "find-agents-by-label",
     "continue-an-agent-by-id",
     "create-a-subagent",
+    "run-work-in-a-background-workspace",
     "request-structured-output",
     "read-the-current-state-of-an-agent",
     "list-the-commands-a-session-loaded",
@@ -599,6 +601,7 @@
     "what-password-auth-does-and-does-not-do",
     "when-to-use-it",
     "docker-self-hosting",
+    "linux-desktop-sandbox",
     "agent-authentication",
     "hub-identities-and-credentials",
     "recommendations"
@@ -619,6 +622,7 @@
   ],
   "troubleshooting": [
     "troubleshooting",
+    "appimage-wont-open-on-linux",
     "paseo-cant-find-my-provider",
     "see-what-paseo-sees",
     "fix-it",

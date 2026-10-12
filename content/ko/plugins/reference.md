@@ -659,10 +659,7 @@ export default function contribute(server: PluginServerContext) {
 | `workspace.created` | `workspace` | 레코드 생성 및 디렉터리 사용 가능 |
 | `workspace.archived` | `workspace` | 보관 상태 저장 |
 
-에이전트 이벤트는 내부 유틸리티 에이전트를 제외합니다. 보관 이벤트가 런타임/작업 트리 정리보다 먼저
-발생할 수 있습니다. 이미 닫힌 에이전트를 다시 닫아도 `agent.closed` 이벤트가 다시 발생하지 않습니다.
-데몬 종료 중에는 대기 중인 이벤트 훅이 플러그인 중지 전에 완료될 수 있도록 최대 5초가 주어집니다.
-`workspace.created`는 에이전트 시작 전 설정 장벽이 아닙니다.
+에이전트 이벤트는 데몬의 비공개 일회용 도우미를 제외합니다. 공개 백그라운드 작업공간과 그 안의 일반 에이전트에는 다른 작업공간과 같은 수명 주기 훅이 실행됩니다. 보관 이벤트가 런타임/작업 트리 정리보다 먼저 발생할 수 있으므로 정리가 중요하면 수명 주기 완료를 별도로 관찰하세요.
 
 **공유 페이로드 형태** (`@getpaseo/plugin/server`):
 
@@ -716,7 +713,6 @@ type PluginTurnOutcome =
 | `providerOptions` | 불투명한 공급자 고유 옵션 |
 | `mcpServers`, `toolPolicy` | MCP 구성과 정확한 도구 사전 승인 |
 | `cwd` | 변경할 수 없음 |
-| `internal` | 데몬 소유이며 이 훅에서 변경할 수 없음 |
 
 **`agent.session_open` 요청 예시:**
 

@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-description: Why Paseo can't find a provider you've installed, and how to fix the PATH and environment mismatches behind most setup issues.
+description: Fix Linux AppImage launch errors, missing providers, and environment mismatches.
 nav: Common problems
 order: 90
 category: Troubleshooting
@@ -8,7 +8,22 @@ category: Troubleshooting
 
 # 문제 해결
 
-거의 모든 "내 터미널에서는 작동하지만 Paseo에서는 작동하지 않습니다" 문제는 동일합니다. Paseo와 터미널이 동일한 `PATH`을 검색하지 않습니다. 이 페이지에서는 이를 발견하고 수정하는 방법을 다룹니다.
+## Linux에서 AppImage가 열리지 않음
+
+다운로드한 AppImage를 실행 가능하게 만든 다음 터미널에서 실행해 오류를 확인하세요.
+
+```bash
+chmod +x Paseo-x86_64.AppImage
+./Paseo-x86_64.AppImage
+```
+
+`error loading libfuse.so.2`가 표시되면 FUSE 없이 실행하세요.
+
+```bash
+./Paseo-x86_64.AppImage --appimage-extract-and-run
+```
+
+Paseo 창이 열려야 합니다. [다운로드 페이지](https://paseo.sh/download)에서 Debian/Ubuntu용 `.deb` 또는 Fedora용 `.rpm`을 설치할 수도 있습니다.
 
 ## Paseo가 내 제공업체를 찾을 수 없습니다.
 

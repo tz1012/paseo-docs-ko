@@ -105,6 +105,27 @@ const child = await workspace.agents.create({
 
 `parent`은 친자 관계를 설정합니다. 상위 항목을 보관하면 해당 하위 항목도 계단식으로 보관됩니다. 자녀가 독립적으로 계속해야 할 경우 먼저 `detach()`에 호출하세요.
 
+## 백그라운드 작업공간에서 작업 실행
+
+백그라운드 작업공간과 첫 번째 에이전트를 한 번의 호출로 만듭니다. 작업공간 옵션에 `background`를 두고 에이전트 구성은 `agent` 아래에 넣으세요.
+
+```ts
+const cwd = "/Users/me/dev/storefront";
+const workspace = await client.workspaces.create({
+  source: { kind: "directory", path: cwd },
+  background: true,
+  agent: {
+    cwd,
+    config: { provider: "codex/gpt-5.5" },
+    prompt: "Review the checkout flow.",
+  },
+});
+```
+
+호출은 작업공간 핸들을 반환하고 제공된 프롬프트로 첫 번째 에이전트를 시작합니다.
+
+백그라운드 에이전트는 기록을 유지하고 데몬 재시작 후에도 남아 있습니다. 기본 검색에서는 숨겨지며 포함하려면 `client.agents.list({ filter: { includeBackground: true } })`를 사용하세요. 정확한 ID의 핸들은 평소와 같이 작동합니다. 기본값과 호출자 상속은 [작업공간 생성](./workspaces.md#create-a-fresh-workspace)을 참조하세요.
+
 ## 구조화된 출력 요청
 
 ```ts

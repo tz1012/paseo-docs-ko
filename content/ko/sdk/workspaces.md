@@ -50,7 +50,15 @@ const workspace = await client.workspaces.create({
 });
 ```
 
+작업공간과 첫 번째 에이전트를 한 번의 호출로 만들려면 `agent`를 전달하세요. [결합된 백그라운드 작업공간 예제](./agents.md#run-work-in-a-background-workspace)를 참조하세요. 표시 여부는 작업공간 옵션에 설정하며 `agent.background`는 거부됩니다.
+
 이미 소스가 있는 경우 두 소스 모두에서 `projectId`을 전달할 수 있습니다. 대부분의 통합에서는 이를 생략해야 합니다. 데몬은 디렉터리에서 프로젝트를 찾거나 생성합니다.
+
+기본 검색에서 작업공간을 숨기려면 `background: true`를 전달하세요. 해당 에이전트와 터미널은 일반적인 기록, 수명 주기 훅, 보관, 정확한 ID 접근과 함께 계속 유지됩니다. 앱 사이드바의 **백그라운드 표시**는 복제된 상태를 버리지 않고 이를 표시합니다.
+
+`background`는 생성할 때만 정할 수 있습니다. 생략하면 기본값은 false입니다. `callerAgentId`가 새 작업공간을 만드는 에이전트를 식별하면 생략 시 해당 에이전트 작업공간의 값을 상속합니다. false 또는 true를 명시하면 상속을 재정의합니다. `workspaceId`를 사용하는 에이전트 생성에서는 명시적인 백그라운드 생성 의도를 거부합니다. 작업공간을 만들 때 표시 여부를 구성하세요. SDK/RPC 암시적 에이전트 생성에서도 `background`는 에이전트 속성이 아니라 작업공간 생성 의도입니다.
+
+생성 및 포함 검색에는 `features.backgroundWorkspaces`가 필요합니다. 지원하지 않는 호스트에서는 클라이언트가 호스트 업데이트 안내와 함께 요청을 거부합니다.
 
 ## 작업공간에서 에이전트 시작
 
@@ -115,6 +123,8 @@ do {
   cursor = page.pageInfo.nextCursor ?? undefined;
 } while (cursor);
 ```
+
+`filter.includeBackground`가 true가 아니면 백그라운드 작업공간은 제외됩니다. `client.workspaces.list({ filter: { includeBackground: true } })` 또는 `client.agents.list({ filter: { includeBackground: true } })`를 사용하세요. 작업공간 설명자에는 `background`가 포함됩니다. 에이전트는 작업공간에서 표시 여부를 파생하며 별도의 설정이 없습니다.
 
 ## 핸들 새로 고침 및 보관
 

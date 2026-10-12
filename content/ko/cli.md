@@ -21,7 +21,48 @@ paseo attach <id>                    # Stream agent output
 paseo send <id> "also fix linting"   # Send follow-up task
 paseo logs <id>                      # View agent timeline
 paseo stop <id>                      # Stop an agent
+paseo usage                          # Show account quotas and balances
 ```
+
+## 계정 사용량
+
+호스트의 사용량 소스에서 계정 할당량과 잔액을 표시합니다.
+
+```bash
+paseo usage
+paseo usage ls --refresh
+paseo usage ls --agent <agent-id>
+paseo usage inspect <report-id>
+paseo usage inspect <report-id> --refresh
+```
+
+`paseo usage`는 `paseo usage ls`와 같습니다. 요약은 창과 잔액을 계정별로 그룹화하고 보고서 ID, 소스 및 계정 레이블, 상태, 가져온 시각을 표시합니다. 누락된 값은 `-`로 표시되며, 사용할 수 없거나 실패한 보고서에는 그 이유가 포함됩니다.
+
+목록에서 전체 보고서 ID를 복사해 `inspect`에 전달하면 재설정 시각, 잔액과 단위, 플랜 세부 정보, 제공된 예측, 복구 안내가 포함된 로그인 실패를 확인할 수 있습니다. 보고서 ID는 정확히 일치해야 합니다.
+
+`--agent`는 에이전트와 연결된 계정 할당량을 선택합니다. 해당 에이전트의 토큰 소비량이나 비용을 측정하지는 않습니다. 전체 에이전트 ID를 사용하고 `--agent`를 `inspect`와 함께 사용하지 마세요.
+
+쿼리는 사용할 수 있을 때 호스트의 5분 캐시를 사용합니다. 캐시를 우회하려면 `--refresh`를 추가하세요. [데몬 하나를 선택](#select-one-daemon)하려면 `--host` 또는 `--home`을 사용하세요. 사용량 소스를 지원하지 않는 호스트는 업데이트 안내를 반환합니다.
+
+### 스크립트에서 사용하기
+
+```bash
+paseo usage ls --json
+paseo usage inspect <report-id> --json
+paseo usage ls --quiet
+```
+
+목록 JSON은 보고서가 없을 때의 `[]`을 포함해 항상 배열입니다. 검사 JSON은 하나의 보고서 항목입니다. 각 항목에는 `id`, `sourceId`, `sourceLabel`, `account`, `fetchedAt`과 중첩된 `report`가 포함됩니다. 데이터에 접근하기 전에 `report.status`를 확인하세요.
+
+| 상태 | 필드 |
+| --- | --- |
+| `available` | 선택적 `planLabel`, `balances`, `details`가 포함된 `windows` |
+| `unavailable` | 만료되거나 거부된 자격 증명 또는 누락된 할당량을 설명하는 `problem` |
+| `error` | 실패 메시지인 `error` |
+
+항목에는 `loginErrors`도 포함될 수 있습니다. 구조화된 출력은 숫자 값과 선택적 필드를 보존합니다. 표준 `--format yaml`, `--no-headers`, `--no-color` 옵션을 지원하며, `--quiet`은 전체 보고서 ID를 출력합니다.
+
+완료된 쿼리는 개별 보고서를 사용할 수 없거나 가져오지 못했을 때도 상태 `0`으로 종료됩니다. 연결 또는 요청 실패, 지원하지 않는 호스트, 알 수 없는 보고서 ID, 충돌하는 선택자는 상태 `1`로 종료되고 오류를 stderr에 기록합니다. 결과가 비어 있으면 사람이 읽는 출력에 **사용량 보고서가 반환되지 않았습니다**가 표시됩니다. 이는 모든 소스에서 계정 검색에 성공했다는 의미가 아닙니다.
 
 ## 공급자 진단
 
@@ -42,7 +83,8 @@ paseo --host devbox:6767 provider diagnostic opencode
 ```bash
 paseo run "implement user authentication"
 paseo run --provider codex "refactor the API layer"
-paseo run --background "run the focused test suite"
+paseo run --no-wait "run the focused test suite"
+paseo run --output-schema schema.json "name this branch"
 paseo run --new-workspace worktree --worktree-mode branch-off --new-branch feature/x --base origin/main "implement feature X"
 paseo run --workspace <workspace-id> "review the current diff"
 paseo run --output-schema schema.json "extract release notes"
@@ -55,9 +97,11 @@ paseo run --output-schema '{"type":"object","properties":{"summary":{"type":"str
 
 기존 Paseo 에이전트가 동일한 명령을 실행하면 Paseo는 `PASEO_AGENT_ID`을 통해 이를 인식합니다. 명시적인 배치가 없으면 새 에이전트는 동일한 작업 영역에서 하위 에이전트가 됩니다. `--workspace`은 상위를 변경하지 않고 해당 하위 에이전트를 다른 곳에 배치할 수 있습니다.
 
-일치하는 JSON 출력만 반환하려면 `--output-schema`을 사용하세요. 스키마 파일 경로 또는 인라인 JSON 스키마 개체를 전달할 수 있습니다. 이 모드는 `--background`과 함께 사용할 수 없습니다.
+일치하는 JSON 출력만 반환하려면 `--output-schema`을 사용하세요. 스키마 파일 경로 또는 인라인 JSON 스키마 개체를 전달할 수 있습니다. 이 모드는 `--no-wait`와 함께 사용할 수 없습니다.
 
-기본적으로 `paseo run`은 완료될 때까지 기다립니다. 에이전트가 계속 실행되는 동안 즉시 반환하려면 `--background`을 사용하세요.
+기본적으로 `paseo run`은 완료될 때까지 기다립니다. 에이전트가 계속 실행되는 동안 즉시 반환하려면 `paseo send`와 같은 `--no-wait` 플래그를 사용하세요.
+
+이전 `run --background`와 `-d` 별칭도 여전히 `--no-wait`를 의미합니다. 이 별칭은 사용 중단됐고 도움말에 표시되지 않으며 stderr에 경고를 출력합니다. 스크립트에서는 `--no-wait`를 사용하세요. 작업공간 표시 여부는 `workspace create --background`로 별도로 선택합니다. 이번 릴리스에서 `run --background`의 용도가 바뀌지는 않습니다.
 
 ## 프로젝트
 
@@ -116,10 +160,20 @@ paseo workspace create \
   --pr-number 2186
 ```
 
+기본 검색에서 작업공간을 숨기려면 `--background`를 추가하세요. 해당 에이전트와 터미널에는 일반적인 기록, 지속성, 훅, 재시작 복구가 그대로 적용됩니다. `--no-background`는 호출자 작업공간으로부터의 상속을 명시적으로 재정의합니다. 생략하면 Paseo 에이전트가 실행할 때는 상속하고 사람의 셸에서 실행할 때는 기본값이 false입니다. 표시 여부는 생성할 때만 정할 수 있습니다.
+
+```bash
+paseo workspace create --isolation local --background --path /path/to/repo
+paseo run --workspace <workspace-id> --no-wait "review the checkout flow"
+```
+
+정확한 작업공간 및 에이전트 ID를 사용하면 목록 표시 여부와 관계없이 접근할 수 있습니다.
+
 그런 다음 이를 나열하거나 사용하거나 이름을 변경하거나 보관하세요.
 
 ```bash
 paseo workspace ls
+paseo workspace ls --background               # Also include background workspaces
 paseo run --workspace <workspace-id> "implement authentication"
 paseo workspace rename <workspace-id> "Auth rework"
 paseo workspace rename <workspace-id> --reset   # back to the branch or directory name
@@ -192,6 +246,7 @@ paseo ls                    # Non-archived agents in active workspaces
 paseo ls -a                 # Also include archived agents
 paseo ls -g                 # Non-archived agents across all workspaces
 paseo ls -a -g --json       # All agents, including archived, as JSON
+paseo ls --background       # Also include agents in background workspaces
 ```
 
 ## 스트리밍 출력
@@ -386,7 +441,7 @@ CLI는 에이전트 자체에서 사용하도록 설계되었습니다. 병렬 �
 
 ```bash
 # Agent A spawns Agent B and waits for it
-agent_id=$(paseo run --background --quiet --title api-agent "implement the API")
+agent_id=$(paseo run --no-wait --quiet --title api-agent "implement the API")
 paseo wait "$agent_id"
 paseo logs "$agent_id" --tail 5
 ```

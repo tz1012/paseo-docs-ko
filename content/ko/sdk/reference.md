@@ -57,7 +57,9 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 
 `list({ subscribe: {} })`는 `subscriptionId`와 소유된 `subscription`도 반환합니다. `subscribe({ snapshot, update, error? })` 콜백은 범위가 지정된 유선 업데이트보다 먼저 스냅샷을 받습니다. `release()`는 해당 관찰을 종료합니다. 기능을 지원하는 데몬은 ID를 할당하고 관찰을 서로 독립적으로 유지합니다. 이전 데몬은 로컬 ID와 기존 공유 전달 동작을 사용합니다. 일반 목록은 관찰을 만들지 않습니다. 같은 계약이 작업공간 목록에도 적용됩니다. [이벤트](./events.md)를 참조하세요.
 
-생성 옵션에는 `config`, `cwd`, `parent`, `title`, `prompt`, `env`, `outputSchema`, `images`, `attachments`, `git`, `worktree`, `autoArchive` 및 `labels`.
+생성 옵션에는 `config`, `cwd`, `parent`, `title`, `prompt`, `env`, `outputSchema`, `images`, `attachments`, `git`, `worktree`, `autoArchive`, `background`, `labels`가 포함됩니다.
+
+`background`는 작업공간 생성 의도입니다. 기존 `workspaceId`와 함께 사용할 수 없습니다. 호출자 상속과 포함 검색은 [백그라운드 작업공간](./workspaces.md)을 참조하세요.
 
 `config` 수락:
 
@@ -124,13 +126,15 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 ## `client.workspaces`
 
 | 방법 | 결과 | 행동 |
-| ------------------------ | ---------------- | --------------------------------------------------------------------------------- |
-| `list(options?)` | `PaseoWorkspaceListResult` | 작업공간 디렉토리를 나열, 필터, 페이징하거나 구독합니다.                  |
-| `open(cwd)` | `PaseoWorkspaceHandle` | 디렉토리에 대한 활성 작업공간을 재사용하거나 디렉토리를 생성합니다.                       |
-| `create(options)` | `PaseoWorkspaceHandle` | 항상 새로운 디렉터리 지원 또는 Paseo-worktree 작업 공간을 만듭니다.              |
-| `ref(workspaceOrId)` | `PaseoWorkspaceHandle` | 로컬 핸들을 만듭니다.                                                           |
-| `archive(workspaceOrId)` | `PaseoWorkspaceArchiveResult` | 먼저 핸들을 만들지 않고 보관합니다.                                         |
+| --- | --- | --- |
+| `list(options?)` | `PaseoWorkspaceListResult` | 작업공간 디렉터리를 나열, 필터, 페이징하거나 구독합니다. |
+| `open(cwd)` | `PaseoWorkspaceHandle` | 디렉터리에 대한 활성 작업공간을 재사용하거나 하나를 만듭니다. |
+| `create(options)` | `PaseoWorkspaceHandle` | 항상 새 디렉터리 기반 또는 Paseo 작업 트리 작업공간을 만듭니다. `background: true`는 기본 검색에서 숨깁니다. |
+| `ref(workspaceOrId)` | `PaseoWorkspaceHandle` | 로컬 핸들을 만듭니다. |
+| `archive(workspaceOrId)` | `PaseoWorkspaceArchiveResult` | 먼저 핸들을 만들지 않고 보관합니다. |
 | `subscribe(handler)` | 구독 취소 기능 | 이 API 인스턴스의 로컬 리스너입니다. 소유된 `list({ subscribe: {} })` 관찰이 필요합니다. |
+
+`create({ source, agent, background })`는 작업공간과 첫 번째 에이전트를 함께 만듭니다. `agent`에는 `worktree`, `git`, `onEvent`, `idempotencyKey`, `requestId`를 제외한 에이전트 생성 옵션을 사용할 수 있습니다. `background`는 작업공간 옵션에 설정하세요. `agent.background`는 거부됩니다. [결합 생성 예제](./agents.md#run-work-in-a-background-workspace)를 참조하세요.
 
 작업 영역 핸들은 `id`, `projectId`, `directory`, `name`, `status`, `current()`, `refresh()`, `setTitle(title)`, `archive()` 및 `subscribe()`을 노출합니다. 파생된 작업공간 이름으로 복원하려면 `setTitle`에 `null`을 전달하세요. 작업공간 ID나 디렉터리를 반복하지 않고 에이전트를 생성하려면 `workspace.agents.create(options)`을 사용하세요.
 
