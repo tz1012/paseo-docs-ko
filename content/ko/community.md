@@ -31,3 +31,4 @@ category: Getting started
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | [Paseo Self-hosted](https://github.com/blockfeed/paseo-selfhosted) | Paseo 웹 UI와 로컬 데몬을 Docker 배포로 패키징합니다.                                                     |
 | [Devbox Fleet](https://github.com/omrihaviv/devbox-fleet)          | Paseo, 코딩 에이전트, Tailscale 액세스를 갖춘 개발자별 GCP devbox를 프로비저닝하고 유지 관리합니다.       |
+| [Paseo Vercel Sandbox](https://github.com/vercel-labs/paseo-vercel-sandbox) | Vercel AI Gateway를 통해 Codex, Claude Code, OpenCode 또는 Pi와 함께 Paseo 데몬을 실행하는 영속적 Vercel Sandbox를 생성합니다. 각 샌드박스를 원격 Paseo 호스트로 페어링합니다. |
