@@ -71,7 +71,7 @@
   ],
   "community": [
     "related-projects",
-    "plugin-directory",
+    "plugins",
     "tools-and-integrations",
     "hosting-and-infrastructure"
   ],
@@ -409,15 +409,16 @@
   ],
   "plugins/publishing": [
     "publish-a-plugin",
-    "plugin-registry",
-    "publish-on-npm",
-    "1-set-your-package-name-and-version",
-    "2-check-and-publish",
-    "3-test-the-published-plugin",
-    "plugins-with-a-build-step",
-    "icons-and-screenshots",
     "your-listing-page",
-    "share-through-github-or-git"
+    "icons-and-screenshots",
+    "publish-on-npm",
+    "1-set-package-identity",
+    "2-lock-installed-dependencies",
+    "3-check-the-package-and-publish",
+    "share-through-github-or-git",
+    "plugin-registry",
+    "plugins-with-a-build-step",
+    "private-npm-packages"
   ],
   "plugins/reference": [
     "plugin-reference",
@@ -618,7 +619,8 @@
     "supported-providers",
     "native-support",
     "antigravity",
-    "acp-catalog"
+    "acp-catalog",
+    "hoplite"
   ],
   "troubleshooting": [
     "troubleshooting",

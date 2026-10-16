@@ -222,11 +222,12 @@ paseo script stop web
 데몬에서 신뢰할 수 있는 플러그인을 만들고 관리합니다.
 
 ```bash
-paseo plugin init /absolute/path/to/plugin
-paseo plugin install /absolute/path/to/plugin
-paseo plugin add owner/repository
+paseo plugin init ./plugin
+paseo plugin install ./plugin
+paseo plugin add owner/slug
+paseo plugin add git:owner/repository
 paseo plugin add https://gitlab.com/group/repository.git --ref main
-paseo plugin add owner/monorepo:plugins/review
+paseo plugin add git:owner/monorepo:plugins/review
 paseo plugin ls [id]
 paseo plugin update my-plugin
 paseo plugin update --all
@@ -237,7 +238,10 @@ paseo plugin enable my-plugin
 paseo plugin remove my-plugin
 ```
 
-GitHub 단축 표기는 먼저 기존 호스트 디렉터리를 확인합니다. 모노레포의 플러그인에는 `:<directory>`를 덧붙이세요. `paseo plugin ls [id]`는 원격에 연결하지 않습니다. `paseo plugin logs <id>`는 플러그인의 최근 데몬 측 stdout과 stderr을 반환합니다. 구조화된 항목을 받으려면 `--json`을 추가하고, 다른 데몬을 대상으로 하려면 `paseo --host <target> plugin logs <id>`를 실행하세요. 설치, 신뢰, 수명 주기, 로그 보존 동작은 [플러그인 참조](/docs/plugins/reference)를 확인하세요.
+단순 `owner/slug`는 검토된 레지스트리 목록을 설치합니다. GitHub 소스에는 `git:owner/repository`를,
+로컬 디렉터리에는 `./plugin`을 사용하세요. 모노레포의 플러그인에는 `:<directory>`를 덧붙이세요.
+
+`paseo plugin ls [id]`는 원격에 연결하지 않습니다. `paseo plugin logs <id>`는 플러그인의 최근 데몬 측 stdout과 stderr을 반환합니다. 구조화된 항목을 받으려면 `--json`을 추가하고, 다른 데몬을 대상으로 하려면 `paseo --host <target> plugin logs <id>`를 실행하세요. 설치, 신뢰, 수명 주기, 로그 보존 동작은 [플러그인 참조](/docs/plugins/reference)를 확인하세요.
 
 ## 에이전트 나열
 
