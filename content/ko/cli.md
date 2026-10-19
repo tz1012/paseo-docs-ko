@@ -238,6 +238,13 @@ paseo plugin enable my-plugin
 paseo plugin remove my-plugin
 ```
 
+`paseo plugin reload <id>`는 다시 로드 작업 자체의 결과를 보고합니다. 데몬이 플러그인을 중지하고
+시작하는 동안 시간이 얼마나 걸리든 기다리며, 데몬의 다른 플러그인 작업 뒤에서 대기합니다.
+명령을 취소하거나 연결이 끊겨도 데몬의 작업은 중지되지 않으며, 목록이나 로그 항목만으로는 취소된
+다시 로드 작업의 결과를 확정할 수 없습니다. [플러그인 참조](/docs/plugins/reference)에서 이러한
+중간 상태를 다룹니다. 다시 로드를 한 번 더 실행해야 결과를 보고받을 수 있습니다. 진행 중인 작업
+뒤에서 기다린 다음 플러그인을 다시 한 번 중지하고 시작합니다.
+
 단순 `owner/slug`는 검토된 레지스트리 목록을 설치합니다. GitHub 소스에는 `git:owner/repository`를,
 로컬 디렉터리에는 `./plugin`을 사용하세요. 모노레포의 플러그인에는 `:<directory>`를 덧붙이세요.
 
@@ -272,8 +279,14 @@ paseo attach abc123   # Attach to agent (Ctrl+C to detach)
 ```bash
 paseo send <id> "now run the tests"
 paseo send <id> --image screenshot.png "what's wrong here?"
-paseo send <id> --no-wait "queue this task"
+paseo send <id> --no-wait "run this task"
+paseo send <id> --behavior interrupt "stop and do this instead"
 ```
+
+에이전트가 보낸 요청(`PASEO_AGENT_ID`가 설정된 경우)은 기본적으로 실행 중인 턴에 지시를 추가합니다.
+그 밖의 요청은 기본적으로 해당 턴을 중단합니다. 기본값을 재정의하려면 `--behavior steer` 또는
+`--behavior interrupt`를 사용하세요. 지시 추가를 사용할 수 없으면 실행 중인 턴을 중단하고 교체하는
+클라이언트와 같은 대체 동작을 사용합니다.
 
 ## 로그 보기
 

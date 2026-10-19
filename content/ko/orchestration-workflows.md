@@ -51,7 +51,10 @@ category: Orchestration
 
 > Paseo를 사용해 [여기에 에이전트 ID 붙여넣기] 에이전트에게 다음 프롬프트를 보내세요. “작업공간의 파서 변경을 검토하고 누락된 테스트 사례가 있으면 보고하세요.”
 
-수신 에이전트는 기존 대화에서 프롬프트를 받습니다. 별도 메시지로 회신하게 하려면 송신 에이전트의 ID도 알려주세요.
+수신 에이전트는 기존 대화에서 프롬프트를 받습니다. 에이전트가 보낸 요청은 기본적으로 실행 중인 턴에
+지시를 추가하며, 이를 사용할 수 없으면 턴을 중단하는 대체 동작을 사용합니다. 이 기본값을 재정의하려면
+MCP `activeTurnBehavior` 또는 CLI `--behavior`를 `steer`나 `interrupt`로 설정하세요. 별도 메시지로
+회신하게 하려면 송신 에이전트의 ID도 알려주세요.
 
 내부적으로 에이전트는 수신자의 `agentId`와 `prompt`를 사용해 `send_agent_prompt`를 호출합니다. `list_agents`로 ID를 찾을 수도 있으며, CLI에서는 [`paseo send <id>`](/docs/cli#sending-messages)를 사용합니다. 다른 호스트의 경우 [원격 CLI 워크플로](#work-on-another-machine)를 사용하세요.
 
