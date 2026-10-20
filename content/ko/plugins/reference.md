@@ -155,7 +155,7 @@ Paseo는 클라이언트 코드에 다음 모듈을 제공합니다.
 
 위와 정확히 일치하는 모듈 지정자는 호스트의 런타임 인스턴스를 사용합니다. 다른 호스트 모듈을 요청하는 클라이언트 번들은 `Module "<name>" is not available in plugin client code` 오류와 함께 실패합니다.
 
-`lucide-react-native`, `react-native-svg` 또는 DOM 라이브러리를 가져오지 마세요. 기여의 `icon` 필드에는 [Lucide 아이콘 이름](https://lucide.dev/icons/)을 설정하세요. Paseo가 이름을 검증하고 아이콘을 렌더링합니다.
+`lucide-react-native`, `react-native-svg` 또는 DOM 라이브러리를 가져오지 마세요. 기여의 `icon` 필드에는 [Lucide 아이콘 이름](https://lucide.dev/icons/), 인라인 SVG 또는 구성 요소를 설정하세요. Paseo가 아이콘을 검증하고 렌더링합니다. [아이콘](#icons)을 참조하세요.
 
 ### 크로스 플랫폼 규칙
 
@@ -307,7 +307,7 @@ Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용�
 
 명령 기반 ACP를 연동하려면 `@getpaseo/plugin/server/acp`의 `runAcpProvider()`를 사용하세요. 공급업체별 검색, 구성, 알림 또는 도구 호출 차이에만 변환기 훅을 추가합니다.
 
-`ProviderRegistration.icon`은 `icon.svg`처럼 플러그인 디렉터리를 기준으로 한 파일 경로입니다. 해당 디렉터리 안에 있는 64KiB 이하의 일반 SVG 파일이어야 합니다. SVG는 자체 완결형이어야 하며 스크립트, 스타일, `foreignObject`, 이벤트 핸들러 속성, JavaScript URL, 외부 `href` 또는 `xlink:href` 참조는 거부됩니다. `#mark` 같은 프래그먼트 참조는 허용됩니다. Paseo는 플러그인을 시작할 때 파일을 읽고 정제합니다. 문자열 자체를 인라인 SVG나 URL로 사용하지 않습니다.
+`ProviderRegistration.icon`은 `icon.svg`처럼 플러그인 디렉터리를 기준으로 한 파일 경로입니다. 해당 디렉터리 안에 있고 [SVG 아이콘 규칙](#svg-rules)을 따르는 일반 파일이어야 합니다. Paseo는 플러그인을 시작할 때 파일을 읽고 검증합니다. 문자열 자체를 인라인 SVG나 URL로 사용하지 않습니다.
 
 ### 사용량 소스
 
@@ -455,7 +455,7 @@ export default function contribute(server: PluginServerContext) {
 
 `usage.list_reports`는 ID 없이 호출하면 계정을 검색합니다. ID를 지정하면 ID를 다시 검색하지 않고 알려진 계정을 새로 고칩니다. 저장소의 계정이 바뀌면 다음 검색 전까지 기존 카드에 새 로그인 할당량이 표시됩니다. 보고서는 5분 동안 캐시되며 `forceRefresh`는 해당 캐시를 우회합니다. 항목에는 `id`, `account.label`, `fetchedAt`이 포함됩니다. 실패한 계정에는 선택적인 `loginErrors` 항목도 포함되며, 각 항목에는 `harness`와 각 로그인의 실패한 `report`가 들어갑니다. 클라이언트는 `server_info.features.usageSources`를 기준으로 이 기능을 활성화합니다. 이전 `provider.usage.list` RPC는 0.10 클라이언트를 위해 같은 보고서를 매핑하고 문제를 `error` 문자열로 렌더링합니다.
 
-소스 아이콘은 위의 공급자 SVG 제한을 따릅니다.
+소스 아이콘은 공급자 아이콘과 같은 규칙을 따르는 파일 경로입니다.
 
 ## 진입점과 정리
 
@@ -880,7 +880,7 @@ Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계, 쿼�
 
 | 구성 요소 | props 및 동작 |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SidebarRow` | 필수 `onPress`; 선택적 `icon`(Lucide 이름 또는 `{ size, color }` 구성 요소), `label`, `active`, `trailing`, `id`. 전체 너비 행. `trailing`은 행의 pressable 옆에 렌더링되므로 그 안의 버튼은 독립적으로 눌리고 나머지 영역은 행을 누름. `id`는 테스트 ID에서 한 항목의 여러 행을 구분함. |
+| `SidebarRow` | 필수 `onPress`; 선택적 `icon`([아이콘](#icons)의 모든 형식), `label`, `active`, `trailing`, `id`. 전체 너비 행. `trailing`은 행의 pressable 옆에 렌더링되므로 그 안의 버튼은 독립적으로 눌리고 나머지 영역은 행을 누름. `id`는 테스트 ID에서 한 항목의 여러 행을 구분함. |
 | `SidebarSeparator` | props 없음. 행 그룹 사이에 표시하는 사이드바 구분선. |
 
 누름이 행에서 발생했든 `trailing` 콘텐츠에서 발생했든 팝오버는 눌린 행에 고정됩니다. 따라서 행별 "More" 버튼은 해당 행 옆에 팝오버를 엽니다.
@@ -1125,13 +1125,75 @@ async function copyResult() {
 
 ### 아이콘
 
-`Icon`은 Paseo에 설치된 아이콘 집합에서 [Lucide 아이콘](https://lucide.dev/icons/)을 렌더링합니다. 플러그인 번들은 `lucide-react-native`나 `react-native-svg`를 가져오지 않습니다.
+모든 기여의 `icon` 필드는 `@getpaseo/plugin/client`에서 `PluginIcon`으로 타입이 지정된 다음 세 가지 형식 중 하나를 받습니다.
+
+| 형식 | 예 | 용도 |
+| ----------- | --------------------------- | --------------------------------------------------- |
+| Lucide 이름 | `icon: "Scan"` | 모든 [Lucide 아이콘](https://lucide.dev/icons/). |
+| 인라인 SVG | `icon: { svg: reviewIcon }` | 브랜드 마크 또는 Lucide에 없는 아이콘. |
+| 구성 요소 | `icon: ReviewBadge` | 카운터처럼 상태에 따라 달라지는 아이콘. |
+
+첨부 소스는 첨부된 각 항목이 소스의 아이콘을 저장하므로 Lucide 이름 또는 인라인 SVG(`PluginSerializableIcon`)를 받습니다.
+
+Paseo는 기여를 등록할 때 아이콘을 검증합니다. 알 수 없는 Lucide 이름이나 규칙을 위반하는 SVG가 있으면 플러그인은 이유와 함께 실패합니다.
+
+```text
+Workspace panel review has an invalid icon: script elements are not allowed
+```
+
+Paseo는 표면의 아이콘 크기에 맞춰 인라인 SVG를 그리고, 표면의 아이콘 색상을 `currentColor`로 전달합니다. 테마를 따르려면 `currentColor`로 칠하세요. 고정된 채우기 색상은 그대로 유지됩니다.
+
+구성 요소는 `PluginIconProps`인 `{ size, color }`를 전달받고 해당 크기 안에 렌더링합니다. 헤더 버튼과 작성기 필은 [`PluginButtonIconProps`](#custom-icons-and-popover-content)를 전달합니다.
+
+#### SVG 규칙
+
+인라인 SVG, 공급자 아이콘, 사용량 소스 아이콘에는 같은 규칙이 적용됩니다.
+
+- 하나의 `<svg>` 문서이며 64KiB 이하여야 합니다.
+- `<script>`, `<style>`, `<foreignObject>` 요소를 사용할 수 없습니다.
+- `onclick` 같은 이벤트 핸들러 속성과 `javascript:` URL을 사용할 수 없습니다.
+- `href`와 `xlink:href`는 `#mark`처럼 같은 문서 안의 프래그먼트만 가리킬 수 있습니다.
+
+#### SVG 마크업 포함하기
+
+마크업을 클라이언트 모듈에 보관하세요.
+
+```ts
+// client/icons.ts
+export const reviewIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <path d="M4 4h16v16H4z" />
+</svg>`;
+```
+
+또는 `.svg` 파일을 `client/`에 두고 가져오세요. 플러그인 컴파일러가 파일의 마크업을 문자열로 번들에 포함합니다. TypeScript가 가져오기를 허용하도록 모듈을 한 번 선언합니다.
+
+```ts
+// client/svg.d.ts
+declare module "*.svg" {
+  const markup: string;
+  export default markup;
+}
+```
+
+```ts
+// index.client.tsx
+import reviewIcon from "./client/review.svg";
+
+client.addWorkspacePanel({ id: "review", title: "Review", icon: { svg: reviewIcon } /* … */ });
+```
+
+#### 아이콘 렌더링
+
+`@getpaseo/plugin/client/react-native`의 `Icon`은 자체 UI 안에 아이콘을 그립니다. 플러그인 번들은 `lucide-react-native`나 `react-native-svg`를 가져오지 않습니다.
 
 | Prop | 타입 | 필수 | 동작 |
-| ------- | -------- | -------- | ----------------------------------------------- |
-| `name` | `string` | 예 | Lucide 아이콘 이름. 알 수 없는 이름이면 아무것도 렌더링하지 않습니다. |
-| `size` | `number` | 아니요 | 아이콘의 너비와 높이. |
-| `color` | `string` | 아니요 | 아이콘 색상. 플러그인 테마 토큰을 사용하세요. |
+| ------- | ------------ | ---------------- | ------------------------------------------------------------ |
+| `name` | `string` | `name` 또는 `icon` | Lucide 아이콘 이름. |
+| `icon` | `PluginIcon` | `name` 또는 `icon` | 위의 모든 아이콘 형식. |
+| `size` | `number` | 아니요 | 아이콘의 너비와 높이. 기본값은 24입니다. |
+| `color` | `string` | 아니요 | 아이콘 색상 및 SVG `currentColor`. 플러그인 테마 토큰을 사용하세요. |
+
+알 수 없는 이름이나 규칙을 위반하는 SVG는 아무것도 렌더링하지 않습니다.
 
 ## 타임라인 항목
 
@@ -1287,7 +1349,7 @@ export default function contribute(client: PluginClientContext) {
 
 ## 설정 화면
 
-`index.client.tsx`에서 `client.addSettingsScreen({ id, title, icon, Component })`로 구성 요소를 등록하세요. 해당 호스트의 **설정 → 플러그인 → 플러그인 이름** 아래에 표시됩니다. `id`는 설치본 내에서 고유하고 `icon`은 Lucide 이름입니다. 등록 함수는 멱등성을 갖는 제거 함수를 반환하며 플러그인을 종료하면 남은 화면이 제거됩니다.
+`index.client.tsx`에서 `client.addSettingsScreen({ id, title, icon, Component })`로 구성 요소를 등록하세요. 해당 호스트의 **설정 → 플러그인 → 플러그인 이름** 아래에 표시됩니다. `id`는 설치본 내에서 고유하고 `icon`은 모든 [아이콘](#icons) 형식을 받습니다. 등록 함수는 멱등성을 갖는 제거 함수를 반환하며 플러그인을 종료하면 남은 화면이 제거됩니다.
 
 직접 만든 화면을 열려면 `client.openSettings(id)` 또는 Command Center 콜백의 `openSettings(id)`를 호출하세요. 여러 호스트에 같은 플러그인이 설치되어 있어도 각 설치본에는 자체 값과 경로가 있습니다.
 
@@ -1457,7 +1519,7 @@ export default function contribute(client: PluginClientContext) {
 | ----------- | -------- | ------------------------------------------------------------- |
 | `id` | 예 | 플러그인 로컬 패널 ID. |
 | `title` | 예 | 작업공간 탭 제목. |
-| `icon` | 예 | Lucide 아이콘 이름. |
+| `icon` | 예 | Lucide 이름, `{ svg }` 또는 구성 요소. [아이콘](#icons)을 참조하세요. |
 | `context` | 예 | `workspace` 또는 `agent`. |
 | `locations` | 아니요 | `workspace`, `explorer` 또는 둘 다. 기본값은 `workspace`입니다. |
 | `Component` | 예 | 선택한 컨텍스트의 props에 맞는 React Native 구성 요소. |
@@ -1545,7 +1607,7 @@ client.addCommandCenterItem({
 | ---------- | -------- | ---------------------------------------------- |
 | `id` | 예 | 플러그인 로컬 항목 ID. |
 | `title` | 예 | 검색 결과 제목. |
-| `icon` | 예 | Lucide 아이콘 이름. |
+| `icon` | 예 | Lucide 이름, `{ svg }` 또는 구성 요소. [아이콘](#icons)을 참조하세요. |
 | `keywords` | 아니요 | 추가 Command Center 검색어. |
 | `context` | 예 | `global`, `workspace` 또는 `agent`. |
 | `onSelect` | 예 | 해당 컨텍스트의 클라이언트 측 콜백. |
@@ -1659,7 +1721,7 @@ const pill = client.addComposerPill({
 | 필드 | 필수 | 의미 |
 | ---------- | -------- | ----------------------------------------------------------------------- |
 | `title` | 예 | 비어 있지 않은 접근성 레이블, 툴팁, 시트 제목입니다. |
-| `icon` | 예 | Lucide 이름 또는 `ComponentType<PluginButtonIconProps>`입니다. |
+| `icon` | 예 | Lucide 이름, `{ svg }` 또는 `ComponentType<PluginButtonIconProps>`입니다. |
 | `label` | 아니요 | 비어 있지 않은 표시 텍스트입니다. 배치의 기본값을 사용하려면 생략하세요. |
 | `visible` | 아니요 | 기본값은 `true`입니다. false이면 트리거와 레이아웃 공간을 제거합니다. |
 | `disabled` | 아니요 | 기본값은 `false`입니다. 버튼을 표시하되 상호 작용을 막습니다. |
@@ -2026,7 +2088,7 @@ export default function contribute(server: PluginServerContext) {
 }
 ```
 
-Paseo는 작성기 메뉴, 검색 선택기, 선택된 필, 초안 상태, 제출을 관리합니다. `text` 값은 에이전트에 전송되는 전체 스냅샷입니다.
+Paseo는 작성기 메뉴, 검색 선택기, 선택된 필, 초안 상태, 제출을 관리합니다. `text` 값은 에이전트에 전송되는 전체 스냅샷입니다. `icon`은 Lucide 이름 또는 `{ svg }`입니다. [아이콘](#icons)을 참조하세요.
 
 ## 호스트와 수명 주기
 

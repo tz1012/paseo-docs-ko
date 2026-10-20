@@ -458,6 +458,9 @@
     "copy-and-paste",
     "toasts",
     "icons",
+    "svg-rules",
+    "ship-svg-markup",
+    "render-an-icon",
     "timeline-items",
     "append-a-timeline-row-from-the-daemon",
     "theme-and-layout",
@@ -504,7 +507,8 @@
   "schedules": [
     "schedules",
     "what-its-for",
-    "ways-to-create-one"
+    "ways-to-create-one",
+    "keep-run-workspaces"
   ],
   "sdk/agents": [
     "agents-with-the-sdk",

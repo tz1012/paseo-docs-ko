@@ -219,7 +219,7 @@ client.addCommandCenterItem({
 });
 ```
 
-`icon`은 [Lucide](https://lucide.dev/icons/) 아이콘 이름입니다.
+`icon`은 [Lucide](https://lucide.dev/icons/) 아이콘 이름, 인라인 SVG 또는 구성 요소입니다. [아이콘](/docs/plugins/reference#icons)을 참조하세요.
 
 ## 편집하고 다시 로드하기
 
