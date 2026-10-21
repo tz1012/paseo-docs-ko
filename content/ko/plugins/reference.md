@@ -587,9 +587,11 @@ export default function contribute(server: PluginServerContext) {
       return;
     }
 
-    const text = latestOutputText(event.timeline);
+    const agent = context.paseo.agents.ref(event.agent.id);
+    const page = await agent.timeline.refetch({ direction: "tail", limit: 20 });
+    const text = latestOutputText(page.entries.map(({ item }) => item));
     if (/out of credits/i.test(text)) {
-      await context.paseo.agents.ref(event.agent.id).send("Try again.");
+      await agent.send("Try again.");
     }
   });
 
@@ -602,6 +604,9 @@ Turn ends: "out of credits"
   → plugin sends "Try again."
   → a new turn starts
 ```
+
+핸들러는 타임라인의 마지막 20개 항목만 가져옵니다. 그 페이지보다 앞선 출력은 검사하지 않습니다.
+플러그인에 더 많은 기록이 필요하면 `cursor`와 `direction`을 사용해 추가 페이지를 가져오세요.
 
 기존 SDK로 새 메시지를 보냅니다. 계속 일치하면 후속 작업도 계속 전송되므로 필요에 따라 플러그인에 제한이나 지연을 추가하세요. 첨부 파일과 도구 효과는 재실행되지 않습니다.
 
@@ -653,11 +658,11 @@ export default function contribute(server: PluginServerContext) {
 ### 이벤트
 
 | 이름 | 이벤트 필드 | 트리거 |
-| ---------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| ---------------------------- | ------------------------------------------------------- | -------------------------------------------------- |
 | `agent.created` | `agent` | 일반 생성 완료; 가져오기/재개 제외 |
 | `agent.closed` | `agent` | 실행 중인 에이전트 런타임이 닫힘 |
 | `agent.turn_started` | `agent`, `turnId` | 실시간 턴 시작 |
-| `agent.turn_ended` | `agent`, `turnId`, `outcome`, `timeline` | 실시간 턴 완료, 실패 또는 취소 |
+| `agent.turn_ended` | `agent`, `turnId`, `outcome`, 지원 중단된 `timeline: []` | 실시간 턴 완료, 실패 또는 취소 |
 | `agent.permission_requested` | `agent`, `request` | 권한 또는 질문이 대기 상태가 됨 |
 | `agent.permission_resolved` | `agent`, `requestId`, `resolution` | 대기 중인 요청에 응답하거나 요청이 지워짐 |
 | `agent.archived` | `agent`, `archivedAt` | 보관 상태 저장 |
@@ -665,6 +670,10 @@ export default function contribute(server: PluginServerContext) {
 | `workspace.archived` | `workspace` | 보관 상태 저장 |
 
 에이전트 이벤트는 데몬의 비공개 일회용 도우미를 제외합니다. 공개 백그라운드 작업공간과 그 안의 일반 에이전트에는 다른 작업공간과 같은 수명 주기 훅이 실행됩니다. 보관 이벤트가 런타임/작업 트리 정리보다 먼저 발생할 수 있으므로 정리가 중요하면 수명 주기 완료를 별도로 관찰하세요.
+
+`agent.turn_ended.timeline`은 지원 중단되었으며 항상 비어 있습니다. 필요할 때
+`context.paseo.agents.ref(event.agent.id).timeline.refetch({ direction: "tail", limit: 20 })`로
+기록을 가져오세요. 훅 페이로드 크기는 대화 기록이 길어져도 늘어나지 않습니다.
 
 **공유 페이로드 형태** (`@getpaseo/plugin/server`):
 
