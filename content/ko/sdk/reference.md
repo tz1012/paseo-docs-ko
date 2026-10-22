@@ -59,6 +59,11 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 
 생성 옵션에는 `config`, `cwd`, `parent`, `title`, `prompt`, `env`, `outputSchema`, `images`, `attachments`, `git`, `worktree`, `autoArchive`, `background`, `labels`가 포함됩니다.
 
+`parent`는 호스트 로컬 에이전트 ID, `AgentAddress`(`{ serverId, agentId }`) 또는 에이전트 핸들을
+받습니다. 핸들의 `address`는 연결이 끊어진 뒤에도 호스트 ID를 유지합니다.
+`hosts.client(serverId)`를 통해 생성할 때는 부모 핸들 또는 완전한 주소를 전달하세요. SDK가 부모
+메타데이터를 대상에 전달합니다.
+
 `background`는 작업공간 생성 의도입니다. 기존 `workspaceId`와 함께 사용할 수 없습니다. 호출자 상속과 포함 검색은 [백그라운드 작업공간](./workspaces.md)을 참조하세요.
 
 `config` 수락:
@@ -79,6 +84,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | 회원 | 결과 | 행동 |
 | -------------- | --------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `id` | `string` | 안정적인 데몬 에이전트 ID입니다.                                                                           |
+| `address` | `AgentAddress` | 완전한 `{ serverId, agentId }` ID입니다. 이 값을 설정하려면 연결된 호스트가 필요합니다. |
 | `workspaceId` | `string \| null` | 현재 작업공간 배치.                                                                      |
 | `cwd` | `string \| null` | 현재 작업 디렉토리.                                                                        |
 | `status` | 에이전트 상태 또는 `null` | 현재 수명주기 상태.                                                                         |
@@ -198,6 +204,63 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 `config.get(requestId?)`은 데몬의 변경 가능한 구성을 반환합니다.
 
 `config.patch(patch, requestId?)`은 업데이트된 구성을 검증하고 유지하며 반환합니다. 에이전트별 선택이 아닌 호스트 구성을 위해 이 관리 화면을 사용하십시오. 패치는 해당 데몬을 사용하는 모든 클라이언트와 향후 에이전트에 영향을 미칩니다.
+
+## `client.hosts`
+
+선택한 데몬에 연결된 호스트를 관리합니다. 관리하는 데몬과 대상이 모두 연결된 호스트를 지원해야 합니다.
+
+```ts
+const directory = await client.hosts.list();
+const registration = await client.hosts.add({
+  connection: "ssh://deploy@build-box",
+  label: "Build box",
+  metadata: { team: "infra" },
+  sourceKey: "build-box",
+});
+await client.hosts.update(registration.registrationId, { enabled: false });
+await client.hosts.remove(registration.registrationId);
+```
+
+`list()`는 `{ self: { serverId, label }, hosts }`를 반환합니다. 각 호스트에는 등록 ID와 서버 ID,
+레이블, 인증된 소스, 문자열 메타데이터, 활성화 상태, 연결 상태, 안전한 대상 설명,
+마지막 온라인/재시도 타임스탬프 및 조치 가능한 오류가 포함됩니다. 자격 증명은 절대 반환되지 않습니다.
+유효하지만 연결할 수 없는 연결은 저장 후 재시도합니다. 잘못된 구문은 저장하지 않고 실패합니다.
+
+`update(registrationId, patch)`는 `label`, `metadata`, `enabled`, `connection`, `replaceIdentity`를
+받습니다. 메타데이터는 전체 맵을 교체합니다. 연결을 교체해도 예상 서버 ID는 유지되며,
+`replaceIdentity: true`일 때만 새 대상을 명시적으로 받아들입니다.
+
+`observe()`는 소유 구독을 반환합니다. `ready`를 기다리고 스냅샷과 `hosts.changed` 업데이트를
+구독한 다음 `release()`를 호출하세요. 관찰은 다시 연결된 후 현재 스냅샷을 복원합니다.
+
+```ts
+const remote = await client.hosts.client("srv_build_box");
+try {
+  const workspaces = await remote.workspaces.list();
+  const providers = await remote.providers.listAvailable();
+  await remote.agents.ref("agent_on_build_box").send("Continue the investigation");
+} finally {
+  await remote.dispose();
+}
+```
+
+`client(serverId)`는 선택한 데몬을 통해 해당 대상에 바인딩된 호출자 소유 `PaseoApi`를 반환합니다.
+일반 API의 시그니처는 유지됩니다. 경로와 ID는 대상에 속합니다. 로컬 서버 ID를 선택하면 로컬 범위를
+반환합니다. 라우팅은 한 홉을 지원합니다.
+
+범위 하나를 폐기하면 형제 범위를 닫거나 저장된 호스트를 삭제하지 않고 해당 범위의 관찰을 해제합니다.
+원본을 폐기하면 연쇄적으로 폐기됩니다. 관찰은 일반 클라이언트 수명주기를 통해 복구됩니다. 연결 중에는
+새 요청이 기존의 제한된 전송 큐를 사용하며, 연결이 끊긴 요청은 실패합니다. 연결이 끊기면 기존 대기자와
+대기열의 전송이 지워집니다. 일반적인 복구 불가능 요청은 재생되지 않으며, 기존의 승인된/멱등 생성 복구는
+요청 ID를 유지합니다. 제출한 요청의 응답이 유실되면 `DaemonConnectionError`
+(`code: "DAEMON_CONNECTION_LOST"`)와 선택적 `outcome: "unknown"`, 알려진 `serverId`로 거부됩니다.
+변경 작업을 재시도하기 전에 상태를 검사하세요.
+
+등록과 호스트 획득 실패는 안정적인 `code`를 노출합니다. 값은 `host_unknown`, `host_disabled`,
+`host_offline`, `permission_denied`, `unsupported_capability`, `authentication_failed`,
+`server_id_mismatch`, `self_host`, `duplicate_host`입니다. `access_denied`를 비롯한 일반 RPC 권한 코드는
+변경 없이 전달됩니다. 멀티플렉싱은 전송 계층이며, 소비자는 동일한 클라이언트/API 작업과 수명주기를
+사용합니다. 검색이 실행 권한을 부여하지는 않습니다.
 
 ## 오류 및 정리
 

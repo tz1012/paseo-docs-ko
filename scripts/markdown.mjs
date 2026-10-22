@@ -19,6 +19,8 @@ export function sourceHeadingIds(markdown) {
   const counts = new Map();
   const prose = markdown.replace(/^(```|~~~)[^\r\n]*\r?\n[\s\S]*?^\1\s*$/gm, '');
   return [...prose.matchAll(/^#{1,6}\s+(.+?)\s*#*\s*$/gm)].map((match) => {
+    const explicit = match[1].match(/^(.*?)\s+\{#([^}]+)\}\s*$/);
+    if (explicit) return explicit[2];
     const base = match[1]
       .replace(/!?\[([^\]]+)\]\([^)]*\)/g, '$1')
       .replace(/<[^>]*>/g, '')

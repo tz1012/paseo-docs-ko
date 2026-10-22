@@ -38,7 +38,7 @@ export function renderMarkdown(markdown, currentSlug = 'index', pageSlugs, sourc
       while (index < lines.length && lines[index].startsWith('|')) { rows.push(cells(lines[index])); index++; }
       index--; html += `<table><thead><tr>${header.map((cell) => `<th>${inline(cell, currentSlug, pageSlugs)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${inline(cell, currentSlug, pageSlugs)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     }
-    else if (heading) { closeList(); const level = heading[1].length; const id = sourceHeadingIds?.[headingIndex++] || heading[2].toLowerCase().replace(/[^\w가-힣]+/g, '-'); const aliases = (headingAliases[id] || []).map((alias) => `<span id="${escape(alias)}"></span>`).join(''); html += `${aliases}<h${level} id="${escape(id)}">${inline(heading[2], currentSlug, pageSlugs)}</h${level}>`; }
+    else if (heading) { closeList(); const level = heading[1].length; const label = heading[2].replace(/\s+\{#[^}]+\}\s*$/, ''); const id = sourceHeadingIds?.[headingIndex++] || label.toLowerCase().replace(/[^\w가-힣]+/g, '-'); const aliases = (headingAliases[id] || []).map((alias) => `<span id="${escape(alias)}"></span>`).join(''); html += `${aliases}<h${level} id="${escape(id)}">${inline(label, currentSlug, pageSlugs)}</h${level}>`; }
     else if (item) { if (!list) { html += '<ul>'; list = true; } html += `<li>${inline(item[1], currentSlug, pageSlugs)}</li>`; }
     else if (!line.trim()) { closeList(); }
     else { closeList(); html += `<p>${inline(line, currentSlug, pageSlugs)}</p>`; }

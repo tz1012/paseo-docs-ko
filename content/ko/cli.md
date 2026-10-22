@@ -64,6 +64,33 @@ paseo usage ls --quiet
 
 완료된 쿼리는 개별 보고서를 사용할 수 없거나 가져오지 못했을 때도 상태 `0`으로 종료됩니다. 연결 또는 요청 실패, 지원하지 않는 호스트, 알 수 없는 보고서 ID, 충돌하는 선택자는 상태 `1`로 종료되고 오류를 stderr에 기록합니다. 결과가 비어 있으면 사람이 읽는 출력에 **사용량 보고서가 반환되지 않았습니다**가 표시됩니다. 이는 모든 소스에서 계정 검색에 성공했다는 의미가 아닙니다.
 
+## 연결된 호스트
+
+`--host`는 저장된 연결을 관리할 데몬을 선택합니다. 등록에는 레이블이 아니라
+`registrationId`를 사용합니다.
+
+```sh
+paseo --host localhost:6767 host add 'ssh://deploy@build-box' --label build-box --meta team=infra
+paseo --host localhost:6767 host ls --json
+paseo --host localhost:6767 host inspect hst_123
+paseo --host localhost:6767 host update hst_123 --meta team=tools --remove-meta obsolete
+paseo --host localhost:6767 host update hst_123 --connection 'ssh://deploy@new-address'
+paseo --host localhost:6767 host disable hst_123
+paseo --host localhost:6767 host enable hst_123
+paseo --host localhost:6767 host rm hst_123
+```
+
+추가 작업은 TCP/호스트와 포트, `ws://`/`wss://`, 로컬 소켓/파이프, SSH 및 릴레이/페어링 URL을
+받습니다. SSH는 이미 실행 중인 데몬에 연결합니다. 데몬에 비밀번호가 필요하면 SSH URI에
+`?password=...`를 추가하세요(`daemonPort` 뒤에는 `&password=...`). 연결할 수 없는 대상도 저장되며
+자동으로 재시도합니다. `ls`에는 비활성화되었거나 실패한 호스트도 포함됩니다. `inspect`에는 안전한
+연결 세부정보와 복구 안내가 포함됩니다. JSON 출력에는 연결 자격 증명이 절대 포함되지 않습니다.
+
+`update --meta`는 지정한 키를 교체하고 `--remove-meta`는 키를 제거합니다. 연결을 교체해도 고정된
+데몬 ID는 유지됩니다. 대상이 변경되었음을 확인한 뒤에만 `--connection`과 함께
+`--replace-identity`를 추가하세요. `rm`은 저장된 연결을 제거하지만 해당 호스트의 에이전트와
+작업공간은 계속 실행됩니다.
+
 ## 공급자 진단
 
 데몬에게 실제로 사용하는 공급자 환경을 검사하도록 요청하세요.

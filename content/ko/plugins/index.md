@@ -11,6 +11,7 @@ category: Plugins
 플러그인은 하나의 Paseo 데몬에 설치되는 TypeScript 프로젝트입니다.
 [화면 및 사이드바 항목](/docs/plugins/reference#screens-and-sidebar-items),
 [작업공간 패널](/docs/plugins/reference#workspace-panels),
+[파일 패널](/docs/plugins/reference#file-panels),
 [Command Center 항목](/docs/plugins/reference#command-center-items),
 [슬래시 명령](/docs/plugins/reference#slash-commands),
 [작성기 필](/docs/plugins/reference#composer-pills),

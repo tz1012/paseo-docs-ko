@@ -16,6 +16,7 @@ category: Plugins
 
 - Paseo 클라이언트의 React Native 화면과 사이드바 헤더/푸터 항목
 - 작업공간 탭으로 열리는 작업공간 및 에이전트 패널
+- 일치하는 파일을 보거나 편집하는 [파일 패널](#file-panels)
 - Command Center의 전역, 작업공간 및 에이전트 작업
 - 메시지 작성기의 슬래시 명령
 - 변환하거나 데몬에서 푸시하는 에이전트 타임라인 행
@@ -25,6 +26,27 @@ category: Plugins
 - 메시지 작성기에서 검색할 수 있는 외부 리소스
 
 플러그인 코드는 신뢰된 코드로 취급되며 샌드박스 없이 실행됩니다. 클라이언트 표면은 Paseo 앱에서 실행됩니다. 백엔드 기여는 데몬 머신의 파일, 프로세스, 자격 증명, 네트워크에 접근할 수 있는 하위 프로세스에서 실행됩니다.
+
+## 연결된 호스트
+
+클라이언트 표면의 `usePaseo().hosts`와 서버 핸들러 또는 수명 주기 훅의
+`context.paseo.hosts`는 같은 [SDK 호스트 API](/sdk/reference#clienthosts)를 사용합니다. 이 API는
+선택한 데몬에 저장된 연결을 설명합니다. 기존 `useHosts()`와 `getPaseoClient(serverId)`는 계속해서
+앱이 알고 있는 호스트를 설명합니다.
+
+```ts
+const remote = await context.paseo.hosts.client("srv_build_box");
+try {
+  return await remote.workspaces.list();
+} finally {
+  await remote.dispose();
+}
+```
+
+반환된 API는 자체 관찰을 소유합니다. 플러그인 API를 정리하면 파생 범위도 폐기됩니다. 원격 호출은
+이를 소유하는 핸들러 또는 수명 주기 범위 안에서 유지하세요. B를 호출해도 B의 플러그인 수명 주기 훅이
+A로 전달되지는 않습니다. 라우팅된 플러그인이 만든 등록에는 인증된 링크와 원본 플러그인으로 한정된
+소스가 유지됩니다.
 
 ## 프로젝트 파일
 
@@ -59,6 +81,7 @@ my-plugin/
 | `icon` | 아니요 | 플러그인 패키지 안의 PNG를 가리키는 상대 경로입니다. |
 | `media` | 아니요 | 패키지 안의 이미지 또는 동영상 경로나 HTTPS URL의 배열입니다. 빈 배열도 유효합니다. |
 | `description` | 아니요 | **설정 → 플러그인**에서 플러그인 ID 아래에 표시되는 비어 있지 않은 요약입니다. |
+| `translations` | 아니요 | 레지스트리가 읽고 Paseo는 무시하는 다른 언어의 목록 텍스트입니다. [다른 언어](/docs/plugins/publishing#other-languages)를 참조하세요. |
 | `requirements` | 아니요 | 아래에서 설명하는 지원 Paseo 버전입니다. |
 | `build` | 아니요 | CLI 참조에서 설명하는 준비 명령입니다. |
 
@@ -87,6 +110,10 @@ my-plugin/
 
 Paseo 시험판 버전은 안정화 핵심 버전(`major.minor.patch`)이 만족하는 범위도 만족합니다. 따라서
 `0.8.0-beta.1`은 `>=0.8.0`을 만족하지만 `<0.8.0`은 만족하지 않습니다.
+
+따라서 `>=0.12.0-beta.4` 같은 시험판 최소 버전은 안정화 핵심 버전 `0.12.0`을 통해
+`0.12.0-beta.3`도 허용합니다. 같은 핵심 버전의 이전 빌드를 제외해야 한다면 다른 안정화 핵심 버전을
+사용하세요.
 
 `paseo plugin init`은 현재 CLI 버전 앞에 `>=`를 붙여 기록하고 타입 검사를 위해 일치하는 SDK 버전을
 고정합니다. 새 API를 채택할 때는 최소 버전을 올리세요. 새 릴리스가 호환되지 않으면 상한을 추가하세요.
@@ -122,6 +149,103 @@ Paseo 시험판 버전은 안정화 핵심 버전(`major.minor.patch`)이 만족
 | `server/` | 데몬 번들만 | Node API, 로컬 리소스, 자격 증명, RPC 핸들러. |
 | `shared/` | 두 번들 모두 | 두 런타임에서 가져오는 Zod RPC 계약과 일반 값. |
 
+## 런타임 번역 {#runtime-translations}
+
+**출시되지 않은 API입니다.** 플러그인을 게시하기 전에 `requirements.paseo`를 이 API를 도입하는
+릴리스로 설정하세요. [번역 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/translations)는
+임시로 `>=0.12.1`을 사용하지만 도입 릴리스는 아직 정해지지 않았습니다.
+
+클라이언트 번들에 JSON 리소스를 포함하세요. 영어(`en`)는 필수이며 다른 키는 `zh-CN` 같은 정규 언어
+태그를 사용합니다. 리소스는 문자열을 잎으로 갖는 중첩 객체입니다. 다른 언어에서는 키를 생략할 수 있고,
+이 경우 영어로 대체됩니다. 번역을 정의할 때 알 수 없는 키, 잘못된 리소스, 정규 형식이 아닌 로캘 태그,
+일치하지 않는 보간 자리표시는 거부됩니다.
+
+```ts
+// client/messages.ts
+import { defineTranslations } from "@getpaseo/plugin/client";
+import en from "./locales/en.json";
+import zhCN from "./locales/zh-CN.json";
+
+export const messages = defineTranslations({ resources: { en, "zh-CN": zhCN } });
+```
+
+플러그인의 `tsconfig.json`에서 `resolveJsonModule`을 활성화하세요. Paseo는 이 가져오기를 로컬로
+번들링하며 네트워크 로더는 실행되지 않습니다. 예를 들어 리소스 쌍에는 다음 내용을 넣을 수 있습니다.
+
+`client/locales/en.json`:
+
+```json
+{
+  "title": "Workspace notes",
+  "add": "Add note",
+  "notes_one": "{{count}} note",
+  "notes_other": "{{count}} notes"
+}
+```
+
+`client/locales/zh-CN.json`:
+
+```json
+{
+  "title": "工作区笔记",
+  "add": "添加笔记",
+  "notes_other": "{{count}} 条笔记"
+}
+```
+
+React UI에서 플러그인 훅을 호출하세요.
+
+```tsx
+import { useTranslation } from "@getpaseo/plugin/client";
+import { Text } from "react-native";
+import { messages } from "./messages";
+
+function NoteCount({ count }: { count: number }) {
+  const { t, locale } = useTranslation(messages);
+  return <Text accessibilityLanguage={locale}>{t("notes", { count })}</Text>;
+}
+```
+
+호스트가 렌더링하는 지속 레이블에는 `messages.message(key, options?)`를 사용하세요.
+
+```tsx
+client.addScreen({
+  id: "notes",
+  title: messages.message("title"),
+  Component: Notes,
+});
+```
+
+`PluginText`는 `string | PluginMessage`입니다. 메시지 참조는 화면 제목(제목 함수 포함), 설정과
+사이드바 제목, 작업공간과 파일 패널 제목, Command Center 제목, 슬래시 명령 설명과 인수 힌트,
+버튼 제목과 레이블, 중첩 메뉴 제목, 첨부 소스 제목/선택기 제목/검색 자리표시자 및 테마 이름에 사용할 수
+있습니다. 기존 리터럴 문자열도 계속 유효합니다. ID, 슬래시 명령 이름, 아이콘, URL 및 명령 검색
+키워드는 안정적으로 유지하세요.
+
+설명자 타입의 기존 문자열 기본값은 유지됩니다. 번역된 설명자에 타입을 명시할 때는
+`PluginScreenContribution<PluginText>`처럼 텍스트 매개변수를 사용하세요. 인라인 등록은 이를 자동으로
+추론합니다.
+
+콜백의 일시적인 텍스트에는 `client.i18n.t(messages, "add")`를 호출하세요. 호출 시점에 앱의 현재
+언어를 읽습니다. `client.i18n.locale`과 훅의 `locale`은 메시지가 영어로 대체될 때도 확인된 앱 언어를
+보고합니다. `t`의 결과를 지속 등록 레이블로 저장하지 마세요.
+
+키는 영어에서 가져옵니다. `notes` 같은 복수형 기본 키에는 숫자 `count`가 필요하며 i18next는 로캘의
+`_zero`, `_one`, `_two`, `_few`, `_many`, `_other` 형식을 선택합니다. 이름이 있는 보간에는
+`{{name}}`을 사용하고 `{ name: value }`를 전달하세요. JSON 문자열 값은 TypeScript에서 넓은 타입으로
+취급되므로 가져온 JSON의 보간 이름은 런타임에 검사됩니다. 인라인 리터럴 리소스는 필요한 보간 이름도
+추론합니다. `{{amount, number}}` 같은 i18next 서식 구문은 확인된 언어의 `Intl` 포매터를 사용합니다.
+
+명시적인 앱 언어가 기기 언어보다 우선하며, 시스템 설정은 앱의 지원 로캘 확인을 따릅니다. 별도로 연결된
+앱은 서로 독립적인 언어를 사용합니다. 언어를 바꾸면 플러그인을 다시 불러오거나 구성 요소 상태를
+초기화하거나 RPC/쿼리 캐시를 교체하지 않고 마운트된 UI와 호스트 레이블을 갱신합니다. 모달과 팝오버
+콘텐츠는 웹과 네이티브에서 같은 설치 컨텍스트를 전달받습니다.
+
+언어 중립적인 구조화 RPC 데이터를 반환하고 클라이언트에서 표시를 번역하세요. 사용자 초안, 에이전트
+출력, 원시 데몬 오류, 로그 및 터미널 텍스트는 변경하지 마세요. 매니페스트 목록 번역과
+`OVERVIEW.<locale>.md`는 별도의 게시 메타데이터입니다. [목록 페이지](publishing#your-listing-page)를
+참조하세요.
+
 ## 런타임 모듈
 
 Paseo는 각 번들을 해당 진입점에서 빌드합니다. `client/`를 데몬 번들로 가져오거나, `server/`를 앱 번들로 가져오거나,
@@ -130,8 +254,8 @@ Paseo는 각 번들을 해당 진입점에서 빌드합니다. `client/`를 데�
 런타임별 타입을 가져오면 안 됩니다.
 
 SDK 루트(`@getpaseo/plugin`)에는 공유 데이터, 스키마 및 런타임 중립적인 도우미만 있습니다. 클라이언트
-컨텍스트와 훅은 `/client`, 서버 컨텍스트와 수명 주기 계약은 `/server`, UI는 `/client/react-native` 또는
-`/client/ui`에서 가져오세요. 이러한 규칙은 타입 가져오기와 전이 종속성에도 적용됩니다. `/client/host`는
+컨텍스트와 훅은 `/client`, 서버 컨텍스트와 수명 주기 계약은 `/server`, UI는 `/client/ui`에서
+가져오세요. 이러한 규칙은 타입 가져오기와 전이 종속성에도 적용됩니다. `/client/host`는
 앱 호스트 전용이며 플러그인에서 가져올 수 없습니다.
 
 ### 클라이언트 런타임
@@ -139,10 +263,9 @@ SDK 루트(`@getpaseo/plugin`)에는 공유 데이터, 스키마 및 런타임 �
 Paseo는 클라이언트 코드에 다음 모듈을 제공합니다.
 
 | 모듈 | 용도 |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
 | `@getpaseo/plugin` | 공유 데이터, `defineRpc`, `defineSettings`, `defineAttachmentSource`, `RpcInput`, `RpcOutput` |
-| `@getpaseo/plugin/client/ui` | 이름이 지정된 조합 가능한 설정 구성 요소 |
-| `@getpaseo/plugin/client/react-native` | Paseo UI 구성 요소와 UI 훅 |
+| `@getpaseo/plugin/client/ui` | Paseo UI 구성 요소와 UI 훅 |
 | `@getpaseo/plugin/client` | 클라이언트 기여 컨텍스트, `usePaseo`, `useRpc`, `useSettings` 및 데이터 훅 |
 | `@tanstack/react-query` | 요청 상태와 캐싱 |
 | `react` | 구성 요소와 훅 |
@@ -864,7 +987,10 @@ export default function contribute(client: PluginClientContext) {
 
 Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계, 쿼리 클라이언트를 관리합니다. 플러그인은 화면 본문을 관리합니다.
 
-`addScreen({ id, title, Component })`는 화면을 등록합니다. `title`은 화면 헤더의 제목으로, 문자열이거나 화면 매개변수를 받아 문자열을 반환하는 함수입니다. 예를 들면 봇 화면에 봇 이름을 표시할 수 있습니다. 매개변수가 바뀌면 함수가 다시 실행됩니다. 제목이 비어 있거나 문자열이나 함수가 아니면 등록이 오류를 일으킵니다. 제목 함수가 오류를 일으키거나 빈 문자열을 반환하면 화면 ID가 표시되고 화면은 계속 렌더링됩니다.
+`addScreen({ id, title, Component })`는 화면을 등록합니다. `title`은 화면 헤더의 제목으로,
+[표시 텍스트](#runtime-translations)이거나 화면 매개변수를 받아 표시 텍스트를 반환하는 함수입니다.
+매개변수나 언어가 바뀌면 함수가 다시 실행됩니다. 유효하지 않거나 비어 있는 리터럴 제목은 거부됩니다.
+제목 함수가 오류를 일으키거나 빈 문자열로 확인되면 화면 ID가 표시되고 화면은 계속 렌더링됩니다.
 
 `openScreen({ screenId, params })`은 봇 화면에 표시할 봇과 같은 매개변수와 함께 화면을 엽니다. 매개변수는 화면 URL의 쿼리에 저장되므로 새로 고침, 뒤로/앞으로 이동, 화면 링크에서도 유지됩니다. 문자열 키는 어떤 것이든 사용할 수 있지만 값은 문자열이어야 하며, 다른 유형은 오류를 일으킵니다. 같은 화면을 다른 매개변수로 열면 새 매개변수가 표시됩니다.
 
@@ -988,11 +1114,11 @@ function hideAlerts() {
 
 ## 호스트 UI
 
-클라이언트 코드에서 `@getpaseo/plugin/client/react-native`를 통해 Paseo가 제공하는 UI를 가져오세요. 다음 예제는 제어형 모달을 열고, 호스트 아이콘을 렌더링하고, 토스트로 작업 결과를 알립니다.
+클라이언트 코드에서 `@getpaseo/plugin/client/ui`를 통해 Paseo가 제공하는 UI를 가져오세요. 다음 예제는 제어형 모달을 열고, 호스트 아이콘을 렌더링하고, 토스트로 작업 결과를 알립니다.
 
 ```tsx
 import type { PluginSurfaceProps } from "@getpaseo/plugin/client";
-import { Icon, Modal, useToast } from "@getpaseo/plugin/client/react-native";
+import { Icon, Modal, useToast } from "@getpaseo/plugin/client/ui";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -1031,6 +1157,24 @@ export function IssueActions({ theme }: PluginSurfaceProps) {
 }
 ```
 
+### Markdown
+
+웹, iOS, Android에서 Paseo의 Markdown 표현으로 문자열을 렌더링하려면
+`@getpaseo/plugin/client/ui`에서 `Markdown`을 가져오세요.
+
+```tsx
+import { Markdown } from "@getpaseo/plugin/client/ui";
+
+<Markdown>{"## Review\n\nThe checks **passed**."}</Markdown>;
+```
+
+`children`은 유일한 prop이며 문자열이어야 합니다. 값을 갱신하면 새 콘텐츠가 즉시 렌더링되고 빈 문자열은
+아무것도 렌더링하지 않습니다. 호스트가 테마, 텍스트 선택, 코드 블록, 표, 다이어그램 및 링크 처리를
+제공합니다. 포함된 표면이 작업공간 컨텍스트를 제공하면 작업공간 파일 링크와 이미지도 이를 사용합니다.
+
+이 구성 요소는 페이지 패딩이나 스크롤 컨테이너를 추가하지 않습니다. 필요하면 바깥쪽 레이아웃이나
+스크롤 뷰를 사용하세요. 콘텐츠를 가져오고 로딩 또는 오류 상태를 표시하는 일은 플러그인이 담당합니다.
+
 ### 모달
 
 `Modal`은 좁은 레이아웃에서 하단 시트를 사용하고, 그 외에는 가운데 정렬된 대화상자를 사용합니다. 플러그인이 `open` 상태를 관리합니다.
@@ -1062,14 +1206,14 @@ export function IssueActions({ theme }: PluginSurfaceProps) {
 
 ### 스크롤
 
-Paseo 모달에 표시될 수 있는 콘텐츠에는 `@getpaseo/plugin/client/react-native`의 `ScrollView`와 `FlatList`를 가져오세요. React Native props와 ref를 받으며 시트 제스처와 연동됩니다. 시트 밖에서는 일반 React Native 스크롤을 사용합니다. 하단 시트 라이브러리를 직접 가져오지 마세요.
+Paseo 모달에 표시될 수 있는 콘텐츠에는 `@getpaseo/plugin/client/ui`의 `ScrollView`와 `FlatList`를 가져오세요. React Native props와 ref를 받으며 시트 제스처와 연동됩니다. 시트 밖에서는 일반 React Native 스크롤을 사용합니다. 하단 시트 라이브러리를 직접 가져오지 마세요.
 
 세로 스크롤 소유자는 기본 모달 본문 또는 `scrollable={false}`로 설정한 자체 목록 중 하나만 사용하세요. 기본 스크롤 본문 안에 고정 높이 세로 목록을 중첩하면 Android에서 시트와 제스처를 두고 충돌할 수 있습니다. 가로 스크롤은 호스트의 세로 본문과 함께 사용할 수 있습니다.
 
 기본 본문과 SDK 목록은 네이티브 시트 제스처를 공유합니다. 스크롤하기 전에 위로 드래그해 확장하고, 목록 맨 위에서 아래로 드래그해 축소하거나 닫으세요. `scrollable={false}`는 제스처를 바꾸지 않고 호스트의 스크롤 컨테이너만 제거합니다. `scrollToEnd` 같은 목록 메서드를 사용하기 전에 시트를 확장하세요. 시트가 최대 높이보다 낮으면 목록 오프셋이 잠깁니다.
 
 ```tsx
-import { FlatList, Modal } from "@getpaseo/plugin/client/react-native";
+import { FlatList, Modal } from "@getpaseo/plugin/client/ui";
 import { Text } from "react-native";
 
 // Inside your controlled Modal:
@@ -1096,7 +1240,7 @@ import { Text } from "react-native";
 `copyText(text): Promise<void>`는 앱이 실행되는 기기의 클립보드에 씁니다. 사용자 동작에서 호출하고 성공을 알리기 전에 완료를 기다리세요. 플랫폼에서 복사를 거부하거나 클립보드를 사용할 수 없으면 거부됩니다. 브라우저 권한과 보안 컨텍스트 요구 사항도 그대로 적용됩니다.
 
 ```tsx
-import { copyText, useToast } from "@getpaseo/plugin/client/react-native";
+import { copyText, useToast } from "@getpaseo/plugin/client/ui";
 
 // Inside your component:
 const toast = useToast();
@@ -1110,7 +1254,7 @@ async function copyResult() {
 }
 ```
 
-프로그래밍 방식 복사와 네이티브 텍스트 선택은 별개의 상호작용입니다. 길게 눌러 선택하고 OS 복사 기능을 사용하려면 `<Text selectable>`을 사용하세요. 모달 양식에는 `@getpaseo/plugin/client/react-native`의 `TextInput`을 가져오세요. React Native 입력 props와 ref를 받고 OS 붙여넣기를 지원하며, 네이티브 시트에 포커스를 등록하므로 키보드가 양식을 위로 올릴 수 있습니다. 시트 밖에서는 일반 입력을 사용합니다. 일반 React Native 입력도 붙여넣기를 지원하지만 시트에 포커스를 등록하지 않아 키보드가 입력을 가릴 수 있습니다. OS 붙여넣기에는 클립보드 읽기 API가 필요하지 않습니다. 네이티브 플러그인에서는 DOM 클립보드 코드와 `react-native`의 더 이상 사용되지 않는 `Clipboard` 내보내기를 피하세요.
+프로그래밍 방식 복사와 네이티브 텍스트 선택은 별개의 상호작용입니다. 길게 눌러 선택하고 OS 복사 기능을 사용하려면 `<Text selectable>`을 사용하세요. 모달 양식에는 `@getpaseo/plugin/client/ui`의 `TextInput`을 가져오세요. React Native 입력 props와 ref를 받고 OS 붙여넣기를 지원하며, 네이티브 시트에 포커스를 등록하므로 키보드가 양식을 위로 올릴 수 있습니다. 시트 밖에서는 일반 입력을 사용합니다. 일반 React Native 입력도 붙여넣기를 지원하지만 시트에 포커스를 등록하지 않아 키보드가 입력을 가릴 수 있습니다. OS 붙여넣기에는 클립보드 읽기 API가 필요하지 않습니다. 네이티브 플러그인에서는 DOM 클립보드 코드와 `react-native`의 더 이상 사용되지 않는 `Clipboard` 내보내기를 피하세요.
 
 실행 가능한 [모달 UI 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/modal-ui)에는 패딩된 양식, 전체 너비 행, 가상 목록, 가로 탭, 복사/붙여넣기 입력이 포함되어 있습니다.
 
@@ -1193,7 +1337,7 @@ client.addWorkspacePanel({ id: "review", title: "Review", icon: { svg: reviewIco
 
 #### 아이콘 렌더링
 
-`@getpaseo/plugin/client/react-native`의 `Icon`은 자체 UI 안에 아이콘을 그립니다. 플러그인 번들은 `lucide-react-native`나 `react-native-svg`를 가져오지 않습니다.
+`@getpaseo/plugin/client/ui`의 `Icon`은 자체 UI 안에 아이콘을 그립니다. 플러그인 번들은 `lucide-react-native`나 `react-native-svg`를 가져오지 않습니다.
 
 | Prop | 타입 | 필수 | 동작 |
 | ------- | ------------ | ---------------- | ------------------------------------------------------------ |
@@ -1248,7 +1392,7 @@ export default function contribute(client: PluginClientContext) {
 
 `query.itemType`은 안정적인 대분류 선택자입니다. 제공자나 도구에 따른 세부 판별은 `transform` 안에서 선택한 항목을 살펴보며 수행하세요. `undefined`를 반환하면 원래 항목을 유지합니다. `items`를 반환하면 해당 항목을 대체하고, 빈 배열을 반환하면 제거합니다. 항목의 `data`는 JSON과 호환되어야 합니다. `phase` 입력은 실시간 어시스턴트 메시지, 실행 중인 도구 호출, 로드 중인 추론에 대해 `"streaming"`이며, 커밋되었거나 가져온 메시지와 완료된 도구 또는 추론에 대해서는 `"complete"`입니다. 어시스턴트 및 추론 콜백은 문단 구분자를 포함해 갱신할 때마다 지금까지 누적된 전체 텍스트를 전달받습니다. Paseo는 네이티브 Markdown을 분할하거나 Overview에서 도구를 그룹화하기 전에 변환기를 호출합니다. 변환기가 맡은 어시스턴트 메시지는 스트리밍 내내 하나의 원본 항목으로 유지됩니다. 첫 텍스트만으로 판별하기 어렵다면 알아볼 수 있을 때까지 `undefined`를 반환하세요. 각 대체 항목에 선택적으로 플러그인 로컬 `id`를 설정할 수 있습니다. 설정하지 않으면 Paseo는 원본 항목의 출력 내 인덱스를 사용합니다.
 
-렌더러는 `agentId`, `item`, `timestamp`, `theme`, `host`, `layout`을 전달받습니다. Paseo는 렌더링 전에 등록된 스키마로 `item.data`를 검증합니다. 변환기는 동기적이고 결정적으로 동작하도록 작성하세요. Paseo는 원본 항목의 참조를 기준으로 결과를 메모이제이션하고 원본 행에서 대체 항목의 식별자를 도출하므로, 스트리밍 항목 하나가 갱신되어도 해당 렌더러를 다시 마운트하지 않습니다. 렌더러가 Paseo의 기본 어시스턴트 행처럼 스트리밍 텍스트의 표시 속도를 조절해야 한다면 내보내진 `useRevealedText(text, phase)` 훅을 사용하세요.
+렌더러는 `agentId`, `item`, `timestamp`, `theme`, `host`, `layout`을 전달받습니다. Paseo는 렌더링 전에 등록된 스키마로 `item.data`를 검증합니다. 변환기는 동기적이고 결정적으로 동작하도록 작성하세요. Paseo는 원본 항목의 참조를 기준으로 결과를 메모이제이션하고 원본 행에서 대체 항목의 식별자를 도출하므로, 스트리밍 항목 하나가 갱신되어도 해당 렌더러를 다시 마운트하지 않습니다. Paseo 어시스턴트 행처럼 일반 텍스트의 표시 속도를 조절하려면 `@getpaseo/plugin/client/ui`의 `<StreamedText text={item.data.text} phase={item.data.phase} />`를 렌더링하세요. 이 구성 요소는 React Native `Text` props(`style` 포함)를 받고 기본적으로 어시스턴트 타이포그래피와 전경색을 제공합니다. 완료 시에는 전체 텍스트를 즉시 표시하고 스트리밍 중 표시 속도는 호스트가 관리합니다. Paseo 0.13 이상이 필요합니다.
 
 채팅 찾기(Ctrl 또는 Cmd+F)는 검색어가 원본 메시지와도 일치할 때 대체 행의 텍스트를 찾아 강조합니다.
 호스트는 원본 프롬프트 텍스트나 Markdown 문법을 제거한 어시스턴트 응답을 검색한 다음, 앱은 렌더러가
@@ -1386,7 +1530,7 @@ export function DisplaySettings() {
 
 | 구성 요소 | Props와 동작 |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `SettingsGroup`, `SettingsSection` | 필수 `title`, `children`; 선택적 `info` 도구 설명, `trailing` 콘텐츠, `testID`. 섹션 간격과 제목을 관리합니다. |
+| `SettingsSection` | 필수 `title`, `children`; 선택적 `info` 도구 설명, `trailing` 콘텐츠, `testID`. 섹션 간격과 제목을 관리합니다. |
 | `SettingsCard` | `children`, 선택적 `testID`. 카드 표면과 직접 자식 사이의 구분선을 관리합니다. 매핑한 행에는 안정적인 React 키를 지정하세요. |
 | `SettingsRow` | 필수 `label`; 선택적 `hint`, `error`, `children`, `testID`. 사용자 지정 제어 항목이나 콘텐츠를 감쌉니다. |
 | `SettingsSwitch` | 행 props와 필수 `value: boolean`, `onValueChange`; 선택적 `disabled`. |
@@ -1579,6 +1723,189 @@ export default function contribute(client: PluginClientContext) {
 | `labels` | `Record<string, string>` |
 
 Paseo는 탭 포커스, 분할, 닫기, 유지, 쿼리 상태, API/RPC 제공자, 렌더링 오류 경계를 관리합니다. 복원된 탭의 플러그인, 패널, 컨텍스트, 작업공간 또는 에이전트를 사용할 수 없으면 작업공간이 충돌하는 대신 사용 불가 메시지와 함께 탭이 열린 상태로 유지됩니다.
+
+## 파일 패널
+
+파일 탭의 본문에서 파일을 렌더링하는 구성 요소를 등록하세요. 구성 요소는 원격 호스트를 포함해 선택한
+호스트에 있는 파일의 핸들을 전달받습니다. 파일을 읽고 자체 로딩 상태를 표시하며 사용자가 편집하면 파일을
+씁니다. 패널이 저장되지 않은 변경 사항을 보고하는 동안 탭 막대에는 패널 전환기, 더보기 메뉴 및 점이
+표시됩니다.
+
+```tsx
+import type { PluginClientContext } from "@getpaseo/plugin/client";
+import { PdfPanel } from "./client/pdf-panel";
+
+export default function contribute(client: PluginClientContext) {
+  return client.addFilePanel({
+    id: "pdf",
+    title: "PDF",
+    icon: "FileText",
+    files: { extensions: ["pdf"] },
+    Component: PdfPanel,
+  });
+}
+```
+
+`addFilePanel`은 `PluginFilePanelContribution`을 받고 멱등성을 갖는 정리 함수를 반환합니다. Paseo는
+클라이언트 진입점이 언로드될 때도 등록을 제거합니다.
+
+| 필드 | 필수 | 의미 |
+| ----------- | -------- | -------------------------------------------------------------------------- |
+| `id` | 예 | `^[a-z][a-z0-9-]*$`와 일치하는 플러그인 로컬 ID. |
+| `title` | 예 | 패널 전환기, 선택기 및 다음으로 열기 메뉴에 표시되는 비어 있지 않은 레이블. |
+| `icon` | 예 | Lucide 이름, `{ svg }` 또는 구성 요소. [아이콘](#icons)을 참조하세요. |
+| `files` | 예 | `{ extensions: readonly string[]; filenames?: readonly string[] }`. |
+| `Component` | 예 | `PluginFilePanelProps`를 전달받는 구성 요소. |
+
+확장자에는 앞쪽 점이 없으며 대소문자를 구분하지 않고 일치합니다. 파일 이름은 대소문자를 포함한 정확한
+기본 이름과 일치합니다. 선택자에는 경로, glob 또는 와일드카드가 없습니다. 파일 이름만으로 선택하려면
+`extensions: []`를 사용하세요. 확장자나 파일 이름이 하나 이상 필요합니다.
+
+### 파일 패널 props
+
+`PluginFilePanelProps`에는 [테마와 레이아웃](#theme-and-layout)에서 설명하는 공통 `theme`, `host`,
+`layout` 및 선택적 `navigation` props와 다음 항목이 포함됩니다.
+
+| Prop | 타입 | 의미 |
+| ------------- | -------------------- | ------------------------------------------------------------------------------- |
+| `workspaceId` | `string` | 파일 탭이 속한 작업공간. |
+| `file` | `PluginFile` | 파일 핸들. 탭에 이 파일이 표시되는 동안 안정적으로 유지됩니다. |
+| `tab` | `PluginFileTab` | `setModified(modified)`는 탭의 저장 안 됨 점을 표시하고 닫기 전에 확인합니다. |
+| `location` | `PluginFileLocation` | `lineStart?`, `lineEnd?` 및 탐색할 때마다 증가하는 `revision`. |
+
+Paseo는 파일을 읽지 않고도 파일이 존재하고 크기를 알게 되면 패널을 마운트합니다. `file` 객체는
+안정적이며, stat 필드는 Paseo가 알고 있는 최신 버전을 담습니다. 렌더링할 때 이 필드를 읽으세요. 필드가
+바뀌어도 패널이 다시 렌더링되지는 않습니다. 패널은 `watch` 리스너 또는 `useFileText`, `useFileBytes`,
+`useFileUrl`로 인한 재렌더링을 통해 변경을 알게 됩니다.
+
+| 멤버 | 의미 |
+| -------------------------------- | ------------------------------------------------------------------------------------------- |
+| `path`, `name`, `extension` | 호스트의 절대 경로, 기본 이름, 점을 뺀 소문자 확장자(없으면 `""`). |
+| `size`, `modifiedAt`, `mimeType` | 바이트 단위 크기, 수정 타임스탬프, 호스트가 보고한 MIME 유형. |
+| `readText()` | 파일을 UTF-8로 읽습니다. 바이트 순서 표시는 제거되며 `writeText`로 다시 씁니다. |
+| `readBytes()` | 파일의 바이트를 읽습니다. |
+| `url()` | 현재 바이트의 로컬 `blob:`(웹) 또는 `file:`(네이티브) URL. `DocumentFrame`에 사용합니다. |
+| `writeText(text, options?)` | 이 핸들이 마지막으로 읽거나 쓴 뒤 디스크의 파일이 바뀌지 않았을 때 UTF-8 텍스트를 씁니다. |
+| `writeBytes(bytes, options?)` | 바이트에 대해 같은 작업을 수행합니다. |
+| `watch(listener)` | `PluginFileEvent`와 함께 `listener(event)`를 호출하고 구독 취소 함수를 반환합니다. |
+
+`PluginFileEvent`는 `{ type: "changed" }` 또는 `{ type: "deleted" }`입니다. 향후 버전에서 필드가
+추가될 수 있으므로 `type`으로 분기하세요. 파일이 삭제되어도 패널은 마운트된 상태로 유지됩니다.
+읽기에서 파일이 없음을 확인하면 `watch`가 `{ type: "deleted" }`를 보고합니다. 따라서 파일을 제거했다가
+다시 쓰는 프로그램은 `{ type: "changed" }`만 보고합니다. 삭제된 파일이 다시 나타나도
+`{ type: "changed" }`를 보고합니다.
+
+핸들이 마지막으로 읽거나 쓴 뒤 디스크의 파일이 바뀌면 쓰기가 `PluginFileConflictError`로 거부됩니다.
+그래도 쓰려면 `{ force: true }`를 전달하세요. 파일이 없으면 `force` 여부와 관계없이 쓰기가
+`PluginFileDeletedError`로 거부됩니다. 핸들 자체의 쓰기는 해당 핸들의 감시자에게 알리지 않습니다.
+`url()`이 반환한 URL은 Paseo가 소유합니다. 더 새 버전의 URL이 확인되거나 탭이 닫힐 때까지 유효합니다.
+`file.path`로 데몬 URL을 만들지 마세요. 로컬 URL은 데몬이 원격일 때도 작동합니다.
+
+### 파일 읽기
+
+대부분의 패널은 훅을 통해 읽습니다. 각 훅은 마운트될 때 읽고, 디스크의 파일이 바뀌면 다시 읽으며,
+다시 읽는 동안 현재 값을 유지합니다.
+
+| 훅 | 준비 상태 |
+| -------------------- | ---------------------------------------- |
+| `useFileText(file)` | `{ status: "ready", text: string }` |
+| `useFileBytes(file)` | `{ status: "ready", bytes: Uint8Array }` |
+| `useFileUrl(file)` | `{ status: "ready", url: string }` |
+
+각 훅은 첫 읽기 전에는 `{ status: "loading" }`을, 읽기가 실패하면
+`{ status: "error", error }`를 반환합니다. 삭제된 파일의 `error`는 `PluginFileDeletedError`입니다.
+콘텐츠가 화면에 표시될 때까지 `@getpaseo/plugin/client/ui`의 `Loading`을 표시하세요. 이 구성 요소는
+패널을 채우므로 여전히 레이아웃 중인 콘텐츠 위에 렌더링하세요.
+
+```tsx
+import { type PluginFilePanelProps, useFileUrl } from "@getpaseo/plugin/client";
+import { DocumentFrame, Loading } from "@getpaseo/plugin/client/ui";
+import { Text } from "react-native";
+
+export function PdfPanel({ file, theme }: PluginFilePanelProps) {
+  const url = useFileUrl(file);
+  if (url.status === "loading") return <Loading />;
+  if (url.status === "error") {
+    return <Text style={{ color: theme.colors.statusDanger }}>{url.error.message}</Text>;
+  }
+  return <DocumentFrame url={url.url} testID="pdf-panel" />;
+}
+```
+
+### 파일 편집하기
+
+훅이 다시 읽으면 디스크 버전을 채택하므로 다음 쓰기는 그 사이에 바뀐 내용을 덮어씁니다. 저장하지 않은
+편집 내용을 보관하는 패널은 `readText()`로 한 번 읽은 다음 `watch`를 직접 처리합니다.
+
+1. `file.readText()`로 읽고 텍스트를 표시합니다.
+2. 편집할 때마다 `tab.setModified(true)`를 호출하고 디바운스를 적용해 `file.writeText(text)`로 씁니다.
+3. 쓰기가 끝나고 대기 중인 더 새로운 편집이 없으면 `tab.setModified(false)`를 호출합니다.
+4. 저장하지 않은 내용이 없는 상태에서 `{ type: "changed" }`를 받으면 다시 읽습니다. 저장하지 않은 편집이
+   있으면 충돌을 표시하고 사용자가 다시 불러오거나 `{ force: true }`로 덮어쓰게 합니다.
+5. `PluginFileConflictError`에서는 같은 충돌을 표시합니다.
+6. `{ type: "deleted" }` 또는 `PluginFileDeletedError`에서는 파일이 없어졌음을 알립니다.
+
+구성 요소가 언마운트되기 전에 대기 중인 편집 내용을 쓰세요. 패널을 전환하거나 탭을 닫으면 구성 요소가
+언마운트됩니다. 패널이 저장하지 않은 변경 사항을 보고하면 Paseo는 탭을 닫기 전에 확인합니다.
+[Markdown 패널](https://github.com/getpaseo/paseo/tree/main/plugin-examples/markdown-panel) 예제는 이 단계를
+구현합니다.
+
+### 선택 및 다음으로 열기
+
+플러그인 패널은 텍스트와 바이너리를 가리지 않고 선택자와 일치하는 모든 파일의 후보입니다. 기본 제공
+패널은 호스트의 파일 종류를 요구합니다. Markdown, HTML, **소스**는 텍스트 파일을 열고 이미지는 이미지
+파일을 엽니다. 후보 순서는 기본 제공 Markdown, HTML, 이미지 패널, 호스트 카탈로그 순서의 플러그인
+패널, 모든 텍스트 파일에 있는 **소스** 순입니다. 다른 패널이 파일을 요청하지 않을 때만 소스가 기본으로
+파일을 엽니다.
+
+기억된 연결은 현재 호스트에서 해당 패널을 사용할 수 있을 때 그 패널을 선택합니다. 그렇지 않으면 Paseo는
+첫 후보를 엽니다. 여러 후보 가운데 플러그인 패널이 있고 적용할 연결이 없으면 Paseo는 탭을 열 때 한 번,
+이미 연 패널 위에서 선택을 묻습니다. 기본 제공 패널만 있을 때는 묻지 않습니다. Markdown 파일은
+Markdown으로 열리고 전환기에서 소스를 제공합니다. Markdown 플러그인이 설치되어 있으면 선택기에
+**Markdown — Paseo**, **Rich Markdown — markdown-panel**, **소스 — Paseo**가 표시됩니다. 텍스트
+확장자를 요청하는 플러그인은 소스와 경쟁하므로 처음 열 때 묻습니다. 바이너리 파일을 유일하게 요청하는
+플러그인은 묻지 않고 열립니다.
+
+**다시 묻지 않기**는 이 기기에서 확장자에 대한 선택을 기억합니다. 후보가 정확한 파일 이름과 일치하면
+해당 기본 이름에 선택을 적용합니다. 사용할 수 없는 연결은 이 호스트에서 무시되지만 해당 패널이 설치된
+호스트를 위해 유지됩니다.
+
+사용자는 막대의 패널 전환기(최대 패널 3개, 휴대폰에서는 2개를 나란히 표시하고 그 이상은 메뉴에 표시)나
+탭 메뉴의 **다음으로 열기…**로 현재 탭을 전환합니다. 이 선택은 탭의 대상이 다시 지정될 때까지 기억된
+연결보다 우선합니다. 막대의 더보기 메뉴와 다음으로 열기에 있는 **항상 사용**은 표시 중인 패널을
+기억합니다. 링크나 검색 결과에서 줄을 지정해 파일을 열면 탭이 소스로 전환됩니다. 후보가 없는 파일에는
+**바이너리 미리보기를 사용할 수 없음**이 표시되며 바이너리 파일에는 소스 패널이 없습니다.
+
+### DocumentFrame
+
+`file.url()` 또는 `useFileUrl`의 로컬 파일 URL을 표시하려면 `@getpaseo/plugin/client/ui`에서
+`DocumentFrame`을 가져오세요.
+
+| Prop | 필수 | 의미 |
+| -------- | -------- | -------------------------------------------------------------------------------- |
+| `url` | 예 | 로컬 파일 URL. 웹에서는 `blob:`, 네이티브에서는 `file:`입니다. 다른 스킴은 거부됩니다. |
+| `testID` | 아니요 | 프레임의 테스트 식별자. |
+
+웹은 iframe을 마운트하기 전에 로컬 URL의 미디어 유형을 검사합니다. PDF에는 샌드박스 없이 브라우저의
+PDF 뷰어를 사용합니다. HTML과 알 수 없는 유형을 포함한 그 밖의 모든 유형에는 스크립트와 동일 출처
+접근을 모두 막는 완전한 샌드박스를 유지합니다. 네이티브는 JavaScript, 저장소 및 추가 탐색을 비활성화한
+WebView를 사용합니다. Android의 PDF처럼 플랫폼에서 문서를 인라인으로 표시할 수 없으면
+`DocumentFrame`이 파일 유형을 알리는 메시지를 표시하므로 모든 플랫폼에서 렌더링하세요.
+
+인라인 PDF 렌더링에는 Paseo 0.13.0 이상의 데몬이 필요합니다. 이전 데몬은 PDF를
+`application/octet-stream`으로 보고합니다.
+
+### 버전 요구 사항과 예제
+
+파일 패널, `DocumentFrame`, `Loading`에는 Paseo 0.13.0 이상이 필요합니다. `paseo-plugin.json`에
+`"requirements": { "paseo": ">=0.13.0" }`를 선언하세요. 데몬과 앱 모두
+[버전 요구 사항](#requirements)을 확인하며 이전 앱은 클라이언트 번들을 평가하기 전에 건너뜁니다.
+`writeBytes`로 쓰려면 Paseo 0.13.0 이상의 데몬이 필요합니다.
+
+완전한 디렉토리 예제:
+
+- [PDF 패널](https://github.com/getpaseo/paseo/tree/main/plugin-examples/pdf-panel): `Loading` 및 `DocumentFrame`과 함께 사용하는 `useFileUrl`.
+- [Markdown 패널](https://github.com/getpaseo/paseo/tree/main/plugin-examples/markdown-panel): 한 번 읽고 `writeText`로 저장하며 충돌을 해결하는 번들 CodeMirror 편집기와 네이티브의 읽기 전용 텍스트.
 
 ## Command Center 항목
 

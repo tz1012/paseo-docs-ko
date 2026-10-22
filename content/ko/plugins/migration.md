@@ -74,6 +74,7 @@ my-plugin/
 | 기존 루트 진입점의 `plugin.addSurface(id, Component)`                                      | `index.client.tsx`의 `client.addScreen({ id, title, Component })`                          |
 | 기존 루트 진입점의 `plugin.addSidebarItem({ id, title, icon, surface })`                    | `index.client.tsx`의 `client.addSidebarHeaderItem({ id, title, Component })`; [사이드바 항목](reference#sidebar-items) 참조 |
 | 새 사이드바 푸터 기여                                                               | `index.client.tsx`의 `client.addSidebarFooterItem({ id, title, Component })`              |
+| 새 파일 패널 기여                                                                   | `index.client.tsx`의 `client.addFilePanel(panel)`                                         |
 | 기존 루트 진입점의 `plugin.addWorkspacePanel(panel)`                                       | `index.client.tsx`의 `client.addWorkspacePanel(panel)`                                    |
 | 기존 루트 진입점의 `plugin.addCommandCenterItem(item)`                                     | `index.client.tsx`의 `client.addCommandCenterItem(item)`                                  |
 | 기존 루트 진입점의 `plugin.addClientSlashCommand(command)`                                 | `index.client.tsx`의 `client.addSlashCommand(command)`                                    |
@@ -135,27 +136,37 @@ pill.remove();
 
 훅(`usePaseo`, `useRpc`, `useSettings`, `useAgent`, `useWorkspace`)과 클라이언트 기여 유형을
 `@getpaseo/plugin`에서 `@getpaseo/plugin/client`로 옮기세요. `Icon`은
-`@getpaseo/plugin/client/react-native`로 옮기세요. 서버 컨텍스트와 수명 주기 계약은
+`@getpaseo/plugin/client/ui`로 옮기세요. 서버 컨텍스트와 수명 주기 계약은
 `@getpaseo/plugin/server`에서 가져옵니다. 공유 도우미(`defineRpc`, `defineSettings`,
 `defineAttachmentSource`), 스키마 및 일반 데이터 유형은 루트에 유지합니다. 유형 가져오기에도 같은 규칙이
 적용됩니다. 전체 계약은 [런타임 모듈](reference#runtime-modules)을 확인하세요.
 
 나머지 SDK 하위 경로도 소유 런타임 아래로 옮기세요.
 
-| 기존 진입점 | 0.8 진입점 |
-| ------------------------------- | -------------------------------------- |
-| `@getpaseo/plugin/react-native` | `@getpaseo/plugin/client/react-native` |
+| 기존 진입점 | 현재 진입점 |
+| -------------------------------------- | ---------------------------------- |
+| `@getpaseo/plugin/react-native` | `@getpaseo/plugin/client/ui` |
+| `@getpaseo/plugin/client/react-native` | `@getpaseo/plugin/client/ui` |
 | `@getpaseo/plugin/ui` | `@getpaseo/plugin/client/ui` |
 | `@getpaseo/plugin/provider` | `@getpaseo/plugin/server/provider` |
 | `@getpaseo/plugin/acp` | `@getpaseo/plugin/server/acp` |
 
-기존 진입점과 0.8 이전의 `@paseo/plugin` 스코프는 제거되었습니다. `/client/host`는 Paseo 앱 통합 전용이며
+0.8 이전 진입점과 기존 `@paseo/plugin` 스코프는 제거되었습니다. `/client/host`는 Paseo 앱 통합 전용이며
 플러그인 작성자가 가져와서는 안 됩니다.
 
 클라이언트 진입점은 `client/`, `shared/` 및 클라이언트에서 안전하게 사용할 수 있는 패키지만 가져옵니다. 서버 진입점은
 `server/`, `shared/` 및 서버에서 안전하게 사용할 수 있는 패키지만 가져옵니다. 클라이언트 진입점이나 그 진입점에서
 도달할 수 있는 코드에 `node:` 가져오기가 있으면 컴파일 오류가 발생합니다. 등록을 연결하려는 목적으로만 구성 요소를
 서버 진입점에 가져오지 마세요. 해당 등록은 클라이언트 진입점에 있어야 합니다.
+
+### v0.13의 UI 가져오기
+
+모든 Paseo UI 구성 요소와 UI 훅에는 `/client/ui`를 사용하세요. 이전 진입점은 2027-04-20까지
+문서화되지 않은 호환성 별칭으로 유지됩니다.
+
+속도를 조절해 표시하는 타임라인 텍스트의 경우 `useRevealedText(text, phase)`와 이를 감싸는 `Text`를
+`/client/ui`의 `<StreamedText text={text} phase={phase} style={style} />`로 교체하세요.
+플러그인 설정 제목에는 `SettingsSection`을 사용하세요. `SettingsGroup`은 더 이상 권장되지 않습니다.
 
 ## 5. 불완전한 마이그레이션 오류 알아보기
 

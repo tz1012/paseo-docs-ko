@@ -108,6 +108,19 @@ test('source heading IDs ignore comments inside fenced code blocks', async () =>
   ]);
 });
 
+test('preserves explicit source heading IDs without rendering anchor syntax', async () => {
+  const { sourceHeadingIds } = await import('../scripts/markdown.mjs');
+  assert.deepEqual(sourceHeadingIds('## Runtime translations {#runtime-translations}'), [
+    'runtime-translations',
+  ]);
+  assert.equal(
+    renderMarkdown('## 런타임 번역 {#runtime-translations}', 'plugins/reference', undefined, [
+      'runtime-translations',
+    ]),
+    '<h2 id="runtime-translations">런타임 번역</h2>',
+  );
+});
+
 test('all generated relative links resolve to files and fragments', () => {
   const root = resolve('dist');
   const files = [];

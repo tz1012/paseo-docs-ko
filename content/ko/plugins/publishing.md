@@ -50,6 +50,36 @@ category: Plugins
 한 문장짜리 설명도 제공하세요. npm에서는 `package.json`의 `description`을, Git에서는 매니페스트의
 `description`을 사용합니다. 설명이 빠졌다면 검토자가 레지스트리에서 채울 수 있습니다.
 
+### 다른 언어
+
+목록은 영어와 중국어 간체로 표시됩니다. 영어는 필수이며 번역은 선택 사항입니다. 언어 태그를 키로
+사용해 번역된 `name`과 `description`을 `paseo-plugin.json`에 추가하세요.
+
+```json
+{
+  "id": "review-tools",
+  "name": "Review tools",
+  "description": "Reviews changes before merge",
+  "translations": {
+    "zh-CN": { "name": "审查工具", "description": "在合并前审查改动" }
+  }
+}
+```
+
+각 필드는 선택 사항이며 빠진 필드에는 영어 텍스트가 표시됩니다. 레지스트리는 플러그인을 게시할 때
+`translations`를 검사합니다. 키는 `en`이 아닌 정규 언어 태그여야 하며, 각 값에는 비어 있지 않은
+문자열로 `name` 또는 `description`만 설정할 수 있습니다. Paseo 자체는 `translations`를 읽지
+않으므로, 여기에 오류가 있으면 설치가 아니라 게시가 실패합니다.
+
+소개 문서를 번역하려면 `OVERVIEW.md` 옆에 `OVERVIEW.zh-CN.md`처럼 언어 이름을 붙인 완전한 사본을
+게시하세요. 스캐폴드의 `files` 목록에는 이미 `OVERVIEW.*.md`가 포함되어 있습니다. 레지스트리는
+`OVERVIEW.<tag>.md`에서 태그가 `en`이 아닌 두 글자 또는 세 글자 언어 코드의 정규 언어 태그일 때
+번역으로 읽습니다. `OVERVIEW.backup.md`나 `OVERVIEW.zh-cn.md` 같은 다른 이름은 무시합니다.
+`OVERVIEW.old.md` 같은 세 글자 이름은 언어로 간주되므로 번역이 아닌 파일에는 사용하지 마세요.
+해당 언어의 독자에게는 번역이 표시되고, 다른 독자에게는 안내문과 함께 영어 소개가 표시됩니다.
+위 소개 문서 규칙은 번역에도 적용되므로 `OVERVIEW.md`가 바뀌면 함께 갱신하세요. 검토자는
+레지스트리에서 번역을 추가하거나 수정할 수 있습니다.
+
 ## 아이콘과 스크린샷
 
 테마, 패널 및 그 밖의 시각적 플러그인 인터페이스에는 현재 인터페이스를 보여주는 이미지가 하나 이상
