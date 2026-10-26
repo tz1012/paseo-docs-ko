@@ -76,6 +76,7 @@ my-plugin/
 | 새 사이드바 푸터 기여                                                               | `index.client.tsx`의 `client.addSidebarFooterItem({ id, title, Component })`              |
 | 새 파일 패널 기여                                                                   | `index.client.tsx`의 `client.addFilePanel(panel)`                                         |
 | 기존 루트 진입점의 `plugin.addWorkspacePanel(panel)`                                       | `index.client.tsx`의 `client.addWorkspacePanel(panel)`                                    |
+| `context: "agent"`가 있는 에이전트 패널                                                  | `index.client.tsx`의 `client.addAgentPanel(panel)`; `context` 생략                        |
 | 기존 루트 진입점의 `plugin.addCommandCenterItem(item)`                                     | `index.client.tsx`의 `client.addCommandCenterItem(item)`                                  |
 | 기존 루트 진입점의 `plugin.addClientSlashCommand(command)`                                 | `index.client.tsx`의 `client.addSlashCommand(command)`                                    |
 | 기존 루트 진입점의 `plugin.addClientSide(fn)`                                              | 래퍼를 삭제하고 `fn`의 본문을 기본 클라이언트 진입점 함수로 옮기세요        |
@@ -96,6 +97,22 @@ my-plugin/
 제거하세요. 클라이언트 등록은 멱등성을 갖는 제거 함수를 반환하지만, 헤더 버튼과 작성기 필은
 `{ update, remove }` 핸들을 반환합니다. 플러그인이 종료 정리 전에 호출하는 제거 함수는 유지하세요.
 Paseo는 진입점의 정리 함수가 실행된 후 남아 있는 등록을 제거합니다.
+
+### 0.13의 패널 props
+
+모든 패널 종류는 [매개변수, 리비전 및 유지되는 탭 상태](./reference.md#workspace-panels)를 공유합니다.
+
+| 이전 API                                                                | 대체 API                                         |
+| ----------------------------------------------------------------------- | ------------------------------------------------ |
+| 작업공간/에이전트 `context` prop                                        | 등록할 때 종류를 선택합니다.                     |
+| 에이전트 `agentId` prop                                                 | `params.agentId`                                 |
+| `addWorkspacePanel({ context: "workspace", ... })`                    | `addWorkspacePanel({ ... })`                     |
+| `addWorkspacePanel({ context: "agent", ... })`                        | `addAgentPanel({ ... })`                         |
+| 베타 파일 `location.lineStart`, `location.lineEnd`, `location.revision` | `params.lineStart`, `params.lineEnd`, `revision` |
+| 베타 `PluginFileTab`, `PluginFileLocation`                              | `PluginTab`, `PluginFilePanelParams`             |
+
+0.12 별칭은 2027-04-23 이후 제거될 때까지 사용할 수 있습니다. 베타 파일 API는 즉시 변경됩니다.
+새 API를 채택할 때는 `requirements.paseo`를 `>=0.13.0`으로 선언하세요.
 
 ### 작성기 필
 
@@ -161,8 +178,10 @@ pill.remove();
 
 ### v0.13의 UI 가져오기
 
-모든 Paseo UI 구성 요소와 UI 훅에는 `/client/ui`를 사용하세요. 이전 진입점은 2027-04-20까지
-문서화되지 않은 호환성 별칭으로 유지됩니다.
+모든 Paseo UI 구성 요소와 UI 훅에는 `/client/ui`를 사용하세요. 더 이상 권장되지 않는
+`/client/react-native` 진입점은 0.12 플러그인을 위해 `useRevealedText(text, phase): string`을
+2027-04-20 이후 제거될 때까지 유지합니다. 이 훅은 더 이상 권장되지 않으며 `/client/ui`에서는
+내보내지 않습니다.
 
 속도를 조절해 표시하는 타임라인 텍스트의 경우 `useRevealedText(text, phase)`와 이를 감싸는 `Text`를
 `/client/ui`의 `<StreamedText text={text} phase={phase} style={style} />`로 교체하세요.

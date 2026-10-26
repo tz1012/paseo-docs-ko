@@ -387,6 +387,7 @@
     "1-classify-the-existing-code",
     "2-rename-files-and-directories",
     "3-move-every-registration",
+    "panel-props-in-013",
     "composer-pills",
     "4-separate-imports",
     "ui-imports-in-v013",

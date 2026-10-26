@@ -1614,7 +1614,8 @@ if (current.status === "ready") {
 
 ## 작업공간 패널
 
-작업공간 또는 에이전트 컨텍스트의 패널을 등록하세요.
+작업공간 패널은 `addWorkspacePanel`로, 에이전트 패널은 `addAgentPanel`로 등록하세요.
+두 패널 모두 [파일 패널](#file-panels)과 동일한 패널 계약을 전달받습니다.
 
 `client/review.tsx`:
 
@@ -1623,9 +1624,9 @@ import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@getpaseo/pl
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
-export function ReviewPanel({ theme, layout, workspaceId, agentId }: PluginAgentPanelProps) {
+export function ReviewPanel({ theme, layout, workspaceId, params }: PluginAgentPanelProps) {
   const workspaceName = useWorkspace(workspaceId, (workspace) => workspace.name);
-  const agent = useAgent(agentId, ({ id, title }) => ({ id, title }));
+  const agent = useAgent(params.agentId, ({ id, title }) => ({ id, title }));
   const styles = useMemo(
     () => ({
       screen: {
@@ -1654,11 +1655,10 @@ import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { ReviewPanel } from "./client/review";
 
 export default function contribute(client: PluginClientContext) {
-  client.addWorkspacePanel({
+  client.addAgentPanel({
     id: "review",
     title: "Review",
     icon: "Scan",
-    context: "agent",
     locations: ["workspace", "explorer"],
     Component: ReviewPanel,
   });
@@ -1666,20 +1666,45 @@ export default function contribute(client: PluginClientContext) {
 }
 ```
 
-`addWorkspacePanel` 필드:
+`addWorkspacePanel` 및 `addAgentPanel` 필드:
 
 | 필드 | 필수 | 의미 |
 | ----------- | -------- | ------------------------------------------------------------- |
 | `id` | 예 | 플러그인 로컬 패널 ID. |
 | `title` | 예 | 작업공간 탭 제목. |
 | `icon` | 예 | Lucide 이름, `{ svg }` 또는 구성 요소. [아이콘](#icons)을 참조하세요. |
-| `context` | 예 | `workspace` 또는 `agent`. |
 | `locations` | 아니요 | `workspace`, `explorer` 또는 둘 다. 기본값은 `workspace`입니다. |
 | `Component` | 예 | 선택한 컨텍스트의 props에 맞는 React Native 구성 요소. |
 
-작업공간 패널은 `PluginWorkspacePanelProps`를 전달받습니다. 여기에는 `context: "workspace"`, `theme`, `host`, `layout`, `workspaceId`가 있습니다. 에이전트 패널은 `PluginAgentPanelProps`를 전달받습니다. 여기에는 `context: "agent"`와 동일한 공통 필드 및 `workspaceId`에 더해 `agentId`가 있습니다.
+모든 패널은 `theme`, `host`, `layout`, `navigation`, `workspaceId`, 읽기 전용 `params`,
+`revision`, `tab`이 있는 `PluginPanelProps<Params>`를 전달받습니다. 작업공간 패널은 빈
+`PluginWorkspacePanelParams`를 사용하고, 에이전트 패널은 `agentId`가 포함된
+`PluginAgentPanelParams`를 사용합니다. `revision`은 동일한 요청을 포함해 같은 탭에 params가 다시
+전송될 때마다 증가합니다.
 
-`useWorkspace(workspaceId, selector)`와 `useAgent(agentId, selector)`로 캐시된 상태를 읽으세요. 선택자는 필수입니다. Paseo는 결과를 얕게 비교하므로, `{ name, status }`를 선택하면 관련 없는 필드가 바뀌어도 다시 렌더링하지 않습니다. 구성 요소가 렌더링하는 모든 필드를 한 번의 호출로 선택하세요. 전체 스냅샷을 선택하지 마세요.
+`tab.setModified(boolean)`은 저장하지 않은 작업을 표시하고 닫기 전에 확인을 요청합니다. `tab.state`는
+불투명한 영구 JSON이며 초기값은 `undefined`입니다. `tab.setState(value)`는 이 값을 교체합니다. 탭마다
+자체 상태를 소유합니다. Paseo는 이를 해석하지 않고 저장합니다. `useTabState(tab, schema, defaultState)`로
+검증하세요.
+
+```tsx
+const schema = z.object({ view: z.enum(["preview", "source"]) });
+const [state, setState] = useTabState(tab, schema, { view: "preview" });
+// Missing or invalid persisted state returns the default.
+// In an event handler, call setState({ view: "source" }).
+```
+
+`useTabState`는 `@getpaseo/plugin/client`에서, `z`는 `zod`에서 가져오세요. setter는 전체 JSON 값을
+교체합니다. 상태는 탭 복원과 앱 다시 불러오기를 거쳐서도 유지됩니다.
+
+통합 props, `addAgentPanel`, `useTabState`에는 Paseo 0.13.0 이상이 필요합니다.
+
+**더 이상 권장되지 않으며 2027-04-23 이후 제거:** 0.12 패널의 `context`와 평면 `agentId` props,
+`addWorkspacePanel({ context: "workspace" })`, `addWorkspacePanel({ context: "agent" })`는 계속
+작동합니다. 작업공간 `context`는 생략하고, 에이전트 패널은 `addAgentPanel`로 등록하며,
+`params.agentId`를 읽으세요.
+
+`useWorkspace(workspaceId, selector)`와 `useAgent(params.agentId, selector)`로 캐시된 상태를 읽으세요. 선택자는 필수입니다. Paseo는 결과를 얕게 비교하므로, `{ name, status }`를 선택하면 관련 없는 필드가 바뀌어도 다시 렌더링하지 않습니다. 구성 요소가 렌더링하는 모든 필드를 한 번의 호출로 선택하세요. 전체 스냅샷을 선택하지 마세요.
 
 두 훅 모두 레코드를 사용할 수 없으면 `null`을 반환합니다. 그 외에는 정규화된 클라이언트 상태를 대상으로 동기적으로 실행됩니다. 스냅샷 DTO와 그 안에 중첩된 값은 모두 읽기 전용이며 런타임에 동결됩니다. 현재 작업공간이나 에이전트를 알아내기 위해 플러그인 RPC를 호출하지 마세요. 선택적 정보나 공급업체별 보충 정보는 구성 요소를 렌더링한 뒤 가져오세요.
 
@@ -1766,11 +1791,12 @@ export default function contribute(client: PluginClientContext) {
 `layout` 및 선택적 `navigation` props와 다음 항목이 포함됩니다.
 
 | Prop | 타입 | 의미 |
-| ------------- | -------------------- | ------------------------------------------------------------------------------- |
+| ------------- | ----------------------- | --------------------------------------------------------------------------------------------------- |
 | `workspaceId` | `string` | 파일 탭이 속한 작업공간. |
-| `file` | `PluginFile` | 파일 핸들. 탭에 이 파일이 표시되는 동안 안정적으로 유지됩니다. |
-| `tab` | `PluginFileTab` | `setModified(modified)`는 탭의 저장 안 됨 점을 표시하고 닫기 전에 확인합니다. |
-| `location` | `PluginFileLocation` | `lineStart?`, `lineEnd?` 및 탐색할 때마다 증가하는 `revision`. |
+| `params` | `PluginFilePanelParams` | 여는 쪽에서 전달한 읽기 전용 `path`, `lineStart?`, `lineEnd?`. |
+| `revision` | `number` | 같은 줄이더라도 params가 이 탭에 다시 전송될 때마다 증가합니다. |
+| `file` | `PluginFile` | `params.path`에서 해석된 파일 기능. 탭에 이 파일이 표시되는 동안 안정적으로 유지됩니다. |
+| `tab` | `PluginTab` | `setModified`, 불투명한 영구 `state`, `setState`. [작업공간 패널](#workspace-panels)을 참조하세요. |
 
 Paseo는 파일을 읽지 않고도 파일이 존재하고 크기를 알게 되면 패널을 마운트합니다. `file` 객체는
 안정적이며, stat 필드는 Paseo가 알고 있는 최신 버전을 담습니다. 렌더링할 때 이 필드를 읽으세요. 필드가
