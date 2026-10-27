@@ -74,7 +74,7 @@ paseo daemon restart
 
 새 Paseo 홈에서는 `daemon.relay.enabled`를 제거하면 릴레이가 비활성화됩니다. 시작할 때부터 이 필드가 없었던 데몬은 호환성을 위해 기존의 릴레이 활성화 동작을 유지합니다. 이전 구성을 편집할 때는 `daemon.relay.enabled`를 명시적으로 설정하세요.
 
-수신 주소, 인증, 릴레이 엔드포인트와 TLS, 작업 트리 할당, 서비스 프록시 주소, 번들 웹 UI, 로깅, 음성 인식, 음성, 자격 증명, 로컬 모델 설정은 재시작해야 합니다. 다시 로드는 같은 파일의 다른 유효한 변경을 적용한 후 이 경로들을 보고합니다.
+유휴 런타임 정리, 수신 주소, 인증, 릴레이 엔드포인트와 TLS, 작업 트리 할당, 서비스 프록시 주소, 번들 웹 UI, 로깅, 음성 인식, 음성, 자격 증명, 로컬 모델 설정은 재시작해야 합니다. 다시 로드는 같은 파일의 다른 유효한 변경을 적용한 후 이 경로들을 보고합니다.
 
 배포 환경 변수와 레거시 슈퍼바이저 플래그가 항상 우선합니다. 실행 재정의 때문에 변경된 파일 설정이 적용되지 않으면 다시 로드 결과의 `overrideControlledPaths`에 보고됩니다. 수신 주소, 비밀번호, 릴레이 엔드포인트와 TLS, 서비스 프록시와 웹 UI 설정, 로깅, 음성 인식, 음성 구성이 여기에 포함됩니다. 호스트 이름과 CORS 출처 같은 목록 설정은 여러 소스의 값을 계속 추가하므로 `config.json` 값도 적용됩니다. 파일 값을 우선하려면 재정의 없이 배포를 중지하고 다시 시작하세요.
 
@@ -83,6 +83,16 @@ paseo daemon restart
 Paseo가 제공하는 일류 서비스와 `agents.providers` 아래에 추가하는 사용자 정의 항목인 에이전트 제공업체는 자체 페이지에 문서화되어 있습니다.
 
 멘탈 모델은 [제공자](/docs/providers)를 참조하고 Paseo가 시작할 수 있는 에이전트의 전체 목록은 [지원 제공자](/docs/supported-providers)를 참조하세요. Anthropic 호환 엔드포인트(Z.AI, Alibaba/Qwen), 여러 프로필, 사용자 정의 바이너리, ACP 에이전트 및 `additionalModels` 병합 동작에서 Claude를 지정하려면 [사용자 정의 공급자](/docs/custom-providers)를 참조하세요. 전체 필드 참조는 GitHub([docs/custom-providers.md](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md))에 있습니다.
+
+## 유휴 런타임
+
+Paseo는 데몬 기준선에서 정리를 허용하고 구현된 제공자 검사에서도 안전하다고 판단할 때, 한 시간 동안 유휴 상태인 재개 가능한 에이전트 프로세스를 해제합니다. 다음 프롬프트를 보내면 같은 대화가 재개됩니다. 호스트 전체에서 이 기능을 비활성화하려면 **설정 → 호스트 → 에이전트**에서 **유휴 에이전트 해제**를 끄거나 다음을 사용하세요.
+
+```json
+{ "agents": { "idleRuntimeCleanup": false } }
+```
+
+이 설정의 기본값은 `true`입니다. 설정에서 변경하면 즉시 적용되고, 구성 파일을 편집하면 구성을 다시 로드할 때 적용됩니다. 다시 활성화해도 기존 유휴 타임스탬프는 유지됩니다. 에이전트별 설정은 없습니다. 런타임 안전 검사가 없는 제공자에도 같은 데몬 기준선과 한 시간의 유휴 기간이 적용됩니다. 활성 작업, 하위 에이전트, 대기 중인 완료 알림은 정리를 막습니다. ACP 어댑터는 실행 중인 ACP 터미널이 있으면 출력이 없는 터미널도 포함해 런타임을 유지하지만, 종료된 터미널은 정리를 막지 않습니다. 이 검사는 제공자가 내부적으로 실행한 프로세스를 검사하지 않습니다.
 
 ## 작업 트리
 
@@ -100,7 +110,7 @@ Paseo가 제공하는 일류 서비스와 `agents.providers` 아래에 추가하
 
 ## 목소리
 
-Voice는 `providers` 아래에 공급자 자격 증명을 사용하여 `features.dictation` 및 `features.voiceMode`을 통해 구성됩니다.
+Voice는 `features.dictation`과 `features.voiceMode`를 통해 구성합니다. 제공자 자격 증명과 옵션은 `features.dictation.stt`, `features.voiceMode.stt`, `features.voiceMode.tts`에 인라인으로 둡니다.
 
 음성 철학, 아키텍처, 전체 로컬/OpenAI 설정 예시는 [음성 문서](/docs/voice)를 참조하세요.
 
@@ -253,9 +263,9 @@ URI의 `password=`은 항상 env var보다 우선하므로 `PASEO_PASSWORD`을 �
 - `PASEO_LOG_FILE_ROTATE_SIZE`, `log.file.rotate.maxSize` 재정의
 - `PASEO_LOG_FILE_ROTATE_COUNT`, `log.file.rotate.maxFiles` 재정의
 - `PASEO_LOG`, `PASEO_LOG_FORMAT`, 레거시 로그 재정의(계속 지원됨)
-- `OPENAI_API_KEY`, OpenAI 공급자 키 재정의
-- `OPENAI_STT_API_KEY`, `OPENAI_STT_BASE_URL`, OpenAI 음성-텍스트 엔드포인트(받아쓰기 + 음성 모드 STT)
-- `OPENAI_TTS_API_KEY`, `OPENAI_TTS_BASE_URL`, OpenAI 텍스트 음성 변환 엔드포인트(음성 모드 TTS)
+- `OPENAI_API_KEY`, `OPENAI_BASE_URL`, 사이트 값이나 엔드포인트 환경 변수 값이 없을 때 사용할 음성 자격 증명과 기본 URL의 대체값
+- `OPENAI_STT_API_KEY`, `OPENAI_STT_BASE_URL`, 받아쓰기 또는 음성 모드 STT 사이트에 저장된 값이 없을 때 사용할 음성-텍스트 키와 기본 URL의 대체값
+- `OPENAI_TTS_API_KEY`, `OPENAI_TTS_BASE_URL`, 음성 모드 TTS 사이트에 저장된 값이 없을 때 사용할 텍스트-음성 키와 기본 URL의 대체값
 - `PASEO_VOICE_LLM_PROVIDER`, 음성 LLM 제공업체 무시(`claude`, `codex`, `opencode`)
 - `PASEO_DICTATION_STT_PROVIDER`, `PASEO_VOICE_STT_PROVIDER`, `PASEO_VOICE_TTS_PROVIDER`, 음성 공급자 선택 무시(`local` 또는 `openai`)
 - `PASEO_LOCAL_MODELS_DIR`, 로컬 모델 디렉터리 제어

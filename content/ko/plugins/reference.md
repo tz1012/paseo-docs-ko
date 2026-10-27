@@ -675,6 +675,104 @@ server.before("agent.session_open", ({ request }) => {
 
 생성, 재개, 새로 고침 및 가져오기 때 실행됩니다. 생성할 때만 주입하려면 대신 `agent.create` 콜백에서 `env`를 설정하세요.
 
+### 에이전트에 도구 연결하기
+
+`index.server.ts`에서 도구를 정의하고 `before("agent.session_open")`에서 연결하세요. 다음 예시는 `notes/enabled: "true"` 레이블이 있는 에이전트에만 `append_workspace_note`를 제공합니다.
+
+```ts
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
+import { z } from "zod";
+import { defineAgentTool, type PluginServerContext } from "@getpaseo/plugin/server";
+
+const appendWorkspaceNote = defineAgentTool({
+  name: "append_workspace_note",
+  description: "Append a note to AGENT_NOTES.md in this agent's working directory.",
+  input: z.object({ note: z.string().min(1).describe("Note to append") }),
+  async execute({ note }, { agent, signal }) {
+    const notePath = path.join(agent.cwd, "AGENT_NOTES.md");
+    await writeFile(notePath, `${note}\n`, { encoding: "utf8", flag: "a", signal });
+    return {
+      text: `Saved note to ${notePath}`,
+      structuredContent: { path: notePath },
+    };
+  },
+});
+
+export default function contribute(server: PluginServerContext) {
+  server.before("agent.session_open", ({ request }) => {
+    if (request.labels["notes/enabled"] !== "true") return;
+    return { ...request, tools: [...request.tools, appendWorkspaceNote] };
+  });
+  return () => {};
+}
+```
+
+SDK로 에이전트를 만들 때 레이블을 설정하세요.
+
+```ts
+const agent = await paseo.agents.create({
+  config: { provider: "codex/gpt-5.4" },
+  cwd: "/projects/shop",
+  labels: { "notes/enabled": "true" },
+});
+```
+
+세션 열기 요청의 어떤 필드로든 에이전트를 선택할 수 있습니다.
+
+| 선택 기준 | 콜백의 조건 |
+| ---------------- | -------------------------------------------- |
+| 레이블 | `request.labels["notes/enabled"] === "true"` |
+| 제공자 | `request.provider === "codex"` |
+| 작업공간 | `request.workspaceId === "workspace-456"` |
+| 개별 에이전트 | `request.agentId === chosenAgentId` |
+
+`request.tools`는 각 플러그인에서 빈 상태로 시작합니다. 각 콜백은 그 플러그인의 이전 콜백이 반환한 도구를 받습니다. 배열을 교체해 도구를 추가하거나 제거하세요. `undefined`를 반환하면 요청이 유지됩니다. `purpose: "history"`에서는 도구가 무시됩니다.
+
+`defineAgentTool`, `AgentToolDefinition`, `AgentToolContext`, `AgentToolResult`는 `@getpaseo/plugin/server`에서 가져옵니다. 이 도우미는 Zod 스키마에서 검증된 입력을 추론합니다.
+
+```ts
+declare function defineAgentTool<Input extends z.ZodType>(tool: {
+  name: string;
+  title?: string;
+  description: string;
+  input: Input;
+  execute(
+    input: z.output<Input>,
+    context: AgentToolContext,
+  ): AgentToolResult | Promise<AgentToolResult>;
+}): AgentToolDefinition;
+
+interface AgentToolResult {
+  text?: string;
+  structuredContent?: unknown;
+  isError?: boolean;
+}
+```
+
+| 실행 컨텍스트 | 값 |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `agent` | `id`, `workspaceId`, `provider`, `cwd`, `title`을 포함하는 호출 에이전트(`PluginHookAgent`) |
+| `paseo` | 이 데몬에 연결된 SDK |
+| `signal` | 이 도구 호출의 중단 신호. 파일 작업이나 외부 요청에 전달하세요. |
+
+`execute`는 플러그인 프로세스에서 실행됩니다. 클로저와 원본 Zod 스키마는 그곳에 남고 도구 메타데이터와 호출 입력/결과만 프로세스 경계를 넘습니다. Paseo는 `execute`를 호출하기 전에 입력을 검증합니다. 잘못된 입력은 에이전트에 스키마 문제를 반환합니다. 예외가 발생하면 `{ isError: true, text: message }`가 되고 플러그인은 계속 실행됩니다. 호출을 취소하거나 전송을 닫으면 `signal`이 중단되고 결과가 폐기됩니다. 도구 호출에는 30초 훅 시간 제한과 별도로 10분의 상한이 있습니다. 에이전트 세션을 닫거나 다시 열면 이전 정의가 폐기됩니다.
+
+모델에 표시할 텍스트는 `text`로 반환하세요. `structuredContent`는 JSON으로 직렬화할 수 있어야 합니다. `text`를 생략하면 Paseo가 해당 값을 모델용 텍스트로 포맷합니다. 도구 오류를 보고하려면 `isError: true`를 설정하세요.
+
+Paseo는 제공자가 지원하는 방식에 따라 MCP 또는 네이티브 등록을 사용하는 에이전트 도구 전송으로 연결된 도구를 전달합니다. 어느 쪽이든 같은 정의와 콜백을 사용합니다. 연결된 도구에는 [Paseo 도구와 같은 게이트](/docs/mcp#limit-paseo-tools-by-provider)가 적용됩니다. 해당 에이전트만 이 도구를 볼 수 있습니다.
+
+이름은 `/^[a-z][a-z0-9_]*$/`과 일치해야 하며 최대 64자입니다. Paseo 도구 또는 같은 에이전트의 다른 플러그인 도구와 이름이 충돌하면 세션 열기가 실패하고 두 소유자의 이름을 표시합니다. 한 플러그인 안에서 이름이 중복돼도 세션 열기가 실패합니다. 콜백의 대상이 아닌 에이전트는 영향을 받지 않습니다.
+
+| 변경 사항 | 에이전트가 변경을 받는 시점 |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent.session_open`을 선언하는 플러그인 시작, 중지, 다시 로드 | 열린 세션은 오래된 상태가 됩니다. 각 세션은 유휴 상태에서 다음 프롬프트를 처리하기 전에 다시 열립니다. 실행 중인 턴은 중단 없이 계속되고, 다시 열린 뒤의 다음 프롬프트가 세션을 재사용합니다. |
+| 콜백 대상 에이전트 변경 | 이 예시를 편집한 뒤 `paseo plugin reload agent-tools`를 실행하고 에이전트가 유휴 상태일 때 프롬프트를 보내세요. |
+| 즉시 적용 | `await paseo.agents.ref(id).reload({ requestId: "reload-notes" })`를 호출하세요. `requestId`는 선택 사항입니다. 제공자 세션을 다시 열고 `reason: "refresh"`로 훅을 다시 실행하며, 실행 중인 턴을 중단합니다. |
+| 현재 스냅샷 읽기 | `await paseo.agents.ref(id).refresh()`를 호출하세요. 세션을 다시 열지 않고 상태를 읽습니다. |
+
+자동으로 다시 열지 못하면 트리거한 프롬프트가 해당 오류로 실패합니다. [전체 agent-tools 예시](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-tools)를 참조하세요.
+
 ### 작업공간 격리 선택하기
 
 ```ts
@@ -835,9 +933,9 @@ type PluginTurnOutcome =
 ### 사전 훅
 
 | 이름 | 요청 필드 | 편집 가능 항목 |
-| -------------------- | ----------------------------------------------------------------------- | --------------------------------------- |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
 | `agent.create` | `config`, 선택적 `env` | `cwd`를 제외한 공개 에이전트 구성, `env` |
-| `agent.session_open` | `agentId`, `workspaceId`, `provider`, `cwd`, `reason`, `purpose`, `env` | `env`만 |
+| `agent.session_open` | `agentId`, `workspaceId`, `provider`, `cwd`, 읽기 전용 `title`과 `labels`, `reason`, `purpose`, `env`, `tools` | `env`와 `tools` |
 | `workspace.create` | `source`, 선택적 `title`, `firstAgentContext` | 명시적 생성 요청 전체 |
 
 **`agent.create.config`**는 `AgentSessionConfig`를 사용합니다.
@@ -859,6 +957,9 @@ type PluginTurnOutcome =
   "workspaceId": "workspace-456",
   "provider": "codex",
   "cwd": "/projects/shop",
+  "title": "Workspace notes",
+  "labels": { "notes/enabled": "true" },
+  "tools": [],
   "reason": "resume",
   "purpose": "interactive",
   "env": { "COMPANY_ENV": "development" }
@@ -868,6 +969,9 @@ type PluginTurnOutcome =
 | 필드 | 값 |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `workspaceId` | 문자열 또는 `null` |
+| `title` | 읽기 전용 문자열 또는 `null`. 생성 시에는 생성 제목, 재개 시에는 저장된 제목입니다. |
+| `labels` | 읽기 전용 문자열 맵. 생성 시에는 생성 레이블, 재개 시에는 저장된 레이블입니다. |
+| `tools` | 이 플러그인에 로컬인 편집 가능한 `AgentToolDefinition[]`. [에이전트에 도구 연결하기](#attach-tools-to-agents)를 참조하세요. |
 | `reason` | `create`, `resume`, `refresh`, `import` |
 | `purpose` | `interactive`, `history` |
 | `env` | 실행 재정의 맵이며 데몬에서 상속된 환경은 제외합니다. 맵을 교체해 재정의를 추가, 교체 또는 제거합니다. |
@@ -879,7 +983,7 @@ Creation request
   → agent.create hooks (plugin-ID order; registration order within each plugin)
   → resolve defaults and validate provider configuration
   → derive launch configuration with Paseo runtime tools and daemon prompt
-  → agent.session_open hooks (same ordering; env only)
+  → agent.session_open hooks (same ordering; env and plugin-local tools)
   → set PASEO_AGENT_ID and PASEO_AGENT_CWD
   → open provider session and save agent configuration
 ```
@@ -915,6 +1019,7 @@ Creation request
 | [lifecycle-logger](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-logger) | 11개 훅 전체, 환경 값을 가린 JSON 로그 |
 | [lifecycle-actions](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-actions) | 후속 작업, 권한, 환경, 공급자 전환, 작업 트리 선택 |
 | [agent-configuration](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-configuration) | MCP 주입과 Codex 샌드박스/승인 옵션 |
+| [agent-tools](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-tools) | 레이블 대상 도구와 플러그인 프로세스의 파일 작업 |
 
 로거 출력은 `paseo plugin logs lifecycle-logger` 또는 호스트의 `daemon.log`에서 확인하세요.
 

@@ -279,6 +279,38 @@ Paseo가 지속성에서 세션을 다시 열 수 있으면 `restoration: "core"
 
 구현한 기능만 알리세요. 방향 조정을 지원하지 않으면 `prompt.steer`를 생략합니다. 그러면 Paseo가 활성 턴을 교체할 수 있습니다.
 
+## 유휴 런타임 정리 허용하기
+
+Paseo는 데몬 기준선에서 정리를 허용할 때 한 시간 동안 유휴 상태인 재개 가능한 세션을 해제할 수 있습니다. 연결과 세션의 `session.opened` 기능에 `session.can_stop_runtime`을 알리면 제공자가 소유하는 거부권을 추가할 수 있습니다. 이 기능이 없으면 같은 기준선과 한 시간의 유휴 기간이 적용되며 플러그인은 안전 요청을 받지 않습니다.
+
+기존 `send(input)` 핸들러에서 안전 질의를 처리하세요. 하나의 연결이 여러 세션을 제공하는 경우에도 제공자 자체 세션 ID를 대상으로 합니다.
+
+```ts
+case "session.can_stop_runtime": {
+  try {
+    const session = sessions.get(input.sessionId);
+    if (!session) throw new Error("Session not found");
+    emit({
+      type: "session.can_stop_runtime",
+      requestId: input.requestId,
+      sessionId: input.sessionId,
+      canStop: await session.canStopRuntime(),
+    });
+  } catch (error) {
+    emit({
+      type: "request.failed",
+      requestId: input.requestId,
+      error: { message: error instanceof Error ? error.message : String(error) },
+    });
+  }
+  return;
+}
+```
+
+`canStopRuntime(): Promise<boolean>`은 제공자의 세션 구현에 속합니다. 런타임을 해제해도 백그라운드 셸, 모니터, 네이티브 하위 프로세스, 대기 중인 완료 보고, 대기 중인 자율 응답을 잃지 않을 때만 `true`를 반환하세요. 이 질의는 세션을 중지하거나 변경해서는 안 됩니다. 작업이 남아 있는 동안은 `false`를 반환하세요. 거부된 질의, 잘못된 응답, 시간 초과도 런타임을 유지합니다. 이 질의에는 절대로 `request.completed`로 응답하지 마세요.
+
+Paseo는 항상 포그라운드 작업, 권한, 대기 중인 전달, 수명 주기 작업, 작동 중인 관리/네이티브 하위 에이전트, 호출자에 대한 미처리 로컬 또는 원격 완료 구독을 확인합니다. 구독 보호는 등록, 복구, 알림 전달 승인까지 지속됩니다. 제공자가 긍정적으로 응답해도 이러한 차단 조건보다 우선하지 않습니다. Paseo는 기존 `session.close` 작업 전에 활동을 다시 확인합니다. 보호된 작업이 끝나면 한 시간의 새로운 유휴 기간이 시작됩니다. 저장된 제공자 지속성은 같은 대화를 재개할 수 있어야 합니다. 호스트 설정 `agents.idleRuntimeCleanup: false`는 모든 제공자의 정리를 비활성화합니다.
+
 ## 타임라인 항목 게시하기
 
 `timeline.item`을 통해 완전한 스냅샷을 게시하세요. 스트리밍 텍스트, 실행 중인 도구 또는 할 일 목록을 업데이트할 때는 같은 항목 `id`를 재사용합니다. Paseo는 실시간 델타를 산출하고 일반 타임라인을 유지합니다.

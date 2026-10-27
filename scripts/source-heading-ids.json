@@ -83,6 +83,7 @@
     "example",
     "apply-changes",
     "agent-providers",
+    "idle-runtimes",
     "worktrees",
     "voice",
     "bundled-web-ui",
@@ -406,6 +407,7 @@
     "add-session-specific-composer-controls",
     "add-persistence-and-replay",
     "add-commands-and-steering",
+    "permit-idle-runtime-cleanup",
     "publish-timeline-items",
     "adapt-an-acp-agent",
     "test-and-publish"
@@ -446,6 +448,7 @@
     "lifecycle-hooks",
     "change-configuration-and-inject-an-mcp-server",
     "inject-environment-variables-on-every-session-opening",
+    "attach-tools-to-agents",
     "choose-workspace-isolation",
     "send-a-follow-up-when-a-turn-ends",
     "answer-a-permission-request",

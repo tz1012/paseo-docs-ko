@@ -23,31 +23,28 @@ Paseo는 코딩 환경에서 받아쓰기 및 음성 모드 대화를 위한 최
 - 음성 LLM 오케스트레이션: 구성된 공급자(`claude`, `codex` 또는 `opencode`)를 사용하는 숨겨진 에이전트 세션
 - 도구 경로: 음성 도구 및 에이전트 제어를 위한 MCP stdio 브리지
 
-## 현지 연설
+## 로컬 음성
 
-로컬 음성의 기본값은 모델 ID `parakeet-tdt-0.6b-v2-int8`(STT) 및 `kokoro-en-v0_19`(TTS, 스피커 0 / 음성 00)입니다.
+로컬 음성의 기본 모델 ID는 `parakeet-tdt-0.6b-v2-int8`(STT)과 `kokoro-en-v0_19`(TTS, 스피커 0 / 음성 00)입니다.
 
-누락된 모델은 데몬 시작 시 `$PASEO_HOME/models/local-speech`으로 다운로드됩니다. 다운로드는 누락된 파일에 대해서만 발생합니다.
+받아쓰기는 기본적으로 켜져 있습니다. 음성 모드는 **설정 > 음성**에서 켜거나 `features.voiceMode.enabled: true`를 설정하기 전까지 꺼져 있습니다.
+
+활성화된 기능에 필요한 모델이 없으면 데몬 시작 시 `$PASEO_HOME/models/local-speech`에 다운로드합니다. 누락된 파일만 다운로드합니다. **설정 > 음성**에는 모든 로컬 모델과 각 모델의 크기 및 지원 언어가 표시되며, 모델별로 다운로드하거나 삭제할 수 있습니다.
 
 ### 로컬 STT 모델 및 언어 지원
 
-| 모델 ID | 언어 |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `parakeet-tdt-0.6b-v2-int8` | 영어로만 제공됩니다(기본값). 구두점과 대문자를 포함합니다.                                                                                                                                                                                                             |
-| `parakeet-tdt-0.6b-v3-int8` | 25개 유럽 언어, 자동 감지됨: 불가리아어, 크로아티아어, 체코어, 덴마크어, 네덜란드어, 영어, 에스토니아어, 핀란드어, 프랑스어, 독일어, 그리스어, 헝가리어, 이탈리아어, 라트비아어, 리투아니아어, 몰타어, 폴란드어, 포르투갈어, 루마니아어, 러시아어, 슬로바키아어, 슬로베니아어, 스페인어, 스웨덴어, 우크라이나어. |
-
-**영어가 아닌 언어를 사용하려면 로컬 STT 모델을 `parakeet-tdt-0.6b-v3-int8`으로 전환하세요.** v3에서는 음성 언어를 자동으로 감지합니다. 언어별 설정은 없습니다. 아래의 `language` 필드는 로컬 Parakeet 모델을 조종하지 **않습니다**(v2는 영어로만 제공되고 v3는 자동 감지됩니다). OpenAI STT 공급자에만 적용됩니다.
+**설정 > 음성**에는 모든 로컬 STT 모델과 지원 언어가 표시됩니다. 기본 모델인 `parakeet-tdt-0.6b-v2-int8`은 영어만 지원합니다. 다른 언어에는 `parakeet-tdt-0.6b-v3-int8`(유럽 25개 언어)이나 `whisper-base`(99개 언어) 같은 다국어 모델을 선택하세요. `language` 필드는 두 제공자의 STT 세션에 모두 전달됩니다. 현재 로컬 인식기는 음성 언어를 자체적으로 감지하므로 `language`을 설정해도 모델이 지원하는 언어가 늘어나지는 않습니다.
 
 ```json
 {
   "version": 1,
   "features": {
     "dictation": {
-      "stt": { "provider": "local", "model": "parakeet-tdt-0.6b-v2-int8", "language": "en" }
+      "stt": { "provider": "local", "model": "parakeet-tdt-0.6b-v2-int8" }
     },
     "voiceMode": {
       "llm": { "provider": "claude", "model": "haiku" },
-      "stt": { "provider": "local", "model": "parakeet-tdt-0.6b-v2-int8", "language": "en" },
+      "stt": { "provider": "local", "model": "parakeet-tdt-0.6b-v2-int8" },
       "tts": { "provider": "local", "model": "kokoro-en-v0_19", "speakerId": 0 }
     }
   },
@@ -59,7 +56,7 @@ Paseo는 코딩 환경에서 받아쓰기 및 음성 모드 대화를 위한 최
 }
 ```
 
-다국어 로컬 받아쓰기의 경우 모델을 v3으로 설정합니다. 그러면 언어가 자동으로 감지되므로 `language` 필드가 필요하지 않습니다.
+다국어 로컬 받아쓰기에는 다국어 모델을 설정하세요. `language` 필드는 필요하지 않습니다.
 
 ```json
 {
@@ -72,40 +69,46 @@ Paseo는 코딩 환경에서 받아쓰기 및 음성 모드 대화를 위한 최
 }
 ```
 
-`language` 필드는 OpenAI STT 공급자에만 적용됩니다. 받아쓰기의 경우 `features.dictation.stt.language`을 설정하고 음성 모드의 경우 `features.voiceMode.stt.language`을 설정합니다. 음성 언어가 생략되면 Paseo는 `en`으로 대체되기 전에 받아쓰기 언어를 사용합니다. 로컬 Parakeet 모델에는 영향을 미치지 않습니다.
+어느 STT 제공자든 받아쓰기에는 `features.dictation.stt.language`, 음성 모드에는 `features.voiceMode.stt.language`을 설정하세요. 음성 언어를 생략하면 Paseo는 받아쓰기 언어를 사용한 뒤 `en`으로 대체합니다.
 
 ## OpenAI 음성 옵션
 
-공급자 필드를 `openai`으로 설정하고 OpenAI 자격 증명을 제공하면 받아쓰기, 음성 STT, 음성 TTS를 OpenAI로 전환할 수 있습니다.
+`provider`를 `openai`으로 설정하고 자격 증명을 필요한 각 사용 위치에 입력하세요. 받아쓰기, 듣기, 말하기는 각각 자체 키, 기본 URL, 모델을 사용합니다.
 
 ```json
 {
   "version": 1,
   "features": {
-    "dictation": { "stt": { "provider": "openai" } },
+    "dictation": {
+      "stt": { "provider": "openai", "apiKey": "sk-...", "model": "gpt-4o-mini-transcribe" }
+    },
     "voiceMode": {
-      "stt": { "provider": "openai" },
-      "tts": { "provider": "openai" }
-    }
-  },
-  "providers": {
-    "openai": {
+      "enabled": true,
       "stt": {
-        "apiKey": "...",
-        "baseUrl": "https://api.openai.com/v1"
+        "provider": "openai",
+        "apiKey": "sk-...",
+        "baseUrl": "https://api.openai.com/v1",
+        "model": "gpt-4o-transcribe",
+        "language": "en"
       },
-      "tts": {
-        "apiKey": "...",
-        "baseUrl": "https://api.openai.com/v1"
-      }
+      "tts": { "provider": "openai", "apiKey": "sk-...", "model": "tts-1", "voice": "alloy" }
     }
   }
 }
 ```
 
-`providers.openai.stt`은 받아쓰기 및 음성 모드 음성-텍스트를 다루고, `providers.openai.tts`은 음성 모드 텍스트-음성을 다룹니다. 독립적으로 확인되므로 STT와 TTS가 서로 다른 끝점을 가리킬 수 있습니다. 설정이 해제되면 각각은 `providers.openai.apiKey`/`baseUrl`으로 대체된 다음 `OPENAI_API_KEY`/`OPENAI_BASE_URL`으로 대체됩니다. 이러한 설정은 Codex 또는 기타 OpenAI 지원 도구를 변경하지 않고 Paseo OpenAI 음성 트래픽만 구성합니다.
+| 제공자 | 음성-텍스트 필드 | 텍스트-음성 필드 |
+| -------- | --------------------------------------------------------------- | ------------------------------------- |
+| `local` | `model`, `language` | `model`, `speakerId`, `speed` |
+| `openai` | `apiKey`, `baseUrl`, `model`, `language`, `confidenceThreshold` | `apiKey`, `baseUrl`, `model`, `voice` |
 
-Paseo는 구성된 OpenAI 기본 URL에서 다음 경로를 사용합니다.
+`provider` 이외의 필드는 선택 사항입니다. 제공자의 기본값을 사용하려면 `model`을 생략하세요. OpenAI 모델과 음성 이름에는 호환 서버의 사용자 지정 ID를 사용할 수 있습니다. 호스트에 저장한 키는 앱에서 쓰기 전용입니다.
+
+저장된 `apiKey` 또는 `baseUrl`은 환경 설정보다 우선합니다. 저장된 값이 없으면 STT는 `OPENAI_STT_API_KEY` / `OPENAI_STT_BASE_URL`, TTS는 `OPENAI_TTS_API_KEY` / `OPENAI_TTS_BASE_URL`을 사용하고, 둘 다 `OPENAI_API_KEY` / `OPENAI_BASE_URL`로 대체됩니다. 이러한 설정은 Paseo 음성 트래픽에 영향을 줍니다.
+
+기존 `providers.openai` 설정은 인라인 값이 없는 OpenAI 사용 위치에 자동으로 로드됩니다. 엔드포인트 설정은 이전 공유 설정보다 우선합니다. 다음에 저장할 때 인라인 형태로 기록됩니다. 받을 OpenAI 사용 위치가 없는 레거시 키는 경고와 함께 삭제됩니다. 나중에 OpenAI를 선택할 때 키를 입력하세요.
+
+Paseo는 구성된 OpenAI 기본 URL 아래의 다음 경로를 사용합니다.
 
 - 받아쓰기 STT: `/v1/audio/transcriptions`
 - 음성 모드 STT: `/v1/audio/transcriptions`
@@ -113,16 +116,23 @@ Paseo는 구성된 OpenAI 기본 URL에서 다음 경로를 사용합니다.
 
 ## 환경 변수
 
+제공자, 활성화, 모델, 언어, 음성, 튜닝 환경 변수는 구성을 재정의합니다. 키와 기본 URL에는 위의 대체 규칙이 적용됩니다.
+
+- `PASEO_DICTATION_ENABLED`, `PASEO_VOICE_MODE_ENABLED`, 기능 활성화
+- `STT_MODEL`, 두 OpenAI STT 위치의 모델 재정의
+- `STT_CONFIDENCE_THRESHOLD`, 두 OpenAI STT 위치의 신뢰도 임계값
+- `TTS_MODEL`, `TTS_VOICE`, OpenAI 말하기 모델과 음성
+
 - `PASEO_VOICE_LLM_PROVIDER`, 음성 에이전트 제공자 재정의
 - `PASEO_DICTATION_STT_PROVIDER`, `PASEO_VOICE_STT_PROVIDER`, `PASEO_VOICE_TTS_PROVIDER`, 음성 제공자 선택(`local` 또는 `openai`)
 - `OPENAI_STT_API_KEY`, `OPENAI_STT_BASE_URL`, OpenAI 음성-텍스트 엔드포인트(받아쓰기 + 음성 모드 STT)
-- `OPENAI_TTS_API_KEY`, `OPENAI_TTS_BASE_URL`, OpenAI 텍스트 음성 변환 엔드포인트(음성 모드 TTS)
+- `OPENAI_TTS_API_KEY`, `OPENAI_TTS_BASE_URL`, OpenAI 텍스트-음성 엔드포인트(음성 모드 TTS)
 - `PASEO_LOCAL_MODELS_DIR`, 로컬 모델 저장 디렉터리
 - `PASEO_DICTATION_LOCAL_STT_MODEL`, 로컬 받아쓰기 STT 모델 ID
-- `PASEO_VOICE_LOCAL_STT_MODEL`, `PASEO_VOICE_LOCAL_TTS_MODEL`, 현지 음성 STT/TTS 모델 ID
-- `PASEO_DICTATION_LANGUAGE`, 받아쓰기 STT 언어(OpenAI STT만 해당, 로컬 Parakeet 모델은 무시함)
-- `PASEO_VOICE_LANGUAGE`, 음성 모드 STT 언어; 설정 해제 시 `PASEO_DICTATION_LANGUAGE`으로 대체됩니다(OpenAI STT만 해당, 로컬 Parakeet 모델은 무시됨).
-- `PASEO_VOICE_LOCAL_TTS_SPEAKER_ID`, `PASEO_VOICE_LOCAL_TTS_SPEED`, 선택적으로 로컬 음성 TTS 튜닝
+- `PASEO_VOICE_LOCAL_STT_MODEL`, `PASEO_VOICE_LOCAL_TTS_MODEL`, 로컬 음성 STT/TTS 모델 ID
+- `PASEO_DICTATION_LANGUAGE`, 받아쓰기 STT 언어
+- `PASEO_VOICE_LANGUAGE`, 음성 모드 STT 언어. 설정하지 않으면 `PASEO_DICTATION_LANGUAGE`으로 대체됩니다.
+- `PASEO_VOICE_LOCAL_TTS_SPEAKER_ID`, `PASEO_VOICE_LOCAL_TTS_SPEED`, 선택적 로컬 음성 TTS 튜닝
 
 ## 운영 참고 사항
 
