@@ -619,9 +619,11 @@ export default function contribute(server: PluginServerContext) {
 
 앱이 연결되어 있지 않아도 플러그인이 활성화된 동안 데몬에서 훅이 실행됩니다.
 
-### 구성을 변경하고 MCP 서버 주입하기
+`agent.create`는 에이전트의 저장된 구성을 편집합니다. `config` 변경 사항은 지속되며 플러그인을 비활성화하거나 제거한 뒤에도 남습니다. `agent.session_open`은 실행할 때만 적용되는 `env`, `tools`, `mcpServers`를 기여합니다. 이 값은 에이전트 레코드에 저장되지 않고 플러그인의 수명 주기를 따르며 생성, 재개, 새로 고침 및 가져오기 때마다 다시 파생됩니다.
 
-다음 콜백을 `contribute(server)` 안에 추가하세요. 자리표시자 URL을 MCP 엔드포인트로 바꾸세요.
+### 저장된 구성 변경하기
+
+새 Codex 에이전트의 저장 옵션을 설정하려면 다음 콜백을 `contribute(server)` 안에 추가하세요.
 
 ```ts
 server.before("agent.create", ({ request }) => {
@@ -638,26 +640,39 @@ server.before("agent.create", ({ request }) => {
         sandbox_mode: "workspace-write",
         approval_policy: "on-request",
       },
-      mcpServers: {
-        ...request.config.mcpServers,
-        company: {
-          type: "http",
-          url: "https://tools.example.com/mcp",
-        },
-      },
     },
   };
 });
 ```
 
 | 입력 | 결과 |
-| ------------------------------------------- | ----------------------------- |
+| ------------------------------------------- | ----------------------- |
 | `providerOptions.sandbox_mode: "read-only"` | `"workspace-write"` |
 | `providerOptions.web_search: "disabled"` | 전개 연산자로 보존 |
-| 기존 `mcpServers.search` | 전개 연산자로 보존 |
-| 기존 `mcpServers.company` | 위 항목으로 교체 |
 
-선택한 공급자가 `providerOptions`를 검증하며, 구성된 MCP 서버를 지원해야 합니다. 명시적인 Codex 샌드박스 및 승인 옵션은 모드 프리셋보다 우선합니다.
+선택한 공급자가 `providerOptions`를 검증합니다. 명시적인 Codex 샌드박스 및 승인 옵션은 모드 프리셋보다 우선합니다.
+
+### MCP 서버 주입하기
+
+서버를 에이전트의 저장된 구성에 포함하려면 `agent.create.config.mcpServers`를 사용하세요. 플러그인이 소유한 서버의 경우 다음 콜백을 `contribute(server)` 안에 추가하고 자리표시자 URL을 MCP 엔드포인트로 바꾸세요.
+
+```ts
+server.before("agent.session_open", ({ request }) => {
+  if (request.provider !== "codex") return;
+
+  return {
+    ...request,
+    mcpServers: {
+      ...request.mcpServers,
+      company: { type: "http", url: "https://tools.example.com/mcp" },
+    },
+  };
+});
+```
+
+`request.mcpServers`는 `AgentSessionConfig.mcpServers`와 같은 서버 구성을 사용합니다. 이 맵은 각 플러그인에서 빈 상태로 시작하고 해당 플러그인 자체의 콜백을 거치며 누적됩니다. 에이전트에 저장된 서버나 다른 플러그인의 서버는 절대 포함하지 않습니다. 맵을 교체해 이 플러그인의 항목을 추가, 교체 또는 제거하세요. `undefined`를 반환하면 맵이 유지됩니다. Paseo는 플러그인의 최종 맵을 플러그인 ID 순서대로 병합합니다.
+
+저장된 서버, Paseo의 내부 `paseo` 서버 또는 다른 플러그인의 서버와 이름이 충돌하면 세션 열기가 실패하고 서버 이름과 두 출처를 표시합니다. MCP를 지원하지 않는 공급자에서는 플러그인 이름과 함께 `does not support MCP servers` 오류로 실패합니다. `purpose: "history"`로 열 때는 이 서버를 무시합니다. 설치, 비활성화 및 다시 로드 변경 사항은 [세션 다시 열기 동작](#attach-tools-to-agents)을 통해 기존 에이전트에 적용됩니다.
 
 ### 세션을 열 때마다 환경 변수 주입하기
 
@@ -673,7 +688,7 @@ server.before("agent.session_open", ({ request }) => {
 });
 ```
 
-생성, 재개, 새로 고침 및 가져오기 때 실행됩니다. 생성할 때만 주입하려면 대신 `agent.create` 콜백에서 `env`를 설정하세요.
+세션 열기 재정의는 세션을 열 때마다 다시 파생됩니다. `agent.create.env`는 최초 실행에만 적용되며 에이전트 구성에는 저장되지 않습니다.
 
 ### 에이전트에 도구 연결하기
 
@@ -933,9 +948,9 @@ type PluginTurnOutcome =
 ### 사전 훅
 
 | 이름 | 요청 필드 | 편집 가능 항목 |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
 | `agent.create` | `config`, 선택적 `env` | `cwd`를 제외한 공개 에이전트 구성, `env` |
-| `agent.session_open` | `agentId`, `workspaceId`, `provider`, `cwd`, 읽기 전용 `title`과 `labels`, `reason`, `purpose`, `env`, `tools` | `env`와 `tools` |
+| `agent.session_open` | `agentId`, `workspaceId`, `provider`, `cwd`, 읽기 전용 `title`과 `labels`, `reason`, `purpose`, `env`, `tools`, `mcpServers` | 실행할 때만 적용되는 `env`, `tools`, `mcpServers` |
 | `workspace.create` | `source`, 선택적 `title`, `firstAgentContext` | 명시적 생성 요청 전체 |
 
 **`agent.create.config`**는 `AgentSessionConfig`를 사용합니다.
@@ -960,6 +975,7 @@ type PluginTurnOutcome =
   "title": "Workspace notes",
   "labels": { "notes/enabled": "true" },
   "tools": [],
+  "mcpServers": {},
   "reason": "resume",
   "purpose": "interactive",
   "env": { "COMPANY_ENV": "development" }
@@ -972,6 +988,7 @@ type PluginTurnOutcome =
 | `title` | 읽기 전용 문자열 또는 `null`. 생성 시에는 생성 제목, 재개 시에는 저장된 제목입니다. |
 | `labels` | 읽기 전용 문자열 맵. 생성 시에는 생성 레이블, 재개 시에는 저장된 레이블입니다. |
 | `tools` | 이 플러그인에 로컬인 편집 가능한 `AgentToolDefinition[]`. [에이전트에 도구 연결하기](#attach-tools-to-agents)를 참조하세요. |
+| `mcpServers` | 이 플러그인에 로컬이며 실행할 때만 적용되는 편집 가능한 서버 맵. [MCP 서버 주입하기](#inject-mcp-servers)를 참조하세요. |
 | `reason` | `create`, `resume`, `refresh`, `import` |
 | `purpose` | `interactive`, `history` |
 | `env` | 실행 재정의 맵이며 데몬에서 상속된 환경은 제외합니다. 맵을 교체해 재정의를 추가, 교체 또는 제거합니다. |
@@ -983,7 +1000,7 @@ Creation request
   → agent.create hooks (plugin-ID order; registration order within each plugin)
   → resolve defaults and validate provider configuration
   → derive launch configuration with Paseo runtime tools and daemon prompt
-  → agent.session_open hooks (same ordering; env and plugin-local tools)
+  → agent.session_open hooks (same ordering; env and plugin-local tools and MCP servers)
   → set PASEO_AGENT_ID and PASEO_AGENT_CWD
   → open provider session and save agent configuration
 ```
@@ -995,7 +1012,7 @@ Creation request
 | `undefined` | 변경되지 않은 요청 |
 | 예외 발생 또는 잘못된 데이터 반환 | 작업 실패, 이후 콜백은 실행하지 않음 |
 
-자동 심층 병합은 없습니다. 뒤의 콜백이 앞의 값을 덮어쓸 수 있습니다. 에이전트 구성은 저장되지만 환경 재정의는 함께 지속되지 않습니다.
+자동 심층 병합은 없습니다. `env`는 플러그인 전체에 걸쳐 누적됩니다. `tools`와 `mcpServers`는 같은 플러그인 안의 콜백에서만 누적됩니다. 맵이나 배열을 교체해 반환하면 해당 범위의 이전 값이 교체됩니다.
 
 ### 컨텍스트와 정리
 
