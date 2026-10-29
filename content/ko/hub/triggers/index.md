@@ -87,17 +87,18 @@ Hub는 각 프롬프트에 `executionId`를 포함합니다. 에이전트를 이
 
 ## 이벤트
 
-| `on`                                  | 다음 경우에 발생                                      |
-| ------------------------------------- | ----------------------------------------------------- |
-| `github.issue_created`                | 이슈가 열릴 때.                                       |
-| `github.pull_request_created`         | 끌어오기 요청이 열릴 때.                              |
-| `github.issue_comment_created`        | 이슈에 댓글이 작성될 때.                              |
-| `github.pull_request_comment_created` | 끌어오기 요청의 대화 댓글이 작성될 때.                |
-| `github.issue_label_added`            | 이슈에 레이블이 추가될 때.                            |
-| `github.pull_request_label_added`     | 끌어오기 요청에 레이블이 추가될 때.                   |
-| `slack.mention`                       | 채널에서 봇이 멘션될 때.                              |
-| `discord.mention`                     | 길드에서 봇이 멘션될 때.                              |
-| `manual.run`                          | API에서 실행을 시작할 때.                             |
+| `on`                                   | 다음 경우에 발생                                      |
+| -------------------------------------- | ----------------------------------------------------- |
+| `github.issue_created`                 | 이슈가 열릴 때.                                       |
+| `github.pull_request_created`          | 끌어오기 요청이 열릴 때.                              |
+| `github.pull_request_ready_for_review` | 초안 끌어오기 요청이 검토 준비 상태로 표시될 때.      |
+| `github.issue_comment_created`         | 이슈에 댓글이 작성될 때.                              |
+| `github.pull_request_comment_created`  | 끌어오기 요청의 대화 댓글이 작성될 때.                |
+| `github.issue_label_added`             | 이슈에 레이블이 추가될 때.                            |
+| `github.pull_request_label_added`      | 끌어오기 요청에 레이블이 추가될 때.                   |
+| `slack.mention`                        | 채널에서 봇이 멘션될 때.                              |
+| `discord.mention`                      | 길드에서 봇이 멘션될 때.                              |
+| `manual.run`                           | API에서 실행을 시작할 때.                             |
 
 새 GitHub 워크플로에는 의미 기반 이벤트를 사용하세요. 다섯 가지 레거시 이벤트 `github.issues`, `github.issue_comment`, `github.pull_request_review`, `github.pull_request_review_comment`, `github.push`도 계속 호환됩니다. 전체 워크플로와 이벤트 선택 방법은 [GitHub 트리거](/docs/hub/triggers/github)를 참조하세요.
 

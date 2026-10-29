@@ -141,14 +141,15 @@ steps:
 
 새 GitHub 워크플로에는 다음 의미 기반 이벤트 이름 중 하나를 사용하세요.
 
-| `on`                                  | 일치 대상                                                                         |
-| ------------------------------------- | --------------------------------------------------------------------------------- |
-| `github.issue_created`                | 동작이 `opened`인 `issues` 전달입니다.                                             |
-| `github.pull_request_created`         | 동작이 `opened`인 `pull_request` 전달입니다.                                       |
-| `github.issue_comment_created`        | 이슈에서 동작이 `created`인 `issue_comment` 전달입니다.                            |
-| `github.pull_request_comment_created` | 끌어오기 요청에서 동작이 `created`인 `issue_comment` 전달입니다.                   |
-| `github.issue_label_added`            | 동작이 `labeled`인 `issues` 전달입니다.                                            |
-| `github.pull_request_label_added`     | 동작이 `labeled`인 `pull_request` 전달입니다.                                      |
+| `on`                                   | 일치 대상                                                                         |
+| -------------------------------------- | --------------------------------------------------------------------------------- |
+| `github.issue_created`                 | 동작이 `opened`인 `issues` 전달입니다.                                             |
+| `github.pull_request_created`          | 동작이 `opened`인 `pull_request` 전달입니다.                                       |
+| `github.pull_request_ready_for_review` | 초안 끌어오기 요청이 검토 준비 상태로 표시됩니다.                                 |
+| `github.issue_comment_created`         | 이슈에서 동작이 `created`인 `issue_comment` 전달입니다.                            |
+| `github.pull_request_comment_created`  | 끌어오기 요청에서 동작이 `created`인 `issue_comment` 전달입니다.                   |
+| `github.issue_label_added`             | 동작이 `labeled`인 `issues` 전달입니다.                                            |
+| `github.pull_request_label_added`      | 동작이 `labeled`인 `pull_request` 전달입니다.                                      |
 
 기존 구성에서는 `github.issues`, `github.issue_comment`, `github.pull_request_review`, `github.pull_request_review_comment`, `github.push`를 계속 사용할 수 있습니다. 이러한 레거시 이벤트는 기존 동작을 유지합니다.
 

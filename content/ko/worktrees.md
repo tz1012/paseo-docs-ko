@@ -35,6 +35,8 @@ Git 작업 트리는 일종의 작업 공간입니다.
 }
 ```
 
+플러그인은 [`worktree.create.before`](/docs/plugins/hooks#worktreecreatebefore)를 사용해 디스크 어디든 위치를 선택할 수 있습니다. [worktree-placement 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/worktree-placement)는 소스 체크아웃 옆에 작업 트리를 배치합니다. Paseo는 경로를 검증하고 기존 대상을 거부하며 그 위치에서 목록 표시, 보관 및 삭제를 관리합니다. 복구할 때는 생성 훅을 실행하지 않고 기록된 경로를 사용합니다.
+
 1. 작업 트리 격리를 사용하여 작업 공간을 생성하고 Paseo는 작업 트리를 생성하고 설정 후크를 실행합니다.
 2. 해당 작업 영역에서 하나 이상의 에이전트를 시작합니다.
 3. 기본 분기와의 차이점을 검토합니다.
@@ -80,6 +82,19 @@ paseo workspace create \
 
 Paseo가 소스 체크아웃에서 forge(코드 호스팅 서비스)를 식별할 수 없는 경우 `--forge <name>`을 추가하세요.
 
+## .worktreeinclude로 로컬 파일 복사하기
+
+선택한 gitignored 파일을 새 작업 트리로 복사하려면 소스 체크아웃 루트에 `.worktreeinclude`를 만드세요.
+
+```gitignore
+.env
+config/*.local.json
+```
+
+패턴은 gitignore 구문을 사용합니다. 파일을 복사하려면 `.worktreeinclude`와 일치하고 gitignored 상태여야 합니다. 추적되는 파일은 절대 복사하지 않으며 기존 대상 파일도 덮어쓰지 않습니다. `.worktreeinclude`가 없으면 로컬 파일을 복사하지 않습니다. 포함된 경로 안에 심볼릭 링크 디렉터리나 중첩 저장소가 있으면 복사가 실패하고 작업 트리 생성을 중단합니다.
+
+내장 `worktree-include` 플러그인은 작업 트리를 생성하는 체크아웃에서 복사하며, 해당 체크아웃 자체가 다른 작업 트리인 경우도 포함합니다. 복사는 설정, 터미널, 첫 에이전트보다 먼저 끝납니다. 복사가 실패하면 생성을 중단하고 새 작업 트리를 제거합니다. APFS와 btrfs가 지원하면 copy-on-write 복제를 사용하고, 그 밖의 환경에서는 일반 복사를 사용합니다.
+
 ## paseo.json
 
 저장소 루트에 `paseo.json`을 삭제하세요. Paseo는 선택한 기본 브랜치의 커밋된 버전에서 이를 읽으므로 다른 브랜치의 커밋되지 않은 변경 사항은 적용되지 않습니다.
@@ -99,12 +114,14 @@ Paseo가 소스 체크아웃에서 forge(코드 호스팅 서비스)를 식별�
 
 ## 설정 및 해제
 
-`setup`은 작업 트리가 생성된 후 한 번 실행됩니다. 새로운 작업 트리에는 설치된 종속성이 없고 무시되는 파일(예: `.env`)이 없으므로 설정을 사용하여 필요한 것을 설치하고 복사하세요. `teardown`은 디렉터리가 제거되기 전에 보관 중에 실행됩니다.
+플러그인은 [`worktree.create.after`](/docs/plugins/hooks#worktreecreateafter)를 사용해 설정, 터미널, 첫 에이전트보다 먼저 파일을 쓸 수 있습니다.
+
+`setup`은 작업 트리가 생성된 후 한 번 실행됩니다. 설정을 사용해 종속성을 설치하고 프로젝트 초기화를 실행하세요. `.env` 같은 무시된 파일을 복사하려면 [`.worktreeinclude`](#copy-local-files-with-worktreeinclude)를 사용하세요. `teardown`은 디렉터리가 제거되기 전에 보관 중에 실행됩니다.
 
 ```json
 {
   "worktree": {
-    "setup": "npm ci\ncp \"$PASEO_SOURCE_CHECKOUT_PATH/.env\" .env\nnpm run db:migrate",
+    "setup": "npm ci\nnpm run db:migrate",
     "teardown": "npm run db:drop || true"
   }
 }

@@ -31,7 +31,7 @@ GitHub의 SSL 검증을 활성화된 상태로 유지하세요.
 
 ## GitHub 이벤트 구독
 
-**Subscribe to events**에서 **Issue comment**, **Issues**, **Pull requests**, **Pull request review**, **Pull request review comment**, **Push**를 선택하세요. `github.pull_request_created`와 `github.pull_request_label_added`에는 **Pull requests**가 필요합니다.
+**Subscribe to events**에서 **Issue comment**, **Issues**, **Pull requests**, **Pull request review**, **Pull request review comment**, **Push**를 선택하세요. `github.pull_request_created`, `github.pull_request_ready_for_review`, `github.pull_request_label_added`에는 **Pull requests**가 필요합니다.
 
 ## 저장소 연결
 

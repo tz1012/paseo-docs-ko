@@ -74,6 +74,10 @@ steps:
 
 `github.pull_request_created`는 누군가 끌어오기 요청을 열 때만 실행됩니다.
 
+초안이 끝날 때까지 기다리려면 위 예제의 `on`을 `github.pull_request_ready_for_review`로 바꾸세요. 초안이 검토 준비 상태로 표시될 때만 발생하며, 해당 전환을 한 사용자를 `from_users`와 대조합니다. 끌어오기 요청 열기, 이후 push, 다시 초안으로 전환하기는 이 이벤트를 발생시키지 않습니다.
+
+끌어오기 요청 webhook 컨텍스트에는 GitHub가 전달한 `github.pull_request.draft`와 `github.pull_request.head_sha`가 포함됩니다. 끌어오기 요청의 대화 댓글을 비롯한 다른 이벤트에서는 `github.pull_request`가 `null`입니다. 검토하기 전과 게시하기 전에 다시 `gh pr view`로 현재 끌어오기 요청을 가져오세요. 현재 초안이거나 head가 검토한 SHA와 다르면 게시하지 않고 끝내세요. 다시 초안으로 전환해도 이미 진행 중인 Hub 실행은 취소되지 않으므로 워크플로가 이러한 현재 상태 검사를 담당합니다.
+
 ## 새 댓글에 응답
 
 `.paseo/workflows/respond-to-issue-comment.yml`:
@@ -177,14 +181,15 @@ steps:
 
 ## 이벤트 선택
 
-| `on`                                  | 다음 경우에 발생                                      |
-| ------------------------------------- | ----------------------------------------------------- |
-| `github.issue_created`                | 이슈가 열릴 때.                                       |
-| `github.pull_request_created`         | 끌어오기 요청이 열릴 때.                              |
-| `github.issue_comment_created`        | 이슈에 댓글이 작성될 때.                              |
-| `github.pull_request_comment_created` | 끌어오기 요청의 대화 댓글이 작성될 때.                |
-| `github.issue_label_added`            | 이슈에 레이블이 추가될 때.                            |
-| `github.pull_request_label_added`     | 끌어오기 요청에 레이블이 추가될 때.                   |
+| `on`                                   | 다음 경우에 발생                                      |
+| -------------------------------------- | ----------------------------------------------------- |
+| `github.issue_created`                 | 이슈가 열릴 때.                                       |
+| `github.pull_request_created`          | 끌어오기 요청이 열릴 때.                              |
+| `github.pull_request_ready_for_review` | 초안 끌어오기 요청이 검토 준비 상태로 표시될 때.      |
+| `github.issue_comment_created`         | 이슈에 댓글이 작성될 때.                              |
+| `github.pull_request_comment_created`  | 끌어오기 요청의 대화 댓글이 작성될 때.                |
+| `github.issue_label_added`             | 이슈에 레이블이 추가될 때.                            |
+| `github.pull_request_label_added`      | 끌어오기 요청에 레이블이 추가될 때.                   |
 
 이슈 댓글에는 `github.issue_comment_created`를, 끌어오기 요청의 대화 댓글에는 `github.pull_request_comment_created`를 선택하세요. GitHub는 둘 다 이슈 댓글로 전달하지만 Hub가 구분해 줍니다. 변경된 줄의 댓글은 diff 댓글이며 레거시 `github.pull_request_review_comment` 이벤트에서 다룹니다.
 
