@@ -2028,9 +2028,143 @@ export default function contribute(server: PluginServerContext) {
 }
 ```
 
-입력과 출력은 양쪽 모두에서 검증됩니다. RPC 이름은 소문자로 시작하며 소문자, 숫자, 점, 하이픈 또는 밑줄로 구성됩니다. `useRpc()`는 타입이 지정된 비동기 함수를 반환합니다. 요청 상태, 캐싱, 변경 작업에는 TanStack Query를 사용하세요.
+입력은 플러그인 프로세스에서 한 번, 출력은 클라이언트에서 한 번 파싱됩니다. 클라이언트에서 입력 스키마의 입력값을 보내고 핸들러에서 출력 스키마의 입력값을 반환하세요. 스키마 변환은 수신 측에서 실행됩니다. RPC 이름은 소문자로 시작하며 소문자, 숫자, 점, 하이픈 또는 밑줄로 구성됩니다. `useRpc()`는 타입이 지정된 비동기 함수를 반환합니다. 요청 상태, 캐싱, 변경 작업에는 TanStack Query를 사용하세요.
 
 백엔드 핸들러는 동일한 `PaseoApi`를 `{ paseo }` 형태로 전달받습니다. 이 연결은 하위 프로세스에 속하며 플러그인이 중지되면 닫힙니다. 플러그인 코드가 구독하기 전에는 타임라인이나 카탈로그 이벤트를 구독하지 않습니다. 정리와 타임라인 교체는 [SDK 이벤트 계약](/docs/sdk/events)을 따르세요. 백엔드 코드는 Node API와 플러그인 디렉토리에 설치된 종속성을 사용할 수 있습니다.
+
+## 데몬에서 이벤트 스트리밍하기 {#subscriptions}
+
+구독은 클라이언트 하나가 수신하는 동안 데몬 핸들러를 실행하고 해당 클라이언트에 타입이 지정된 이벤트를 보냅니다. 감시기, tail, 실시간 미디어에는 구독을 사용하고, 단일 응답에는 플러그인 RPC를 사용하세요.
+
+`shared/`에 계약을 정의합니다.
+
+```ts
+// shared/diff.ts
+import { defineSubscription } from "@getpaseo/plugin";
+import { z } from "zod";
+
+export const diffWatch = defineSubscription({
+  name: "diff.watch",
+  input: z.object({ cwd: z.string(), from: z.string() }),
+  event: z.object({ type: z.literal("changes"), files: z.array(z.string()) }),
+});
+```
+
+`index.server.ts`에서 처리하세요. 핸들러는 `paseo`와 함께 `push`와 중단 `signal`을 받습니다.
+
+```ts
+server.handle(diffWatch, ({ cwd, from }, { push, signal }) => {
+  const watcher = watchChanges(cwd, from, (files) => void push({ type: "changes", files }));
+  signal.addEventListener("abort", () => watcher.close(), { once: true });
+});
+```
+
+표면에서 `useSubscription(contract, input, onEvent)`로 구독하세요.
+
+```tsx
+const [files, setFiles] = useState<string[]>([]);
+const subscription = useSubscription(diffWatch, { cwd, from: "HEAD" }, (event) => {
+  setFiles(event.files);
+});
+if (subscription.status === "error") return <Text>{subscription.error.message}</Text>;
+```
+
+React 밖에서는 `client.subscribe`에 같은 인수와 옵션을 추가로 전달하면 해제 함수를 반환합니다.
+
+```ts
+const stop = client.subscribe(diffWatch, { cwd, from: "HEAD" }, onChanges, { signal });
+await stop.ready; // the daemon accepted the subscription
+stop(); // or await stop.release()
+```
+
+RPC와 구독은 하나의 이름 공간을 공유합니다. 두 가지에 같은 이름을 등록하면 플러그인 로드가 실패합니다.
+
+### 핸들러 수명 주기
+
+| 핸들러가... | 결과 |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| 동기적으로 예외를 던지거나 입력이 잘못된 경우 | 구독 호출이 오류로 실패하며 이벤트는 전송되지 않습니다. |
+| 아무것도 반환하지 않는 경우 | 클라이언트가 해제할 때까지 구독이 열려 있습니다. |
+| 해결되는 promise를 반환하는 경우 | 구독이 닫힙니다. |
+| 거부되는 promise를 반환하는 경우 | 오류와 함께 구독이 닫힙니다. |
+
+`signal`은 클라이언트가 구독을 해제하거나, 훅을 언마운트하거나, 입력을 변경하거나, 연결을 끊거나, 플러그인이 중지될 때 중단됩니다. 중단 후의 푸시는 폐기됩니다. `push`는 계약에 따라 이벤트를 검증하고 이벤트가 플러그인 프로세스를 벗어나면 해결됩니다. 생성자의 속도를 조절하려면 루프 안에서 await하세요.
+
+각 구독자는 자신만의 핸들러를 실행합니다. Paseo는 하나의 핸들러를 여러 클라이언트가 공유하게 하지 않고 누락된 이벤트를 다시 재생하지도 않습니다. 다시 연결하거나 플러그인을 다시 로드하면 마운트된 표면이 다시 구독하고 핸들러는 처음부터 시작합니다. 여러 구독자에게 비용이 큰 감시기가 필요하면 플러그인 내부에서 공유하세요.
+
+`useSubscription`은 `status`에 대한 다음 공용체를 반환합니다.
+
+| 상태 | 의미 |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| `connecting` | 전송했지만 데몬이 아직 수락하지 않았습니다. |
+| `live` | 핸들러가 실행 중입니다. 이벤트는 `onEvent`를 통해 도착합니다. |
+| `closed` | 핸들러가 완료되었습니다. |
+| `error` | 구독 실패, 핸들러 실패, 이벤트 계약 실패 또는 플러그인 중지가 발생했습니다. |
+
+훅은 `input`이 얕은 동등성 비교에 따라 변경될 때 다시 구독합니다. `onEvent`는 항상 가장 최신 렌더링의 콜백이므로 인라인 함수는 다시 구독하지 않습니다. `client.subscribe`는 `{ signal, onClosed }`를 받고, `onClosed`는 `{ error? }`를 받습니다.
+
+### 바이트
+
+최상위 `Uint8Array`는 JSON이나 base64 없이 바이너리로 전송됩니다. 나머지는 모두 JSON입니다. 이 규칙은 구독 이벤트, RPC 출력, RPC 입력에 적용됩니다. Node `Buffer`는 `Uint8Array`입니다.
+
+```ts
+export const thumbnail = defineRpc({
+  name: "thumbnail.render",
+  input: z.object({ path: z.string(), width: z.number() }),
+  output: z.instanceof(Uint8Array),
+});
+
+// index.server.ts
+server.handle(thumbnail, ({ path, width }) => renderPng(path, width));
+
+// client
+const renderThumbnail = useRpc(thumbnail);
+const png = await renderThumbnail({ path, width }); // Uint8Array
+```
+
+바이트는 `z.instanceof(Uint8Array)`로 선언하세요. 이벤트는 푸시별로 바이트 또는 JSON이 될 수 있습니다. 공용체로 선언하고 `event instanceof Uint8Array`로 분기하세요. 객체 안에 중첩된 `Uint8Array`는 송신 측에서 규칙을 명시하는 오류로 검증에 실패합니다. 바이트는 독립된 이벤트나 RPC 값으로 보내고 메타데이터는 별도의 JSON 이벤트로 보내세요.
+
+이벤트 또는 RPC 값 하나는 100 MiB에서 프레이밍용 65 KiB를 뺀 크기까지 전송할 수 있습니다. 큰 페이로드는 수백 KiB의 청크로 나누어 푸시하세요. 각 `push`는 이전 청크가 플러그인 프로세스를 벗어날 때까지 기다립니다. 휴대폰 업로드의 한도는 더 낮습니다. Android는 한 번의 전송이 16 MiB를 넘으면 연결을 끊으므로 더 큰 업로드는 여러 RPC로 나누세요.
+
+### 하나의 구독에 여러 스트림 담기
+
+페이로드별로 앞에 헤더 바이트를 붙여 스트림을 멀티플렉싱하세요. 레이아웃을 `shared/`에 두면 핸들러와 표면이 이름 있는 함수를 호출합니다.
+
+```ts
+// shared/media-frames.ts
+export const MediaOpcode = { Video: 0x01, Audio: 0x02 } as const;
+
+export function encodeMediaFrame(opcode: number, payload: Uint8Array): Uint8Array {
+  const bytes = new Uint8Array(1 + payload.byteLength);
+  bytes[0] = opcode;
+  bytes.set(payload, 1);
+  return bytes;
+}
+
+export function decodeMediaFrame(bytes: Uint8Array) {
+  return { opcode: bytes[0], payload: bytes.subarray(1) }; // a view, not a copy
+}
+
+export const mediaStream = defineSubscription({
+  name: "media.stream",
+  input: z.object({ source: z.string() }),
+  event: z.instanceof(Uint8Array),
+});
+```
+
+```ts
+useSubscription(mediaStream, { source }, (bytes) => {
+  const frame = decodeMediaFrame(bytes);
+  if (frame.opcode === MediaOpcode.Audio) audio.enqueue(frame.payload);
+  else video.draw(frame.payload);
+});
+```
+
+하나의 구독에서 발생한 JSON과 바이너리 이벤트는 모두 푸시 순서로 도착합니다. `plugin-examples/media-stream`은 영상과 오디오를 이 방식으로 스트리밍하고 `Uint8Array` 입력을 받는 RPC를 통해 프레임을 다시 업로드합니다. `plugin-examples/diff-watch`는 작업 트리를 감시합니다.
+
+### 이전 호스트
+
+구독과 바이너리 RPC 값을 사용하려면 이 기능을 알리는 호스트가 필요합니다. 이전 호스트에서는 `useSubscription`이 호스트를 업데이트하라는 `error`를 보고하고, `client.subscribe`는 같은 메시지로 `ready`를 거부하며, `Uint8Array` 입력 또는 출력을 사용하는 RPC는 실패합니다. 구독을 제공하는 릴리스로 플러그인의 `requirements.paseo`를 올리세요.
 
 ## 백엔드 출력 디버깅
 

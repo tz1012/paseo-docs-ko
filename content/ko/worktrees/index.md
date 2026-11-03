@@ -84,16 +84,7 @@ Paseo가 소스 체크아웃에서 forge(코드 호스팅 서비스)를 식별�
 
 ## .worktreeinclude로 로컬 파일 복사하기
 
-선택한 gitignored 파일을 새 작업 트리로 복사하려면 소스 체크아웃 루트에 `.worktreeinclude`를 만드세요.
-
-```gitignore
-.env
-config/*.local.json
-```
-
-패턴은 gitignore 구문을 사용합니다. 파일을 복사하려면 `.worktreeinclude`와 일치하고 gitignored 상태여야 합니다. 추적되는 파일은 절대 복사하지 않으며 기존 대상 파일도 덮어쓰지 않습니다. `.worktreeinclude`가 없으면 로컬 파일을 복사하지 않습니다. 포함된 경로 안에 심볼릭 링크 디렉터리나 중첩 저장소가 있으면 복사가 실패하고 작업 트리 생성을 중단합니다.
-
-내장 `worktree-include` 플러그인은 작업 트리를 생성하는 체크아웃에서 복사하며, 해당 체크아웃 자체가 다른 작업 트리인 경우도 포함합니다. 복사는 설정, 터미널, 첫 에이전트보다 먼저 끝납니다. 복사가 실패하면 생성을 중단하고 새 작업 트리를 제거합니다. APFS와 btrfs가 지원하면 copy-on-write 복제를 사용하고, 그 밖의 환경에서는 일반 복사를 사용합니다.
+소스 체크아웃에서 설정을 실행하기 전에 `.env`와 같은 선택한 gitignored 파일을 복사하려면 [`.worktreeinclude`](/docs/worktrees/worktreeinclude)를 사용하세요.
 
 ## paseo.json
 

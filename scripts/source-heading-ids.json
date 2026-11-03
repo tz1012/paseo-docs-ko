@@ -518,6 +518,11 @@
     "use-the-paseo-sdk",
     "discover-hosts-and-target-another-host",
     "add-plugin-specific-backend-behavior",
+    "subscriptions",
+    "handler-lifetime",
+    "bytes",
+    "several-streams-on-one-subscription",
+    "older-hosts",
     "debug-backend-output",
     "add-a-composer-attachment-source",
     "hosts-and-lifecycle",
@@ -726,7 +731,7 @@
     "creating-a-workspace",
     "worktrees"
   ],
-  "worktrees": [
+  "worktrees/index": [
     "git-worktrees",
     "layout-and-workflow",
     "create-a-worktree-backed-workspace",
@@ -742,5 +747,12 @@
     "terminals",
     "environment-variables",
     "manage-the-workspace"
+  ],
+  "worktrees/worktreeinclude": [
+    "worktreeinclude",
+    "copy-your-local-configuration",
+    "pattern-syntax",
+    "when-files-are-copied",
+    "run-commands-during-setup"
   ]
 }
