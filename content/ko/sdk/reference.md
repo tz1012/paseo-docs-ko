@@ -64,7 +64,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 `hosts.client(serverId)`를 통해 생성할 때는 부모 핸들 또는 완전한 주소를 전달하세요. SDK가 부모
 메타데이터를 대상에 전달합니다.
 
-`background`는 작업공간 생성 의도입니다. 기존 `workspaceId`와 함께 사용할 수 없습니다. 호출자 상속과 포함 검색은 [백그라운드 작업공간](./workspaces.md)을 참조하세요.
+`background`는 [백그라운드 에이전트](./agents.md#run-a-helper-as-a-background-agent)를 생성합니다. 호출이 작업공간도 만들면 해당 작업공간 역시 백그라운드가 됩니다. `parent`가 있고 값을 생략하면 상위 에이전트의 `background` 값이 적용됩니다. 포함 검색은 [백그라운드 작업공간](./workspaces.md)을 참조하세요.
 
 `config` 수락:
 

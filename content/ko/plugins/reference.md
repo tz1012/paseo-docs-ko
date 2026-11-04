@@ -77,10 +77,10 @@ my-plugin/
 | 필드 | 필수 여부 | 동작 |
 | -------------- | -------- | ----------------------------------------------------------------------------------------- |
 | `id` | 예 | 기본 설치 ID입니다. |
-| `name` | 아니요 | 설치 ID와 별개인 레지스트리 및 웹사이트용 비어 있지 않은 표시 이름입니다. |
+| `name` | 아니요 | 레지스트리, 웹사이트, **설정 → 플러그인**의 해당 행 및 설정 헤더에 표시되는 비어 있지 않은 이름입니다. 생략하면 Paseo가 ID를 표시합니다. |
 | `icon` | 아니요 | 플러그인 패키지 안의 PNG를 가리키는 상대 경로입니다. |
 | `media` | 아니요 | 패키지 안의 이미지 또는 동영상 경로나 HTTPS URL의 배열입니다. 빈 배열도 유효합니다. |
-| `description` | 아니요 | **설정 → 플러그인**에서 플러그인 ID 아래에 표시되는 비어 있지 않은 요약입니다. |
+| `description` | 아니요 | **설정 → 플러그인**에서 플러그인 이름 아래에 표시되는 비어 있지 않은 요약입니다. |
 | `translations` | 아니요 | 레지스트리가 읽고 Paseo는 무시하는 다른 언어의 목록 텍스트입니다. [다른 언어](/docs/plugins/publishing#other-languages)를 참조하세요. |
 | `requirements` | 아니요 | 아래에서 설명하는 지원 Paseo 버전입니다. |
 | `build` | 아니요 | CLI 참조에서 설명하는 준비 명령입니다. |
@@ -1184,7 +1184,7 @@ export default function contribute(client: PluginClientContext) {
 
 ## 설정 화면
 
-`index.client.tsx`에서 `client.addSettingsScreen({ id, title, icon, Component })`로 구성 요소를 등록하세요. 해당 호스트의 **설정 → 플러그인 → 플러그인 이름** 아래에 표시됩니다. `id`는 설치본 내에서 고유하고 `icon`은 모든 [아이콘](#icons) 형식을 받습니다. 등록 함수는 멱등성을 갖는 제거 함수를 반환하며 플러그인을 종료하면 남은 화면이 제거됩니다.
+`index.client.tsx`에서 `client.addSettingsScreen({ id, title, icon, Component })`로 구성 요소를 등록하세요. 그러면 해당 호스트의 **설정 → 플러그인**에 있는 플러그인 행에 첫 번째 화면을 여는 설정 버튼(톱니바퀴)이 표시됩니다. 화면을 여러 개 등록하면 설정 페이지에 등록 순서대로 각 화면의 `title`과 `icon`을 사용한 탭이 하나씩 표시됩니다. 화면이 하나뿐이면 탭은 표시되지 않습니다. 페이지 헤더에는 매니페스트의 `name`이 표시되며, `name`을 생략하면 플러그인 ID가 표시됩니다. 화면 제목은 헤더에 포함되지 않습니다. `id`는 설치본 내에서 고유하고 `icon`은 모든 [아이콘](#icons) 형식을 받습니다. 등록 함수는 멱등성을 갖는 제거 함수를 반환하며 플러그인을 종료하면 남은 화면이 제거됩니다.
 
 직접 만든 화면을 열려면 `client.openSettings(id)` 또는 Command Center 콜백의 `openSettings(id)`를 호출하세요. 여러 호스트에 같은 플러그인이 설치되어 있어도 각 설치본에는 자체 값과 경로가 있습니다.
 
@@ -1733,7 +1733,7 @@ review.remove();
 
 ## 작성기 필
 
-`client.addComposerPill({ id, workspaceId, agentId, button })`은 같은 [버튼 설명자](#button-descriptor)를 사용하며 같은 등록을 반환합니다. 특정 에이전트의 작성기 트랙에서 Tasks 및 Subagents 옆을 대상으로 합니다. 작성기 필은 항상 아이콘과 `label`을 표시하며, `label`을 생략하면 `title`을 표시합니다. 메뉴와 팝오버를 포함해 갈매기표는 표시하지 않습니다.
+`client.addComposerPill({ id, workspaceId, agentId, button })`은 같은 [버튼 설명자](#button-descriptor)를 사용하며 같은 등록을 반환합니다. 특정 에이전트의 작성기 트랙에서 Tasks 및 Subagents 옆을 대상으로 합니다. 작성기 필은 항상 아이콘과 `label`을 표시하며, `label`을 생략하면 `title`을 표시합니다. 메뉴와 팝오버는 모든 레이아웃에서 위쪽 갈매기표를 추가합니다. 해당 표면이 필 위에서 열리기 때문입니다. 동작에는 갈매기표가 없으므로 탭하면 실행되는 필과 무언가를 여는 필을 구분할 수 있습니다. 필이 있든 없든 트랙은 작성기 위의 공간을 유지하므로 필을 추가하거나 제거해도 대화 기록이 움직이지 않습니다.
 
 ```tsx
 const pill = client.addComposerPill({
@@ -1889,6 +1889,8 @@ function PullRequestAction({ theme }: PluginSurfaceProps) {
 ```
 
 반환되는 API는 프로젝트, 작업공간, 에이전트, 터미널, 공급자, 데몬 설정을 다룹니다. 메서드는 [SDK API 참조](/docs/sdk/reference)를 확인하세요. Paseo가 연결을 관리하므로 연결 수명 주기 메서드는 의도적으로 제외되어 있습니다.
+
+분류기나 요약기처럼 사용자에게 보이지 않아야 하는 도우미를 실행하려면 기존 작업공간에서 [백그라운드 에이전트](/docs/sdk/agents#run-a-helper-as-a-background-agent)로 생성하세요.
 
 ### 호스트 검색과 다른 호스트 지정
 

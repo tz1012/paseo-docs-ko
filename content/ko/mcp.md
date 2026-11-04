@@ -83,7 +83,7 @@ MCP는 에이전트 분리 도구를 노출하지 않습니다. 분리는 앱이
 
 | 도구 | 기능 |
 | --- | --- |
-| `create_agent` | 에이전트를 생성하고 선택적으로 `workspaceId`를 사용해 기존 작업공간에 배치합니다. `initialPrompt`로 작업을 시작하며 완료를 기다리지 않고 반환합니다. |
+| `create_agent` | 에이전트를 생성하고 선택적으로 `workspaceId`를 사용해 기존 작업공간에 배치합니다. `initialPrompt`로 작업을 시작하며 완료를 기다리지 않고 반환합니다. `background: true`는 탭, 기본 목록, 사용자의 하위 에이전트 트랙 및 알림에서 숨기지만 완료 알림은 계속 받을 수 있습니다. 생략하면 사용자의 값이 상속됩니다. |
 | `send_agent_prompt` | `agentId`와 `prompt`를 사용해 프롬프트를 보내며 완료를 기다리지 않고 반환합니다. |
 | `get_agent_status` | 에이전트의 최신 스냅샷을 반환합니다. |
 | `list_agents` | 최근 에이전트를 간결한 메타데이터로 나열합니다. `includeBackground: true`는 백그라운드 작업을 포함합니다. |

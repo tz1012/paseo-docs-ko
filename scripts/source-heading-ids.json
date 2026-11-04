@@ -561,6 +561,7 @@
     "continue-an-agent-by-id",
     "create-a-subagent",
     "run-work-in-a-background-workspace",
+    "run-a-helper-as-a-background-agent",
     "request-structured-output",
     "read-the-current-state-of-an-agent",
     "list-the-commands-a-session-loaded",

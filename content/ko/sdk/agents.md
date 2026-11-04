@@ -126,6 +126,23 @@ const workspace = await client.workspaces.create({
 
 백그라운드 에이전트는 기록을 유지하고 데몬 재시작 후에도 남아 있습니다. 기본 검색에서는 숨겨지며 포함하려면 `client.agents.list({ filter: { includeBackground: true } })`를 사용하세요. 정확한 ID의 핸들은 평소와 같이 작동합니다. 기본값과 호출자 상속은 [작업공간 생성](./workspaces.md#create-a-fresh-workspace)을 참조하세요.
 
+## 도우미를 백그라운드 에이전트로 실행하기
+
+사용자가 열어 두었을 수 있는 작업공간에서 도우미를 실행하려면 `background: true`를 전달하세요. 백그라운드 에이전트는 탭을 열지 않고, 상위 에이전트의 하위 에이전트 트랙과 사이드바 상태에 표시되지 않으며, 알림도 발생시키지 않습니다. 기본 목록에서도 제외됩니다.
+
+```ts
+const helper = await client.workspaces.ref(workspaceId).agents.create({
+  config: { provider: "codex/gpt-5.5" },
+  prompt: "Summarize the last turn in one line.",
+  background: true,
+});
+const result = await helper.waitForFinish();
+console.log(result.lastMessage);
+await helper.archive();
+```
+
+백그라운드 `parent` 아래에서 생성한 에이전트는 `background: false`를 전달하지 않는 한 백그라운드가 됩니다. 다른 호스트의 상위 에이전트는 이 값을 핸들로 전달할 때만 이어받습니다. 주소만 전달할 때는 `background`를 직접 지정하세요. 기존 작업공간이나 상위 에이전트 아래에 백그라운드 에이전트를 배치하려면 `features.backgroundAgents`가 필요합니다. 이전 호스트에서는 SDK가 전송 전에 "Update the host to use background agents." 오류를 발생시킵니다.
+
 ## 구조화된 출력 요청
 
 ```ts
