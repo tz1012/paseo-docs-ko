@@ -42,6 +42,25 @@ await directory.subscription.release();
 
 `client.agents.subscribe()`와 에이전트 핸들의 `subscribe()`는 해당 API 인스턴스가 소유한 관찰에 로컬 리스너를 추가합니다. 데이터를 요청하지는 않습니다. 필터링된 뷰 여러 개에 별도의 업데이트가 필요하면 반환된 구독의 콜백을 사용하세요.
 
+## 에이전트의 백그라운드 작업 팔로우
+
+백그라운드 작업은 도구 호출이 반환된 뒤에도 에이전트가 실행해 둔 작업입니다. 예를 들어 `run_in_background`로 시작한 Claude 셸, `Monitor` 감시 또는 하위 에이전트가 아닌 다른 작업입니다. 하위 에이전트와 워크플로는 에이전트의 하위 에이전트 트랙에 계속 남습니다.
+
+```ts
+const agent = client.agents.ref(agentId);
+
+const unsubscribe = agent.backgroundWork.subscribe((items) => render(items));
+
+// When this view closes:
+unsubscribe();
+```
+
+`subscribe()`는 구독이 설정되면 현재 목록으로 리스너를 한 번 호출하고, 재연결할 때마다 다시 호출한 다음, 변경이 있을 때마다 전체 목록으로 호출합니다. 일회성 읽기에는 `list()`를 사용하세요. 각 항목에는 `id`, `kind`(`"shell"`, `"monitor"` 또는 `"other"`; 알 수 없는 값은 `"other"`로 처리), `description`(또는 `null`), 선택적 `command`, 그리고 Paseo가 처음 관찰한 시각인 `startedAt`이 있습니다. 인벤토리 범위는 현재 공급자 세션이며 지속되지 않습니다. 런타임이 사라지면 이전 항목은 폐기됩니다. 사용할 수 없는 인벤토리는 빈 목록이 아니라 오류로 보고됩니다.
+
+설정 또는 목록 오류를 받으려면 `subscribe(listener, { onError })`를 전달하세요. 설정에 실패한 뒤에는 새 구독을 만드세요. 목록 읽기에 실패하면 다음 재연결 시 목록을 다시 읽습니다. `onError`가 없으면 오류가 기록됩니다.
+
+호스트가 `features.agentBackgroundWork`를 알리지 않으면 `list()`는 거부되고 `subscribe()`는 예외를 던집니다. 사용자에게 호스트를 업데이트하도록 요청하세요. `canStop`이 있는 항목은 `backgroundWork.stop(item)`을 호출해 공급자 확인을 기다리세요. 중지에는 `features.agentBackgroundWorkStop`이 필요합니다.
+
 ## 타임라인 이벤트 팔로우
 
 ```ts

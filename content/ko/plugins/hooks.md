@@ -94,7 +94,7 @@ type PluginTurnOutcome =
 
 | 필드         | 형태 / 의미                                                                             |
 | ------------ | --------------------------------------------------------------------------------------- |
-| `turnId`     | 공급자가 보고한 `string` 또는 `null`. 세션을 다시 연 뒤 반복될 수 있음                 |
+| `turnId`     | 공급자가 보고한 `string` 또는 `null`. 재개된 세션 전체에서 고유함                     |
 | `timeline`   | 사용 중단됨. 항상 `[]`이며 기록은 SDK로 가져옴                                         |
 | `request`    | SDK `AgentPermissionRequest`. `kind`는 `tool`, `plan`, `question`, `mode` 또는 `other` |
 | `resolution` | SDK `AgentPermissionResponse`                                                           |
@@ -597,7 +597,7 @@ Creation request
   → resolve defaults and validate provider configuration
   → derive launch configuration with Paseo runtime tools and daemon prompt
   → agent.open.before hooks (same ordering; env and plugin-local tools and MCP servers)
-  → set PASEO_AGENT_ID and PASEO_AGENT_CWD
+  → set PASEO_AGENT_ID, PASEO_AGENT_CWD, and PASEO_WORKSPACE_ID when the agent has a workspace
   → open provider session and save agent configuration
 ```
 

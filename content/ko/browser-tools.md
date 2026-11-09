@@ -33,7 +33,7 @@ category: Browser
 | ------- | ------------------------- | ------------------------------------------------------------------------ |
 | `browser_snapshot` | `browserId` | 페이지를 요소 참조가 있는 접근성 트리로 반환합니다.                           |
 | `browser_screenshot` | `browserId, fullPage?` | `fullPage`을 사용하여 뷰포트의 PNG 또는 전체 페이지를 캡처합니다.                      |
-| `browser_logs` | `browserId, maxEntries?` | 최근 콘솔 메시지와 네트워크 타이밍 항목을 읽습니다.                              |
+| `browser_logs` | `browserId, maxEntries?` | 최근 콘솔 메시지와 네트워크 항목(URL, 타이밍, 크기, HTTP 상태)을 읽습니다.       |
 | `browser_wait` | `browserId, text? \| url?, timeoutMs?` | 페이지에 텍스트가 포함되거나 URL 조각(정확히 둘 중 하나)에 도달할 때까지 기다립니다. |
 
 ## 상호작용

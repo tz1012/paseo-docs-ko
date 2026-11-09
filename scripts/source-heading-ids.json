@@ -478,6 +478,7 @@
     "usage-sources",
     "entry-point-and-cleanup",
     "lifecycle-hooks",
+    "sidebar-views",
     "screens-and-sidebar-items",
     "sidebar-items",
     "several-rows-in-one-item",
@@ -531,6 +532,15 @@
     "cli-reference",
     "load-failures"
   ],
+  "plugins/sidebar-views": [
+    "build-a-sidebar-view",
+    "register-a-view",
+    "query-refs-read-each-row",
+    "list-terminals",
+    "act-on-a-ref",
+    "keep-layout-choices-on-the-device",
+    "match-the-apps-density"
+  ],
   "providers": [
     "providers",
     "mental-model",
@@ -570,6 +580,7 @@
   "sdk/events": [
     "sdk-events",
     "follow-one-agents-status",
+    "follow-an-agents-background-work",
     "follow-timeline-events",
     "fetch-timeline-history",
     "follow-workspace-updates",

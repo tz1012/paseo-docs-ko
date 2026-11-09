@@ -74,6 +74,7 @@ my-plugin/
 | 기존 루트 진입점의 `plugin.addSurface(id, Component)`                                      | `index.client.tsx`의 `client.addScreen({ id, title, Component })`                          |
 | 기존 루트 진입점의 `plugin.addSidebarItem({ id, title, icon, surface })`                    | `index.client.tsx`의 `client.addSidebarHeaderItem({ id, title, Component })`; [사이드바 항목](reference#sidebar-items) 참조 |
 | 새 사이드바 푸터 기여                                                               | `index.client.tsx`의 `client.addSidebarFooterItem({ id, title, Component })`              |
+| 새 사이드바 대체 보기                                                               | `index.client.tsx`의 `client.addSidebarView({ id, title, Component })`; [사이드바 보기](sidebar-views) 참조 |
 | 새 파일 패널 기여                                                                   | `index.client.tsx`의 `client.addFilePanel(panel)`                                         |
 | 기존 루트 진입점의 `plugin.addWorkspacePanel(panel)`                                       | `index.client.tsx`의 `client.addWorkspacePanel(panel)`                                    |
 | `context: "agent"`가 있는 에이전트 패널                                                  | `index.client.tsx`의 `client.addAgentPanel(panel)`; `context` 생략                        |

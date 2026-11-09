@@ -207,6 +207,8 @@ paseo workspace rename <workspace-id> --reset   # back to the branch or director
 paseo workspace archive <workspace-id>
 ```
 
+에이전트 세션 안에서 `PASEO_WORKSPACE_ID`에는 에이전트 자체의 작업공간 ID가 들어 있습니다. 따라서 여러 작업공간이 해당 디렉터리를 공유하더라도 에이전트가 `paseo workspace rename "$PASEO_WORKSPACE_ID" "Auth rework"` 또는 `paseo workspace archive "$PASEO_WORKSPACE_ID"`를 실행할 수 있습니다.
+
 Paseo가 소스 체크아웃에서 forge(코드 호스팅 서비스)를 식별할 수 없는 경우 PR 체크아웃에 `--forge <name>`을 추가하세요. 설정 후크 및 서비스는 [Git 작업 트리](/docs/worktrees)를 참조하세요.
 
 ## 터미널

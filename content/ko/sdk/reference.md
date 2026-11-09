@@ -107,6 +107,9 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 | `subscribe(handler)` | 구독 취소 기능 | 이 ID에 대한 에이전트 디렉터리 업데이트를 필터링하고 핸들 속성을 새로 고칩니다.                   |
 | `archive()` | `{ archivedAt }` | 에이전트를 일시 삭제하고 해당 런타임을 닫습니다.                                                    |
 | `detach()` | `Promise<void>` | 에이전트를 중지하지 않고 상위 관계를 제거합니다.                                       |
+| `backgroundWork.list(options?)` | `Promise<PaseoAgentBackgroundWorkItem[]>` | 에이전트의 현재 백그라운드 작업을 한 번 읽습니다. `features.agentBackgroundWork`가 필요합니다. 옵션은 `requestId`, `timeout`입니다. |
+| `backgroundWork.stop(item, options?)` | `Promise<void>` | 중지할 수 있는 항목을 중지하고 공급자 확인을 기다립니다. `list` 또는 `subscribe`가 반환한 항목을 전달하세요. `features.agentBackgroundWorkStop`이 필요합니다. |
+| `backgroundWork.subscribe(listener, options?)` | `() => void` | 현재 목록으로 `listener`를 호출하고, 재연결할 때마다 다시 호출한 뒤, 변경이 있을 때마다 전체 목록으로 호출합니다. `onError`는 목록 읽기 실패를 받습니다. `features.agentBackgroundWork`가 필요합니다. 구독 취소 함수를 반환합니다. |
 
 `workspaceId`부터 `archivedAt`까지는 핸들이 마지막으로 관찰한 스냅샷을 반영합니다. `ref()`에서 생성한 핸들은 `refresh()`, `run()`, `waitForFinish()`, 타임라인 다시 가져오기 또는 `subscribe()`가 스냅샷을 전달할 때까지 이 속성을 모두 `null`로 읽습니다. 관찰한 스냅샷의 선택적 값도 `null`로 읽힙니다. 전체 스냅샷이 필요하거나 이러한 상태를 구분해야 할 때는 `current()`를 호출하세요.
 
