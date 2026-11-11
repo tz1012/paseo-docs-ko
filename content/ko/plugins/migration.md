@@ -82,6 +82,8 @@ my-plugin/
 | 기존 루트 진입점의 `plugin.addClientSlashCommand(command)`                                 | `index.client.tsx`의 `client.addSlashCommand(command)`                                    |
 | 기존 루트 진입점의 `plugin.addClientSide(fn)`                                              | 래퍼를 삭제하고 `fn`의 본문을 기본 클라이언트 진입점 함수로 옮기세요        |
 | 기존 클라이언트 콜백 안의 `client.addComposerPill(pill)`                                 | `index.client.tsx` 또는 가져온 `client/` 함수 안의 `client.addComposerPill(pill)` |
+| 새 작성기 항목 기여 | `index.client.tsx`의 `client.addComposerItem(item)`. [작성기 항목](reference#composer-items) 참고 |
+| 새 작업공간 항목 기여 | `index.client.tsx`의 `client.addNewWorkspaceItem(item)`. [새 작업공간 항목](reference#new-workspace-items) 참고 |
 | 새 헤더 기여 | `client.addHeaderButton({ id, workspaceId, button })` |
 | 기존 루트 진입점의 `plugin.addAttachmentSource(source)`                                    | `index.client.tsx`의 `client.addAttachmentSource(source)`                                 |
 | 새 설정 화면 기여                                                              | `index.client.tsx`의 `client.addSettingsScreen(screen)`; [설정 화면](reference#settings-screens) 참조 |
@@ -187,6 +189,26 @@ pill.remove();
 속도를 조절해 표시하는 타임라인 텍스트의 경우 `useRevealedText(text, phase)`와 이를 감싸는 `Text`를
 `/client/ui`의 `<StreamedText text={text} phase={phase} style={style} />`로 교체하세요.
 플러그인 설정 제목에는 `SettingsSection`을 사용하세요. `SettingsGroup`은 더 이상 권장되지 않습니다.
+
+### v0.15의 공급자 옵션
+
+공급자 플러그인에는 하나의 구성 레코드인 `providerOptions`가 있으며, 어떤 키에 작성기 제어 항목을
+표시할지 설명합니다. 여전히 `settings`를 보고하는 공급자도 v0.15에서는 작동합니다. Paseo는 각 설정의
+`id`를 옵션 키로, 각 `value`를 해당 옵션으로 읽고 변경 사항을 `changes.providerOptions`와
+`changes.settings` 양쪽에 보냅니다. 이 호환 계층이 2027-05-01 이후 삭제되기 전에 `settings`를
+제거하세요.
+
+| 이전 API | 대체 API |
+| ---------------------------------------------- | -------------------------------------------------------------------------- |
+| `session.config`의 `settings: ProviderSetting[]` | `controls: ProviderOptionControl[]`와 `providerOptions` |
+| 설정 `id` | 제어 항목 `key` |
+| 설정 `value` | `providerOptions[key]`. 제어 항목 자체에는 값이 없음 |
+| 선택 설정 `options: { label, value }[]` | 선택 제어 항목 `choices: { value, label, description? }[]` |
+| 아이콘이나 기본값이 없는 설정 | 제어 항목 `icon`(Lucide 이름)과 `defaultValue` |
+| `session.configure`의 `changes.settings` | `changes.providerOptions`. `null`은 키를 기본값으로 되돌림 |
+| `session.open`의 `config.settings` | `config.providerOptions` |
+| `ProviderSetting` 타입 | `ProviderOptionControl` |
+| `agent.create.before`의 `config.featureValues` | `config.providerOptions`. 반환된 `featureValues` 변경도 계속 적용됨 |
 
 ## 5. 불완전한 마이그레이션 오류 알아보기
 

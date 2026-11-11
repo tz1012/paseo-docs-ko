@@ -14,6 +14,8 @@ category: Plugins
 [파일 패널](/docs/plugins/reference#file-panels),
 [Command Center 항목](/docs/plugins/reference#command-center-items),
 [슬래시 명령](/docs/plugins/reference#slash-commands),
+[작성기 항목](/docs/plugins/reference#composer-items),
+[새 작업공간 항목](/docs/plugins/reference#new-workspace-items),
 [작성기 필](/docs/plugins/reference#composer-pills),
 [타임라인 항목](/docs/plugins/reference#timeline-items),
 [테마](/docs/plugins/reference#contribute-a-theme),

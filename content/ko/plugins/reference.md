@@ -418,13 +418,18 @@ Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpa
 
 ### 공급자
 
-직접 구현과 ACP 구현, 세션 수명 주기, 작성기 설정, 타임라인 렌더러, 테스트, 배포는 [공급자 플러그인 만들기](/docs/plugins/providers)를 따르세요.
+직접 구현과 ACP 구현, 세션 수명 주기, 옵션 제어 항목, 타임라인 렌더러, 테스트, 배포는 [공급자 플러그인 만들기](/docs/plugins/providers)를 따르세요.
 
 `@getpaseo/plugin/server/provider`의 `ProviderRegistration`을 `server.registerProvider()`에 전달하세요. 연결은 `send()`로 입력을 받고 `onEvent()`를 통해 완전한 상태 스냅샷을 내보냅니다. `send()`는 수락 여부만 보고합니다. 프롬프트 처리 결과, 턴, 구성, 지속성, 권한, 실패는 이벤트로 전달됩니다.
 
 메시지, 구조화된 명령, 방향 조정, 명령 부수 효과에는 하나의 `session.prompt` 입력을 사용하세요. 실시간 사용자 타임라인 항목에 `clientMessageId`를 반복하고 정확히 하나의 일치하는 `session.prompt_result`를 게시합니다. 공급자가 만든 하위 항목은 `parentSessionId`가 있는 세션으로 게시하세요.
 
-공급자 설정은 Paseo가 작성기에 렌더링하는 토글/선택 설명자입니다. 공급자 전용 옵션은 `session.open`의 `ProviderSessionConfig.providerOptions`에 두세요. 이 레코드는 구성된 기본값과 에이전트별 재정의를 포함하며, 공급자에서 검증하고 적용해야 합니다. 구성 및 병합 규칙은 [공급자 옵션](/docs/sdk/provider-options)을 참조하세요. 호스트 도구는 전체 세션 구성의 MCP 서버로 전달됩니다.
+공급자 옵션은 `session.open`의 `ProviderSessionConfig.providerOptions`에 있는 하나의 레코드입니다.
+구성된 기본값과 에이전트별 재정의를 포함하며, 공급자에서 검증하고 적용해야 합니다. 작성기에 토글이나
+선택 항목으로 표시할 최상위 키는 `session.config`의 `controls`로 보고하고, 세션이 실제로 사용하는 값은
+`providerOptions`로 보고하세요. 실행 중인 세션의 변경은 `session.configure`의
+`changes.providerOptions`로 전달됩니다. 구성 및 병합 규칙은
+[공급자 옵션](/docs/sdk/provider-options)을 참조하세요. 호스트 도구는 전체 세션 구성의 MCP 서버로 전달됩니다.
 
 Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용해 다시 여는 방식으로 에이전트를 새로 고칩니다. 공급자는 `session.open` 중에 외부 상태를 다시 읽습니다.
 
@@ -1735,6 +1740,268 @@ review.remove();
 
 아이콘만 있는 헤더 버튼에는 `label`을 생략하세요. 넓은 레이아웃에서는 메뉴와 팝오버에 갈매기표가 표시됩니다. Paseo는 공간을 초과한 기여를 공유 오버플로 메뉴로 옮깁니다. 휴대폰과 좁은 창에서는 헤더에 플러그인 버튼을 위한 공간이 없으므로 각 버튼이 아이콘 및 제목과 함께 작업공간 메뉴(`···`)의 행으로 표시되고, 각 버튼의 메뉴와 팝오버는 해당 시트의 페이지로 열립니다. 배치와 오버플로는 호스트가 결정합니다.
 
+## 작성기 항목
+
+`client.addComposerItem({ id, Component })`는 에이전트 작성기, 새 에이전트용 초안 작성기, 새 작업공간
+화면의 작성기에 구성 요소를 배치합니다. `useComposer()`는 작성기가 구성하는 내용을 읽고 변경하며,
+`@getpaseo/plugin/client/ui`의 `Toggle`, `Select`, `Action`은 제어 항목을 표시합니다.
+
+```tsx
+import { useComposer, type PluginClientContext } from "@getpaseo/plugin/client";
+import { Action, Select, Toggle } from "@getpaseo/plugin/client/ui";
+
+function ReviewFlag() {
+  const composer = useComposer();
+  return (
+    <Toggle
+      title="Needs review"
+      icon="Flag"
+      value={composer.agent.metadata["review.needsReview"] === true}
+      onValueChange={({ value }) =>
+        composer.setMetadata({ "review.needsReview": value ? true : null })
+      }
+    />
+  );
+}
+
+function Checklist() {
+  const composer = useComposer();
+  return (
+    <Action
+      title="Insert checklist"
+      icon="ListChecks"
+      onPress={() => composer.insertText("- [ ] Tests\n- [ ] Docs\n")}
+    />
+  );
+}
+
+export default function contribute(client: PluginClientContext) {
+  client.addComposerItem({ id: "review-flag", Component: ReviewFlag });
+  client.addComposerItem({ id: "checklist", Component: Checklist });
+  return () => {};
+}
+```
+
+`useComposer()`는 항목이 들어 있는 작성기를 반환합니다.
+
+| 필드 또는 명령 | 의미 |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `context` | 실행 중인 에이전트는 `"agent"`, 작업공간의 새 에이전트는 `"draft"`, 새 작업공간 화면은 `"new-workspace"`입니다. |
+| `prompt`, `setPrompt(text)`, `insertText(text)` | 프롬프트입니다. `insertText`는 선택 영역을 바꾸거나 커서 위치에 삽입합니다. |
+| `focus(options?)` | 이 작성기에 커서를 놓고 입력할 수 있게 한 뒤 완료되면 resolve됩니다. `selection: { start, end }`는 `prompt` 길이로 제한된 오프셋을 사용해 커서를 두거나 텍스트를 선택합니다. 생략하면 기존 커서 위치를 유지합니다. [작성기에 포커스하기](#focus-a-composer)를 참조하세요. |
+| `attachments`, `addAttachment`, `removeAttachment` | [플러그인 자체 첨부 소스](#add-a-composer-attachment-source)의 항목입니다. 다른 플러그인과 Paseo 자체 첨부 파일은 나열되지 않습니다. |
+| `agent.provider`, `model`, `mode`, `thinking` | 에이전트가 실행하는 값 또는 초안이 만들 값입니다. |
+| `agent.options` | 적용되는 공급자 옵션이며 기본값을 포함합니다. 초안에서는 변경 내용을 포함해 에이전트 생성에 사용할 옵션입니다. |
+| `agent.metadata` | 에이전트의 [메타데이터](/docs/plugins/hooks#metadata)입니다. 새 작업공간에서는 첫 번째 에이전트의 메타데이터입니다. |
+| `setProvider`, `setModel`, `setMode`, `setThinking` | 프로미스를 반환합니다. `setProvider`는 공급자 선택기처럼 모델을 초기화합니다. 공급자를 유지하는 `context: "agent"`와 호스트가 제공하지 않는 공급자에서는 reject됩니다. `setModel`과 `setThinking`은 값을 그대로 전달하며, 실행 중인 에이전트에서는 공급자가 거부하면 프로미스가 reject됩니다. |
+| `setOptions(patch)`, `setMetadata(patch)` | 최상위 키를 대체하며 `null`은 키를 제거합니다. 초안에서 설정한 메타데이터는 에이전트 생성 시 전송되고 프롬프트를 보낸 뒤 지워집니다. |
+
+모든 작성기에서 같은 호출은 같은 작업을 하며, 플러그인이 작성기 구현을 선택하지 않습니다. 실행 중인
+에이전트의 `setMetadata`에는 메타데이터를 지원하는 호스트가 필요합니다. 이전 호스트에서는 프로미스가
+"Update the host to use metadata." 오류로 reject됩니다.
+
+`Toggle`은 `value`와 `onValueChange({ value })`를 받습니다. `Select`는 `value`, `options`
+(`{ value, label, description? }`), `onValueChange({ value })`를 받습니다. `Action`은
+`onPress(event)`를 받습니다. 세 구성 요소 모두 `title`, `icon`([Lucide 이름, SVG 또는 구성 요소](#icons)),
+`disabled`를 받습니다. 콜백은 프로미스를 반환할 수 있습니다. 완료될 때까지 제어 항목이 비활성화되고,
+Paseo는 자체 제어 항목과 마찬가지로 reject를 오류 토스트로 보여줍니다. Paseo가 각 제어 항목의 위치를
+결정합니다. 공간이 있으면 도구 모음에 인라인으로, 없으면 작성기 오버플로 시트의 행으로 표시되며
+휴대폰에서는 항상 시트에 표시됩니다. `Select`는 시트 행을 목록으로 바꿔 엽니다. 이 제어 항목이 아닌
+다른 것을 렌더링하는 `Component`는 항목이 배치된 위치에 그리며, 오버플로 시트에서는 시트 안에 그립니다.
+
+각 명령은 콜백을 만든 렌더가 아니라 실행 시점의 작성기 상태에 작동합니다. 따라서
+`await composer.setProvider("codex")` 다음에 `await composer.setModel("gpt")`를 실행하면 둘 다
+변경됩니다. 명령의 프로미스는 변경이 적용되면 resolve되고 다음 렌더에서 `composer.agent`에 반영됩니다.
+
+새 작업공간 화면이 작업공간과 에이전트를 만드는 동안 작성기는 잠깁니다. 제어 항목은 비활성화되어
+렌더링되고, `setPrompt`와 `insertText`는 예외를 던지며, 에이전트 명령은
+"The composer is locked while the agent is being created." 오류로 reject됩니다.
+`composer.agent.options`와 `composer.agent.metadata`는 고정된 복사본입니다. `setOptions`와
+`setMetadata`를 통해 변경하세요.
+
+Paseo는 항목이 도구 모음에 렌더링하는 크기를 측정해 들어갈 수 있는 항목을 결정하므로, 아무것도
+렌더링하지 않는 항목은 공간을 차지하지 않고 오버플로 버튼도 추가하지 않습니다. 넓은 작성기에서는
+항목이 오버플로에 있는 동안에도 마운트된 상태를 유지하고, 오버플로 시트를 열면 두 번째 인스턴스가
+마운트되므로 효과가 두 번 실행되어도 안전하게 작성하세요. 휴대폰에서는 오버플로 시트를 연 동안에만
+항목이 마운트됩니다.
+
+[작성기 제어 항목 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/composer-controls)는
+`Select`, `Toggle` 두 개(하나는 공급자 옵션을 기록), `Action`을 등록하고, 작성기에 참조로 접근하는
+Explorer 패널과 Command Center 항목도 등록합니다.
+
+### 작성기에 포커스하기
+
+`insertText`와 `setPrompt`는 커서를 움직이지 않습니다. 사용자가 계속 입력할 수 있도록 그 뒤에
+`focus()`를 호출하세요.
+
+```tsx
+composer.insertText("- [ ] Tests\n");
+await composer.focus();
+```
+
+`await composer.focus({ selection: { start: 0, end: composer.prompt.length } })`는 프롬프트를 선택합니다.
+
+사용자가 어디에 있는지 알 필요는 없습니다. 실행 중인 에이전트 작성기가 화면에 없으면 Paseo가
+에이전트 탭 또는 작업공간으로 이동하고, 작성기를 가리는 휴대폰 에이전트 목록이나 Explorer 패널을
+닫고, 에이전트 창으로 포커스를 옮긴 다음 입력란에 포커스합니다. 입력란이 이미 화면에 있고 해당 창에
+포커스되어 있으면 `focus()`는 커서만 그곳에 놓습니다. 모든 작성기는 먼저 자체 위에 연 시트, 메뉴,
+선택기, 이미지 미리보기를 닫습니다. 여기에는 휴대폰에서 플러그인 항목을 담는 제어 항목 시트도
+포함됩니다. 휴대폰에서는 키보드가 열립니다.
+
+`focus()`는 작성기에 포커스할 수 없으면 reject됩니다. 에이전트가 보관되었거나, 작성기가 15초 안에
+화면에 나타나지 않았거나, 휴대폰에서 받아쓰기가 실행 중인 경우처럼 입력란이 포커스를 거부할 때입니다.
+호출이 겹치면 가장 최근 호출이 커서 위치를 결정하고 이전 호출도 그 결과와 함께 완료됩니다. 버튼의
+`onPress`나 Command Center 항목의 `onSelect`가 반환한 프로미스가 reject되면 오류 토스트가 표시됩니다.
+
+초안과 새 작업공간 작성기는 내부 항목에서만 접근할 수 있으므로 `focus()`가 그곳으로 이동하지는
+않습니다. 작성기가 화면에 있는 동안에는 작동하며 사용자가 이미 다른 곳으로 이동했다면
+"The composer is not on screen." 오류로 reject됩니다. 잠긴 작성기도 포커스를 받을 수 있습니다.
+
+### 참조로 작성기에 접근하기
+
+실행 중인 에이전트에는 탭이 열려 있지 않아도 작성기가 있습니다. 모든 플러그인 구성 요소의
+`useComposers(selector)`, 모든 명령 컨텍스트의 `composers(selector)`, 클라이언트 컨텍스트의
+`client.composers(selector)`는 이름을 지정한 에이전트 또는 포커스된 에이전트에 대해
+`useComposer()`가 항목에 제공하는 것과 같은 `PluginComposer`를 반환합니다. [필의 `onPress`](#composer-pills)처럼
+컨텍스트를 받지 않는 콜백에서는 `client.composers`를 사용하세요.
+
+```tsx
+import { useComposers, type PluginClientContext } from "@getpaseo/plugin/client";
+
+function InsertChecklist() {
+  const [focused] = useComposers({ focused: true });
+  return (
+    <Pressable disabled={!focused} onPress={() => focused?.insertText("- [ ] Tests\n")}>
+      <Text>Insert checklist</Text>
+    </Pressable>
+  );
+}
+
+export default function contribute(client: PluginClientContext) {
+  client.addWorkspacePanel({
+    id: "tools",
+    title: "Tools",
+    icon: "ListChecks",
+    locations: ["explorer"],
+    Component: InsertChecklist,
+  });
+  client.addCommandCenterItem({
+    id: "mark-for-review",
+    title: "Mark for review",
+    icon: "Flag",
+    context: "agent",
+    async onSelect({ agent, composers }) {
+      for (const composer of composers({ agentId: agent.id })) {
+        await composer.setMetadata({ "review.needsReview": true });
+      }
+    },
+  });
+  return () => {};
+}
+```
+
+| 선택자 | 결과 |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ agentId }` | 이 호스트에 있는 해당 에이전트의 작성기입니다. 알 수 없거나 보관된 에이전트면 비어 있습니다. |
+| `{ focused: true }` | Command Center가 에이전트 항목에 전달하는 에이전트의 작성기, 즉 화면에 있는 작업공간에서 포커스된 에이전트 탭입니다. 화면이 플러그인 화면이나 새 작업공간처럼 작업공간이 아니거나 포커스된 탭이 에이전트가 아니면 비어 있습니다. 사용자가 탭을 바꾸면 포커스를 따라갑니다. |
+
+결과는 항상 배열이며 비어 있거나 작성기 하나가 들어 있으므로 같은 코드로 어느 선택자든 읽을 수 있습니다.
+작성기가 바뀌면 `useComposers`가 다시 렌더링합니다. `composers()`에서 얻은 작성기는 호출 시점의
+상태이므로 다음 상태를 보려면 `composers()`를 다시 호출하세요.
+
+명령은 [`useComposer()`](#composer-items)의 명령과 같지만 외부에서 접근한 작성기에는 다음 차이가 있습니다.
+
+- 에이전트 작성기가 화면에 있는 동안 `insertText`는 커서 위치에 삽입합니다. 사용자가 다른 작업공간에
+  있는 경우처럼 화면에 없으면 에이전트의 저장된 프롬프트 끝에 추가되고, 사용자가 돌아오면 입력란에
+  텍스트가 표시됩니다. `setPrompt`도 같은 방식으로 저장된 프롬프트를 대체합니다.
+- 실행 중인 에이전트의 작성기는 잠기지 않습니다.
+- `setProvider`는 에이전트 자체 작성기 안에서와 마찬가지로 reject됩니다.
+- `setModel`과 `setThinking`은 값을 검증하지 않고 공급자에게 보냅니다. 공급자가 거부한 값은 공급자의
+  메시지와 함께 reject됩니다. `model`과 `thinking`은 그 순간 모델 선택기에 보이는 값을 읽습니다.
+  공급자 카탈로그가 로드되기 전에는 에이전트가 보고했거나 생성 시 사용한 ID이며 별칭일 수 있고,
+  로드된 뒤에는 카탈로그 자체 ID입니다.
+- `focus()`는 [위 설명](#focus-a-composer)처럼 먼저 작성기를 표시합니다.
+- 초안과 새 작업공간 화면은 참조로 주소를 지정할 수 없습니다. 내부 항목만 `useComposer()`를 통해
+  해당 작성기에 접근합니다.
+
+## 새 작업공간 항목
+
+`client.addNewWorkspaceItem({ id, Component })`는 새 작업공간 화면의 프로젝트, 호스트, 브랜치 선택기
+옆에 필드를 배치합니다. `useNewWorkspace()`는 화면이 만들 내용을 읽고 변경하며,
+`@getpaseo/plugin/client/ui`의 `Combobox`, `Select`, `Toggle`, `Action`은 필드를 표시합니다.
+데스크톱에서는 항목이 설정 행의 배지로, 휴대폰에서는 전체 너비 필드로 표시됩니다.
+
+```tsx
+import { useNewWorkspace, useRpc, type PluginClientContext } from "@getpaseo/plugin/client";
+import { Combobox } from "@getpaseo/plugin/client/ui";
+import { searchIssuesRpc } from "../shared/issues";
+
+function IssueField() {
+  const newWorkspace = useNewWorkspace();
+  const searchIssues = useRpc(searchIssuesRpc);
+  const issueId = newWorkspace.metadata["issues.id"];
+  return (
+    <Combobox
+      title="Issue"
+      icon="CircleDot"
+      value={typeof issueId === "string" ? { id: issueId, label: issueId } : null}
+      search={async ({ query }) => (await searchIssues({ query })).issues}
+      onSelect={async ({ item }) => {
+        await newWorkspace.setBranch(item.branch);
+        await newWorkspace.setMetadata({ "issues.id": item.id });
+      }}
+    />
+  );
+}
+
+export default function contribute(client: PluginClientContext) {
+  client.addNewWorkspaceItem({ id: "issue", Component: IssueField });
+  return () => {};
+}
+```
+
+`useNewWorkspace()`는 항목이 들어 있는 설정을 반환합니다.
+
+| 필드 또는 명령 | 의미 |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host`, `project` | 사용자 선택인 `{ id, label }`과 `{ id, name } \| null`입니다. 읽기 전용이며 항목은 호스트나 프로젝트를 바꿀 수 없습니다. |
+| `isolation`, `setIsolation` | `"local"` 또는 `"worktree"`입니다. 작업 트리를 만들 수 없는 프로젝트는 `"local"`로 읽히며 `setIsolation("worktree")`는 reject됩니다. |
+| `baseRef`, `setBaseRef` | 새 작업 트리의 시작점입니다. `{ type: "branch", name }`, `{ type: "change-request", number }` 또는 기본값을 알기 전까지 `null`입니다. 브랜치의 `name`은 `refs/remotes/origin/main`처럼 생성에 사용하는 정확한 ref이므로 `setBaseRef(newWorkspace.baseRef)`는 아무것도 바꾸지 않습니다. `setBaseRef`는 기준 선택기가 제공하는 ref 또는 Paseo가 다른 곳과 같은 방식으로 해석하는 단순 브랜치 이름을 받습니다. 프로젝트를 선택하지 않은 동안에는 reject됩니다. |
+| `branch`, `setBranch` | 새 작업 트리에 만들 브랜치 이름입니다. `null`이면 Paseo가 이름을 선택합니다. 격리가 로컬이거나 기준이 변경 요청인 동안에도 유지되며, 기본 기준이나 선택한 브랜치에서 분기하는 모든 작업 트리의 새 브랜치 이름이 됩니다. 기존 브랜치나 변경 요청을 체크아웃하는 작업 트리에는 적용되지 않습니다. |
+| `metadata`, `setMetadata` | 첫 번째 에이전트가 아니라 생성되는 작업공간의 [메타데이터](/docs/plugins/hooks#metadata)입니다. 최상위 키를 대체하며 `null`은 키를 제거합니다. 메타데이터를 지원하지 않는 호스트에서는 "Update the host to use metadata." 오류로 reject됩니다. |
+
+명령은 [작성기 항목](#composer-items) 규칙을 따릅니다. 각 명령은 실행 시점의 화면 상태에 작동하므로
+`await newWorkspace.setBranch(name)` 다음에 `newWorkspace.setMetadata(patch)`를 실행하면 둘 다 변경되고,
+프로미스는 변경이 적용되면 resolve됩니다. 명령은 마운트 효과를 포함해 구성 요소의 첫 효과부터
+작동합니다. payload는 JSON 값입니다.
+항목은 하나의 호스트에 있는 하나의 프로젝트에 대해 마운트됩니다. 사용자가 둘 중 하나를 바꾸면 Paseo가
+항목을 다시 마운트하고 `branch`와 `metadata`를 지우므로 이전 프로젝트의 상태와 `Combobox` 결과가
+이어지지 않습니다. 마운트 효과에서 설정하는 항목은 새 프로젝트에 다시 설정합니다. 사용자가 전환해
+포기한 조회의 끝처럼 해당 프로젝트나 호스트를 떠난 뒤 호출된 명령은
+"The New workspace screen moved to another project or host; this item belongs to the previous one."
+오류로 reject되고 아무것도 바꾸지 않습니다. 새 프로젝트에 마운트된 항목에는 영향이 없습니다.
+`host`, `project`, `baseRef`, `metadata`는 고정되어 있습니다. 화면이 작업공간을 만드는 동안에는
+잠깁니다. 필드는 비활성화되어 렌더링되고 모든 명령은
+"The New workspace screen is locked while the workspace is being created." 오류로 reject됩니다.
+프로미스를 반환하는 콜백은 완료될 때까지 제어 항목을 비활성화하며, reject는 오류 토스트로 사용자에게
+전달됩니다.
+
+`Combobox`는 코드에서 검색 결과를 가져오는 검색 가능한 목록 필드입니다.
+
+| prop | 의미 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value` | `{ id, label, description? } \| null`이며 필드에 표시되는 값입니다. 검색 결과에 없어도 되므로 이전에 선택한 항목을 표시할 수 있습니다. |
+| `search` | `({ query }) => Promise<Item[]>`입니다. 목록을 열 때 `""`로 호출되고 사용자가 입력할 때 디바운스되어 다시 호출됩니다. 각 `Item`은 `{ id, label, description? }`와 추가한 필드로 구성됩니다. |
+| `onSelect` | `({ item }) => void \| Promise<void>`입니다. `item`은 `search`가 반환한 객체입니다. |
+
+검색 중에는 Paseo가 "Searching…"을, 검색이 reject되면 오류 메시지와 함께 "Search failed"를, 결과가
+없으면 빈 상태를 표시합니다. 더 최신 검색이 실행되는 동안 이전 결과를 유지하고 최신 검색으로 대체된
+검색은 무시하므로 `search` 자체에서 취소를 처리할 필요가 없습니다. `Combobox`는 다른 제어 항목과 같은
+`title`, `icon`, `disabled`를 받으며 작성기 오버플로 시트 안에서도 목록이 있는 행으로 표시됩니다.
+
+[새 작업공간 이슈 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/new-workspace-issues)는
+데몬 핸들러에서 고정된 이슈 목록을 검색하고 선택한 항목으로 브랜치와 메타데이터를 설정합니다.
+
 ## 작성기 필
 
 `client.addComposerPill({ id, workspaceId, agentId, button })`은 같은 [버튼 설명자](#button-descriptor)를 사용하며 같은 등록을 반환합니다. 특정 에이전트의 작성기 트랙에서 Tasks 및 Subagents 옆을 대상으로 합니다. 작성기 필은 항상 아이콘과 `label`을 표시하며, `label`을 생략하면 `title`을 표시합니다. 메뉴와 팝오버는 모든 레이아웃에서 위쪽 갈매기표를 추가합니다. 해당 표면이 필 위에서 열리기 때문입니다. 동작에는 갈매기표가 없으므로 탭하면 실행되는 필과 무언가를 여는 필을 구분할 수 있습니다. 필이 있든 없든 트랙은 작성기 위의 공간을 유지하므로 필을 추가하거나 제거해도 대화 기록이 움직이지 않습니다.
@@ -1752,6 +2019,31 @@ const pill = client.addComposerPill({
       kind: "action",
       onPress() {
         client.openPanel("review", { workspaceId, agentId });
+      },
+    },
+  },
+});
+```
+
+필의 `onPress`는 인수를 받지 않습니다. [`client.composers`](#reach-a-composer-by-reference)로 해당
+에이전트의 작성기에 접근하세요.
+
+```tsx
+const pill = client.addComposerPill({
+  id: "hello",
+  workspaceId,
+  agentId,
+  button: {
+    title: "Add HELLO to the composer",
+    icon: "Hand",
+    label: "Hello",
+    behavior: {
+      kind: "action",
+      async onPress() {
+        for (const composer of client.composers({ agentId })) {
+          composer.insertText("HELLO");
+          await composer.focus();
+        }
       },
     },
   },

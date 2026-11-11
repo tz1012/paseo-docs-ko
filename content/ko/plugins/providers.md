@@ -23,7 +23,7 @@ Paseo 플러그인을 만들어 본 적이 없다면 [플러그인 빠른 시작
 
 예제는 다음과 같습니다.
 
-- [`provider-direct`](https://github.com/getpaseo/paseo/tree/main/plugin-examples/provider-direct): 세션, 설정, 프롬프트, 지속성, 하위 세션, 공급자 소유 타임라인 렌더러
+- [`provider-direct`](https://github.com/getpaseo/paseo/tree/main/plugin-examples/provider-direct): 세션, 옵션 제어 항목, 프롬프트, 지속성, 하위 세션, 공급자 소유 타임라인 렌더러
 - [`provider-acp-transformer`](https://github.com/getpaseo/paseo/tree/main/plugin-examples/provider-acp-transformer): Zod로 검증하는 공급업체 편집 변환기가 포함된 ACP 명령 템플릿입니다. 플러그인을 로드하기 전에 `example-acp --stdio`를 설치된 ACP 에이전트로 바꾸세요.
 - [`inline-thinking`](https://github.com/getpaseo/paseo/tree/main/plugin-examples/inline-thinking): 공급자를 구현하지 않는 렌더러 전용 플러그인
 
@@ -135,7 +135,7 @@ if (input.type === "catalog") {
 
 ## 세션 열기
 
-`session.open`에는 전체 시작 구성인 작업 디렉터리, 환경, 시스템 프롬프트, MCP 서버, 도구 정책, 모델, 모드, 설정, 불투명한 공급자 옵션, 지속성 기본 설정이 포함됩니다.
+`session.open`에는 전체 시작 구성인 작업 디렉터리, 환경, 시스템 프롬프트, MCP 서버, 도구 정책, 모델, 모드, `providerOptions`, 지속성 기본 설정이 포함됩니다.
 
 호스트 범위 플러그인 설정을 지속하려면 `server.registerSettings()`가 반환한 핸들을 사용하세요. 카탈로그와 세션 콜백에서 설정을 읽고, 공급자가 구성을 메모리에 유지할 때는 변경 사항을 구독하세요. `read()`와 `subscribe()` 계약은 [설정](./reference.md#persisted-values)을 확인하세요.
 
@@ -170,7 +170,8 @@ emit({
     models,
     modes,
     thinkingOptions,
-    settings: [],
+    controls: [],
+    providerOptions: {},
   },
 });
 emit({ type: "session.ready", requestId: input.requestId, sessionId: input.sessionId });
@@ -217,9 +218,16 @@ emit({ type: "session.turn", sessionId, turnId, state: "completed" });
 
 이제 공급자를 사용할 수 있습니다. 사용자는 모델을 선택하고, 세션을 열고, 메시지를 보낸 뒤 응답을 볼 수 있습니다.
 
-## 세션별 작성기 제어 항목 추가하기
+## 공급자 옵션용 작성기 제어 항목 추가하기
 
-네이티브 에이전트에 세션을 연 뒤 사용자가 바꿔야 하는 설정이 있을 때만 `session.configure`를 추가하세요. 해당 설정을 `session.config`에 토글 또는 선택 제어 항목으로 게시합니다.
+`providerOptions`는 공급자 자체의 구성입니다. Paseo가 에이전트별로 저장하고 `session.open`에
+전달하는 하나의 JSON 값 레코드입니다. 사용자가 `config.json`에서 공급자에 설정한 기본값도
+포함됩니다. 읽는 모든 키를 검증하세요.
+
+사용자가 작성기에서 일부 옵션을 보고 변경해야 할 때만 `controls`를 추가하세요. 제어 항목은
+`providerOptions`의 최상위 키 하나를 토글 또는 선택 항목으로 표시합니다. 제어 항목 자체에는 값이
+없으며 Paseo가 `providerOptions`에서 값을 읽습니다. 제어 항목과 실제 실행에 사용하는 값을
+`session.config`에 게시하세요.
 
 ```ts
 emit({
@@ -230,31 +238,45 @@ emit({
     models: [{ id: "agent-large", label: "Agent Large" }],
     modes: [],
     thinkingOptions: [],
-    settings: [
-      {
-        type: "toggle",
-        id: "fast",
-        label: "Fast mode",
-        value: nativeSession.fast,
-      },
+    controls: [
+      { type: "toggle", key: "fast", label: "Fast mode", icon: "Zap", defaultValue: false },
       {
         type: "select",
-        id: "approval",
+        key: "approval",
         label: "Approvals",
-        value: nativeSession.approval,
-        options: [
-          { label: "Ask", value: "ask" },
-          { label: "Auto accept", value: "auto" },
+        icon: "Shield",
+        defaultValue: "ask",
+        choices: [
+          { value: "ask", label: "Ask" },
+          { value: "auto", label: "Auto accept" },
         ],
       },
     ],
+    providerOptions: { fast: nativeSession.fast, approval: nativeSession.approval },
   },
 });
 ```
 
-Paseo는 이 제어 항목을 작성기에 렌더링합니다. 사용자의 변경은 `session.configure`로 전달됩니다. 변경을 적용하고 확정된 `session.config`를 `request.completed`보다 먼저 게시하세요. 공급자는 모델이 바뀐 뒤를 포함해 런타임에 사용 가능한 제어 항목을 변경할 수 있습니다.
+`icon`은 Lucide 아이콘 이름입니다. `defaultValue`는 키에 값이 없을 때 제어 항목이 표시하는
+값입니다. Paseo는 세션을 열거나 변경을 적용할 때 공급자가 보고한 모든 값을 저장합니다. 기본값과
+같은 값이나 아무도 설정하지 않은 값도 포함됩니다. 같은 제어 항목은 새 작업공간 화면, 초안 탭,
+실행 중인 에이전트에 표시됩니다. 실행 중인 세션에서 변경할 수 있는 키에만 제어 항목을 제공하세요.
+공급자는 모델 변경 뒤를 포함해 런타임에 제어 항목을 바꿀 수 있습니다.
 
-`settings`는 사용자에게 보이는 제어 항목입니다. `providerOptions`는 Paseo가 렌더링하지 않는 공급자별 구성을 위해 세션 생성 시 제공되는 불투명한 JSON입니다. 공급자별 토큰 예산은 전용 프롬프트 필드가 아니라 이 둘 중 하나에 속합니다.
+변경은 `session.configure`로 전달되며 `changes.providerOptions`에는 제어 항목 유무와 관계없이 변경된
+키만 들어갑니다. 모든 키를 적용하고 확정된 `session.config`를 `request.completed`보다 먼저
+게시하세요. 세션을 열 때만 읽는 키처럼 하나라도 적용할 수 없다면 `request.failed`로 요청을
+실패시키고 모든 키를 기존 값으로 유지하세요. 값이 `null`이면 해당 키를 공급자의 기본값으로
+되돌립니다. 요청을 그대로 복사하지 말고 세션에 실제로 적용된 값을 게시하세요. Paseo는 게시된 값을
+저장하므로 저장된 옵션과 실제 실행 상태가 일치합니다.
+
+예를 들어 모델을 바꾸면서 Fast가 꺼지는 것처럼 공급자가 자체적으로 옵션을 변경하면 새 값이 담긴
+`session.config`를 게시하세요. Paseo는 해당 값을 저장하며 이전 값을 다시 설정하지 않습니다.
+
+모든 옵션에 제어 항목이 필요한 것은 아닙니다. 예를 들어 공급자별 토큰 예산은 전용 프롬프트 필드가
+아니라 `providerOptions`에 속합니다. `session.open`으로 전달되고, 호출자는 실행 중인 에이전트에서
+이를 변경할 수 있으며, `session.configure` 핸들러가 실시간 적용 가능 여부를 결정합니다. Paseo가
+실행 중인 값을 저장하도록 `providerOptions`에 보고하세요.
 
 ## 지속성과 재생 추가하기
 
@@ -417,7 +439,7 @@ export const vendorEdits: AcpTransformer = {
 모의 프레임만 사용하지 말고 실제 에이전트에 공급자를 연결해 테스트하세요.
 
 1. 플러그인을 디렉터리 소스로 설치합니다.
-2. SVG, 모델, 모드, 설정이 표시되는지 확인합니다.
+2. SVG, 모델, 모드, 옵션 제어 항목이 표시되는지 확인합니다.
 3. 세션을 만들고 실제 프롬프트 하나를 완료합니다.
 4. 지원하는 경우 권한, 방향 조정, 취소, 지속성, 재생을 실행해 봅니다.
 5. 모든 사용자 지정 타임라인 항목을 데스크톱 및 모바일 너비 레이아웃에서 렌더링합니다.

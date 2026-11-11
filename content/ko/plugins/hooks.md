@@ -49,22 +49,22 @@ Paseo에는 반환된 프로미스만 보이므로 분리된 작업에는 오류
 
 ## 훅
 
-| 훅                        | 대기 | payload                                | 핸들러가 변경할 수 있는 항목                   |
-| ------------------------- | ---- | -------------------------------------- | ---------------------------------------------- |
-| `workspace.create.before` | 예   | `{ request }`                          | 전체 생성 요청                                 |
-| `workspace.create.after`  | 아니요 | `{ workspace }`                      |                                                |
-| `workspace.archive.after` | 아니요 | `{ workspace }`                      |                                                |
-| `worktree.create.before`  | 예   | `{ request }`                          | 생성 옵션과 대상                               |
-| `worktree.create.after`   | 예   | `{ worktree }`                         | 작업 트리의 파일. 생성 중단은 예외를 던짐      |
-| `agent.create.before`     | 예   | `{ request: { config, env? } }`        | `cwd`를 제외한 저장 구성, `env`                |
-| `agent.create.after`      | 아니요 | `{ agent }`                          |                                                |
-| `agent.open.before`       | 예   | `{ request }`                          | 실행 시에만 쓰이는 `env`, `tools`, `mcpServers` |
-| `agent.close.after`       | 아니요 | `{ agent }`                          |                                                |
-| `agent.archive.after`     | 아니요 | `{ agent, archivedAt }`              |                                                |
-| `agent.turn.before`       | 아니요 | `{ agent, turnId }`                  |                                                |
-| `agent.turn.after`        | 아니요 | `{ agent, turnId, outcome, timeline }` |                                              |
-| `agent.permission.before` | 아니요 | `{ agent, request }`                 |                                                |
-| `agent.permission.after`  | 아니요 | `{ agent, requestId, resolution }`   |                                                |
+| 훅                        | 대기 | payload                                   | 핸들러가 변경할 수 있는 항목                     |
+| ------------------------- | ---- | ----------------------------------------- | ------------------------------------------------ |
+| `workspace.create.before` | 예   | `{ request }`                             | 전체 생성 요청                                   |
+| `workspace.create.after`  | 아니요 | `{ workspace }`                         |                                                  |
+| `workspace.archive.after` | 아니요 | `{ workspace }`                         |                                                  |
+| `worktree.create.before`  | 예   | `{ request }`                             | 생성 옵션과 대상                                 |
+| `worktree.create.after`   | 예   | `{ worktree }`                            | 작업 트리의 파일. 생성 중단은 예외를 던짐        |
+| `agent.create.before`     | 예   | `{ request: { config, env?, metadata } }` | `cwd`를 제외한 저장 구성, `env`, `metadata`      |
+| `agent.create.after`      | 아니요 | `{ agent }`                             |                                                  |
+| `agent.open.before`       | 예   | `{ request }`                             | 실행 시에만 쓰이는 `env`, `tools`, `mcpServers`  |
+| `agent.close.after`       | 아니요 | `{ agent }`                             |                                                  |
+| `agent.archive.after`     | 아니요 | `{ agent, archivedAt }`                 |                                                  |
+| `agent.turn.before`       | 아니요 | `{ agent, turnId }`                     |                                                  |
+| `agent.turn.after`        | 아니요 | `{ agent, turnId, outcome, timeline }`   |                                                  |
+| `agent.permission.before` | 아니요 | `{ agent, request }`                    |                                                  |
+| `agent.permission.after`  | 아니요 | `{ agent, requestId, resolution }`      |                                                  |
 
 ## 공유 payload
 
@@ -76,6 +76,7 @@ interface PluginHookAgent {
   provider: string;
   cwd: string;
   title: string | null;
+  metadata: Record<string, JsonValue>;
 }
 
 interface PluginHookWorkspace {
@@ -84,6 +85,7 @@ interface PluginHookWorkspace {
   cwd: string;
   name: string | null;
   archivedAt: string | null;
+  metadata: Record<string, JsonValue>;
 }
 
 type PluginTurnOutcome =
@@ -100,9 +102,36 @@ type PluginTurnOutcome =
 | `resolution` | SDK `AgentPermissionResponse`                                                           |
 | `archivedAt` | 타임스탬프 문자열                                                                       |
 
+## 메타데이터
+
+에이전트와 작업공간은 플러그인 데이터를 위한 `metadata` 레코드를 갖습니다. 키는 문자열이고 값은 모든
+JSON 값이 될 수 있으며, Paseo는 키를 해석하지 않고 레코드를 저장합니다. 플러그인끼리 충돌하지 않도록
+키 앞에 플러그인 ID를 붙이세요. 필터링과 태그에는 문자열 레이블을 유지하고, 구조화된 데이터에는
+메타데이터를 사용하세요.
+
+에이전트나 작업공간을 만들 때 메타데이터를 설정하거나 나중에 변경할 수 있습니다. `null`은 키를
+삭제하고 그 밖의 값은 해당 키의 전체 값을 대체합니다.
+
+```ts
+const agent = await paseo.agents.create({
+  config: { provider: "codex/gpt-5.5" },
+  cwd: "/projects/shop",
+  metadata: { "linear.issue": { id: "ENG-123" } },
+});
+
+agent.metadata; // { "linear.issue": { id: "ENG-123" } }
+await agent.setMetadata({ "linear.issue": null });
+await paseo.workspaces.ref(workspaceId).setMetadata({ "linear.issue": { id: "ENG-123" } });
+```
+
+메타데이터는 데몬을 재시작해도 유지됩니다. 모든 훅 payload에 메타데이터가 포함됩니다.
+`workspace.create.before`와 `agent.create.before`는 호출자가 보낸 메타데이터를 받고, `after` 훅과
+`agent.open.before`는 저장된 메타데이터를 받습니다. 메타데이터를 지원하기 전 버전의 호스트에서
+이 호출을 사용하면 "Update the host to use metadata." 오류가 발생합니다.
+
 ## workspace.create.before
 
-`source`, 선택적 `title`, `firstAgentContext`가 있는 `{ request }`를 받습니다. 명시적 생성 요청 전체를 대체할 수 있습니다. 예외, 유효하지 않은 결과 또는 시간 초과는 생성을 실패시킵니다. 기존 작업공간과 디렉터리 조회/가져오기는 영향을 받지 않습니다.
+`source`, 선택적 `title`, 선택적 `metadata`, `firstAgentContext`가 있는 `{ request }`를 받습니다. 명시적 생성 요청 전체를 대체할 수 있습니다. 예외, 유효하지 않은 결과 또는 시간 초과는 생성을 실패시킵니다. 기존 작업공간과 디렉터리 조회/가져오기는 영향을 받지 않습니다.
 
 ### 작업공간 격리 선택하기
 
@@ -202,18 +231,18 @@ server.addHook("worktree.create.after", async ({ worktree }) => {
 
 ## agent.create.before
 
-`{ request: { config, env? } }`를 받습니다. 구성 변경은 저장되어 플러그인이 비활성화되거나 제거된 뒤에도 남습니다. `env`는 첫 실행에 적용되며 저장되지 않습니다. `config.cwd`는 변경할 수 없습니다. 예외, 유효하지 않은 결과 또는 시간 초과는 생성을 실패시킵니다.
+`{ request: { config, env?, metadata } }`를 받습니다. 구성과 `metadata` 변경은 저장되어 플러그인이 비활성화되거나 제거된 뒤에도 남습니다. `env`는 첫 실행에 적용되며 저장되지 않습니다. `config.cwd`는 변경할 수 없습니다. 예외, 유효하지 않은 결과 또는 시간 초과는 생성을 실패시킵니다.
 
 **`agent.create.before.config`**는 `AgentSessionConfig`를 사용합니다.
 
-| 필드                                          | 제약 조건                                                                  |
-| --------------------------------------------- | -------------------------------------------------------------------------- |
-| `provider`, `model`                           | 별도 필드. 공급자 변경 시 모델/모드/옵션도 변경해야 할 수 있음             |
-| `modeId`, `thinkingOptionId`, `featureValues` | 공급자별 선택 항목                                                         |
-| `title`, `systemPrompt`                       | 에이전트 구성                                                              |
-| `providerOptions`                             | 내부가 공개되지 않은 공급자별 옵션                                         |
-| `mcpServers`, `toolPolicy`                    | MCP 구성과 정확한 도구 사전 승인                                           |
-| `cwd`                                         | 변경할 수 없음                                                             |
+| 필드                             | 제약 조건                                                                  |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| `provider`, `model`              | 별도 필드. 공급자 변경 시 모델/모드/옵션도 변경해야 할 수 있음             |
+| `modeId`, `thinkingOptionId`     | 공급자별 선택 항목                                                         |
+| `title`, `systemPrompt`          | 에이전트 구성                                                              |
+| `providerOptions`                | 속도와 자동 수락 선택을 포함한 공급자 옵션                                 |
+| `mcpServers`, `toolPolicy`       | MCP 구성과 정확한 도구 사전 승인                                           |
+| `cwd`                            | 변경할 수 없음                                                             |
 
 ### 저장된 구성 변경하기
 
@@ -261,6 +290,19 @@ server.addHook("agent.create.after", async ({ agent }) => {
 
 `{ request }`를 받습니다. 이번 실행에서는 `env`, `tools`, `mcpServers`만 변경할 수 있습니다. 다른 모든 필드는 읽기 전용입니다. 예외, 유효하지 않은 결과 또는 시간 초과는 열기를 실패시킵니다.
 
+열리는 중인 에이전트에 대한 쓰기 작업(`setMetadata`, `setLabels`, 옵션·모델·사고·모드 변경)을
+기다리지 마세요. 쓰기는 열기가 끝나기를 기다리고 열기는 훅을 기다리므로, 훅이 시간 초과되어 열기에
+실패합니다. 쓰기를 기다리지 않고 시작하면 열기 직후 실행됩니다.
+
+```ts
+server.addHook("agent.open.before", async ({ request }, { paseo }) => {
+  void paseo.agents
+    .ref(request.agentId)
+    .setMetadata({ "my.plugin": { openedBy: "hook" } })
+    .catch((error) => console.error(error));
+});
+```
+
 **`agent.open.before` 요청 예제:**
 
 ```json
@@ -271,6 +313,7 @@ server.addHook("agent.create.after", async ({ agent }) => {
   "cwd": "/projects/shop",
   "title": "Workspace notes",
   "labels": { "notes/enabled": "true" },
+  "metadata": { "linear.issue": { "id": "ENG-123" } },
   "tools": [],
   "mcpServers": {},
   "reason": "resume",
@@ -284,6 +327,7 @@ server.addHook("agent.create.after", async ({ agent }) => {
 | `workspaceId` | 문자열 또는 `null`                                                                                                     |
 | `title`       | 읽기 전용 문자열 또는 `null`. 생성 시에는 생성 제목, 재개 시에는 저장된 제목                                           |
 | `labels`      | 읽기 전용 문자열 맵. 생성 시에는 생성 레이블, 재개 시에는 저장된 레이블                                                |
+| `metadata`    | 읽기 전용 JSON 맵. 에이전트에 저장된 [메타데이터](#metadata)                                                           |
 | `tools`       | 이 플러그인 로컬의 편집 가능한 `AgentToolDefinition[]`. [에이전트에 도구 연결하기](#attach-tools-to-agents) 참고       |
 | `mcpServers`  | 이 플러그인 로컬의 편집 가능한 실행 전용 서버 맵. [MCP 서버 주입하기](#inject-mcp-servers) 참고                         |
 | `reason`      | `create`, `resume`, `refresh`, `import`                                                                                 |
