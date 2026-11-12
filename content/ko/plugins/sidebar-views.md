@@ -84,7 +84,7 @@ const selected = useWorkspace(ref, selector, equals);
 
 선택 함수가 없으면 사용자 지정 동등성 함수가 스냅샷을 받습니다. 선택 함수가 있으면 선택 결과를 받습니다. 기존 작업공간 패널은 호스트 로컬 문자열 ID를 `useWorkspace` 및 `useAgent`에 계속 전달할 수 있습니다. 여러 호스트에 걸친 보기에는 ref를 사용하세요. `useHosts()`는 기존 `serverId`, `label` 및 연결 `status` 필드를 유지합니다.
 
-작업공간 스냅샷에는 `project`, `pinnedAt`, `labels`, `background`, `branch`, `lastPromptAt`, `parentAgent` 및 `createdAt`(이전 호스트에서는 null)이 포함됩니다. Paseo가 표시하는 상태를 나타내려면 `indicator`와 현지화된 `indicatorLabel`을 사용하세요. `status`는 원시 데몬 상태로 유지됩니다. 에이전트 스냅샷에는 해당 작업공간과 상위 ref가 포함됩니다. 프로젝트 스냅샷은 `displayName`, `rootPath`, `kind` 및 `iconRevision`을 제공합니다.
+작업공간 스냅샷에는 `project`, `pinnedAt`, `labels`, `background`, `branch`, `lastPromptAt`, `parentAgent` 및 `createdAt`(이전 호스트에서는 null)이 포함됩니다. Paseo가 표시하는 상태를 나타내려면 `indicator`와 현지화된 `indicatorLabel`을 사용하세요. `status`는 원시 데몬 상태로 유지됩니다. 에이전트 스냅샷에는 해당 작업공간과 상위 ref, `background`, `backgroundWork.count`가 포함됩니다. 프로젝트 스냅샷은 `displayName`, `rootPath`, `kind` 및 `iconRevision`을 제공합니다.
 
 ## 터미널 나열
 

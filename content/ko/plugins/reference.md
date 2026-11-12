@@ -1425,6 +1425,8 @@ const [state, setState] = useTabState(tab, schema, { view: "preview" });
 | `workspaceId` | `string` |
 | `provider` | `string` |
 | `status` | `"initializing" \| "idle" \| "running" \| "error" \| "closed"` |
+| `backgroundWork` | `{ count: number }` |
+| `background` | `boolean` |
 | `createdAt` | ISO 타임스탬프 |
 | `updatedAt` | ISO 타임스탬프 |
 | `lastActivityAt` | ISO 타임스탬프 |
@@ -1437,6 +1439,20 @@ const [state, setState] = useTabState(tab, schema, { view: "preview" });
 | `attentionReason` | `"finished" \| "error" \| "permission" \| null` |
 | `parentAgentId` | `string \| null` |
 | `labels` | `Record<string, string>` |
+
+`backgroundWork.count`는 에이전트의 턴이 끝난 후에도 실행 중으로 남겨 둔 셸과 모니터의 수이며, 활성 항목이 없으면 `0`입니다. 해당 작업이 계속 실행되는 동안에도 에이전트는 `attentionReason: "finished"`인 `idle` 상태일 수 있으므로 플러그인에 필요한 방식으로 필드를 조합하세요.
+
+```tsx
+const busy = useAgent(
+  agentId,
+  (agent) => agent.status === "running" || agent.backgroundWork.count > 0,
+);
+if (busy === null) return null; // The agent is unavailable.
+```
+
+작업 자체를 나열하거나 중지하려면 [`paseo.agents.ref(id).backgroundWork`](/docs/sdk/reference#agent-handle)를 사용하세요.
+
+`background`는 탭, 목록, 주의 표시에서 숨겨지는 도우미인 [백그라운드 에이전트](/docs/sdk/agents#run-a-helper-as-a-background-agent)에 대해 `true`이며, 에이전트 생성 시 고정됩니다. 백그라운드 작업공간의 에이전트는 백그라운드 에이전트로 생성되지 않았다면 `false`이므로 작업공간 자체의 `background`를 확인하세요. `backgroundWork`와 `background`에는 Paseo 0.16.0 이상이 필요합니다.
 
 Paseo는 탭 포커스, 분할, 닫기, 유지, 쿼리 상태, API/RPC 제공자, 렌더링 오류 경계를 관리합니다. 복원된 탭의 플러그인, 패널, 컨텍스트, 작업공간 또는 에이전트를 사용할 수 없으면 작업공간이 충돌하는 대신 사용 불가 메시지와 함께 탭이 열린 상태로 유지됩니다.
 

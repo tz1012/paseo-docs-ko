@@ -401,6 +401,7 @@
     "agentpermissionbefore",
     "answer-a-permission-request",
     "agentpermissionafter",
+    "background-agents",
     "ordering-and-returned-values",
     "context-and-cleanup",
     "complete-examples",

@@ -76,6 +76,7 @@ interface PluginHookAgent {
   provider: string;
   cwd: string;
   title: string | null;
+  readonly background: boolean;
   metadata: Record<string, JsonValue>;
 }
 
@@ -96,6 +97,7 @@ type PluginTurnOutcome =
 
 | 필드         | 형태 / 의미                                                                             |
 | ------------ | --------------------------------------------------------------------------------------- |
+| `background` | [백그라운드 에이전트](#background-agents)이면 `true`                                   |
 | `turnId`     | 공급자가 보고한 `string` 또는 `null`. 재개된 세션 전체에서 고유함                     |
 | `timeline`   | 사용 중단됨. 항상 `[]`이며 기록은 SDK로 가져옴                                         |
 | `request`    | SDK `AgentPermissionRequest`. `kind`는 `tool`, `plan`, `question`, `mode` 또는 `other` |
@@ -312,6 +314,7 @@ server.addHook("agent.open.before", async ({ request }, { paseo }) => {
   "provider": "codex",
   "cwd": "/projects/shop",
   "title": "Workspace notes",
+  "background": false,
   "labels": { "notes/enabled": "true" },
   "metadata": { "linear.issue": { "id": "ENG-123" } },
   "tools": [],
@@ -326,6 +329,7 @@ server.addHook("agent.open.before", async ({ request }, { paseo }) => {
 | ------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `workspaceId` | 문자열 또는 `null`                                                                                                     |
 | `title`       | 읽기 전용 문자열 또는 `null`. 생성 시에는 생성 제목, 재개 시에는 저장된 제목                                           |
+| `background`  | [백그라운드 에이전트](#background-agents)이면 읽기 전용 `true`. 생성 시 고정됨                                         |
 | `labels`      | 읽기 전용 문자열 맵. 생성 시에는 생성 레이블, 재개 시에는 저장된 레이블                                                |
 | `metadata`    | 읽기 전용 JSON 맵. 에이전트에 저장된 [메타데이터](#metadata)                                                           |
 | `tools`       | 이 플러그인 로컬의 편집 가능한 `AgentToolDefinition[]`. [에이전트에 도구 연결하기](#attach-tools-to-agents) 참고       |
@@ -359,7 +363,7 @@ MCP 엔드포인트로 바꾸세요.
 
 ```ts
 server.addHook("agent.open.before", async ({ request }) => {
-  if (request.provider !== "codex") return;
+  if (request.provider !== "codex" || request.background) return;
 
   return {
     ...request,
@@ -435,6 +439,7 @@ const agent = await paseo.agents.create({
 | 공급자           | `request.provider === "codex"`               |
 | 작업공간         | `request.workspaceId === "workspace-456"`    |
 | 개별 에이전트    | `request.agentId === chosenAgentId`          |
+| 백그라운드 에이전트 | `request.background`                       |
 
 `request.tools`는 각 플러그인에서 빈 상태로 시작합니다. 각 콜백에는 해당 플러그인의 이전 콜백이
 반환한 도구가 보입니다. 도구를 추가하거나 제거하려면 배열을 대체하세요. `undefined`를 반환하면
@@ -631,7 +636,20 @@ server.addHook("agent.permission.after", async ({ agent, requestId, resolution }
 });
 ```
 
+## 백그라운드 에이전트
+
 에이전트 훅은 데몬의 비공개 일회용 도우미를 제외합니다. 백그라운드 에이전트와 백그라운드 작업공간의 에이전트에는 같은 훅이 적용됩니다.
+
+[백그라운드 에이전트](/docs/sdk/agents#run-a-helper-as-a-background-agent)는 탭, 목록, 주의 표시에서 숨겨지는 도우미입니다. 모든 훅의 `agent.background`와 `agent.open.before` 요청의 `background`는 백그라운드 에이전트에 대해 `true`이므로 조회 없이 건너뛸 수 있습니다.
+
+```ts
+server.addHook("agent.turn.after", async ({ agent }) => {
+  if (agent.background) return; // A helper reports to the agent that created it.
+  await notifyTeam(agent);
+});
+```
+
+`background`는 에이전트 생성 시 고정되며 훅에서 변경할 수 없습니다. `background: true` 없이 백그라운드 작업공간에 생성된 에이전트에서는 `false`입니다. 0.16.0보다 이전 호스트는 이 필드를 생략하므로 `undefined`로 읽힙니다.
 
 ## 순서와 반환 값
 
