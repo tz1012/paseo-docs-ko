@@ -52,19 +52,20 @@ v0.1.92-beta.3
 
 ### 베타 채널 가입 방법
 
-데스크톱 앱에서:
+| 플랫폼         | 베타 이용 방법                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| iOS 및 iPadOS  | [Paseo TestFlight 베타](https://testflight.apple.com/join/Y5HpSQjJ)에 참여합니다.                            |
+| Android        | [GitHub 릴리스 페이지](https://github.com/getpaseo/paseo/releases)의 시험판에서 APK를 다운로드합니다.       |
+| 데스크톱       | **설정 → 정보**를 열고 **출시 채널**에서 **베타**를 선택합니다.                                             |
+| CLI            | `npm install -g @getpaseo/cli@beta`를 실행합니다. 베타 태그 없이 `npm install -g @getpaseo/cli`를 실행하면 안정 채널이 유지됩니다. |
 
-1. **설정**을 엽니다.
-2. **정보**로 이동합니다.
-3. **출시 채널**에서 **베타**를 선택합니다.
-
-그때부터 앱은 베타 업데이트를 확인합니다.
+데스크톱 앱은 **베타**를 선택하는 순간부터 베타 업데이트를 확인합니다.
 
 ## 앱스토어
 
 일반적으로 데스크탑 릴리스와 CLI가 먼저 제공됩니다. App Store 및 Play Store 출시는 검토를 거치기 때문에 지연될 수 있습니다.
 
-현재 앱 스토어에는 베타 채널이 없습니다. 안정적인 빌드만 제출됩니다. 초기 Android 빌드를 원한다면 [GitHub 릴리스 페이지](https://github.com/getpaseo/paseo/releases)에서 APK를 다운로드하세요.
+App Store와 Play Store에는 안정 빌드만 게시됩니다. iOS에서는 [TestFlight 베타](https://testflight.apple.com/join/Y5HpSQjJ)가 베타 채널입니다. 모든 베타는 Apple의 베타 검토를 거친 후 여기에 업로드되며, 안정 릴리스도 업로드되므로 TestFlight 테스터는 항상 최신 빌드를 사용하게 됩니다. Android에는 Play Store 베타가 없으므로 GitHub에서 베타 APK를 설치하세요.
 
 ## 문제가 발생하면 어떻게 해야 하나요?
 
