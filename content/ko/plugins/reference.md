@@ -803,6 +803,57 @@ function hideAlerts() {
 }
 ```
 
+### 작업공간 행 배지 항목
+
+`addWorkspaceRowBadgeItem({ id, title, icon, Component })`은 사이드바의 각 작업공간
+제목 아래 행에 해당 행의 기본 항목(호스트, 풀 리퀘스트, 검사, 서비스, 레이블) 뒤로 항목을 추가합니다.
+`title`과 `icon`은 구분선 아래의 별도 플러그인 그룹에서 사이드바 **Show** 메뉴에 표시되는
+항목의 토글에 레이블을 붙입니다. 항목은 처음에 표시됩니다.
+
+`Component`는 플러그인이 설치된 호스트의 각 작업공간 행마다 한 번씩 렌더링되며
+`PluginWorkspaceRowBadgeItemProps`인 `theme`, `host`, `layout`, `workspaceId`를 받습니다. 작업공간에 표시할
+내용이 없으면 `null`을, 그렇지 않으면 `@getpaseo/plugin/client/ui`의 `WorkspaceRowBadge`를 렌더링하세요.
+
+| Prop                 | 의미                                                                           |
+| -------------------- | ------------------------------------------------------------------------------ |
+| `icon`               | 선택 사항. 행의 글리프 크기로 그려지는 모든 [아이콘](#icons) 형식입니다.              |
+| `label`              | 선택 사항. 짧은 단어입니다. `icon`과 `label`이 모두 없는 배지는 아무것도 그리지 않습니다. |
+| `tone`               | `"muted"`(기본값), `"success"`, `"warning"`, `"danger"` 또는 `"info"`입니다.        |
+| `accessibilityLabel` | 기본값은 `label`, 그다음은 항목의 `title`입니다.                              |
+
+이 행은 배지 주위에 구분선을 추가하지 않으며 `null`을 반환하면 빈 간격도 남지 않습니다. 원하는 만큼
+많은 배지를 렌더링하세요. 모든 행이 이 구성 요소를 렌더링하므로 작업공간마다 가져오지 말고 하나의 쿼리를 행 간에 공유하세요. 플러그인의 React Query 클라이언트는 호스트에 있는 플러그인의 모든 구성 요소가 공유합니다.
+
+```tsx
+import type { PluginWorkspaceRowBadgeItemProps } from "@getpaseo/plugin/client";
+import { useRpc } from "@getpaseo/plugin/client";
+import { WorkspaceRowBadge } from "@getpaseo/plugin/client/ui";
+import { useQuery } from "@tanstack/react-query";
+
+function ReviewState({ workspaceId }: PluginWorkspaceRowBadgeItemProps) {
+  const list = useRpc(reviewStates);
+  const { data } = useQuery({
+    queryKey: ["review-states"],
+    queryFn: () => list({}),
+    refetchInterval: 5000,
+  });
+  const state = data?.[workspaceId];
+  if (!state) return null;
+  return <WorkspaceRowBadge icon="Eye" label={state.label} tone="warning" />;
+}
+
+client.addWorkspaceRowBadgeItem({
+  id: "review",
+  title: "Review",
+  icon: "Eye",
+  Component: ReviewState,
+});
+```
+
+이 API보다 이전의 앱에는 `addWorkspaceRowBadgeItem`이 없으므로 호출하기 전에 있는지 확인하세요.
+
+[작업공간 행 배지 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/workspace-row-badges)를 참조하세요.
+
 ## 호스트 UI
 
 클라이언트 코드에서 `@getpaseo/plugin/client/ui`를 통해 Paseo가 제공하는 UI를 가져오세요. 다음 예제는 제어형 모달을 열고, 호스트 아이콘을 렌더링하고, 토스트로 작업 결과를 알립니다.
@@ -1117,7 +1168,9 @@ async function publishReview(agentId: string, { paseo }: PluginHandlerContext) {
 | `version` | 양의 정수 | 예 | 렌더러 계약 버전을 선택합니다. |
 | `data` | JSON 호환 | 예 | 렌더러 페이로드. JSON 직렬화 후 최대 64 KiB입니다. |
 
-데몬은 호출한 플러그인 세션에서 `pluginId`를 기록하며, 플러그인 세션이 아닌 곳에서 이 RPC를 호출하면 거부합니다. 행은 실시간으로 표시되고 타임라인을 다시 가져와도 유지되며, 같은 플러그인과 `id`에 대해서는 최신 값만 남습니다. 렌더러가 없으면 Paseo는 기존의 사용 불가 행을 표시합니다. 데몬은 한도를 초과한 `data`를 잘라내지 않고 거부합니다. 이 작업을 지원하는 데몬은 `server_info.features.pluginTimelineItems`로 지원 여부를 알립니다.
+데몬은 호출한 플러그인 세션에서 `pluginId`를 기록하며, 플러그인 세션이 아닌 곳에서 이 RPC를 호출하면 거부합니다. 행은 실시간으로 표시되고 타임라인을 다시 가져와도 유지되며, 같은 플러그인과 `id`에 대해서는 최신 값만 남습니다. 렌더러가 없으면 Paseo는 기존의 사용 불가 행을 표시합니다.
+
+`kind`는 소문자로 시작하며 소문자, 숫자 또는 하이픈으로 구성됩니다. `addTimelineRenderer`와 같은 규칙입니다. 데몬은 다른 `kind`를 거부합니다. 데몬은 한도를 초과한 `data`를 잘라내지 않고 거부합니다. 이 작업을 지원하는 데몬은 `server_info.features.pluginTimelineItems`로 지원 여부를 알립니다.
 
 ## 테마와 레이아웃
 
@@ -1166,6 +1219,12 @@ export default function contribute(client: PluginClientContext) {
       accent: "#cba6f7",
       mutedForeground: "#a6adc8",
       ring: "#6c7086",
+      sidebar: "#181825",
+      sidebarHover: "#313244",
+      sidebarSelected: "#45475a",
+      surface3: "#45475a",
+      surface4: "#585b70",
+      foregroundExtraMuted: "#7f849c",
     },
   });
   return () => {};
@@ -1175,15 +1234,25 @@ export default function contribute(client: PluginClientContext) {
 모든 색상은 16진수 문자열이어야 하며, 다른 형식은 로드에 실패합니다. Paseo가 팔레트를 기본 어두운 테마에서 사용하는 전체 토큰 집합으로 확장하므로, 플러그인이 제공하는 테마는 패널, 메뉴, diff, 상태 색상, 터미널을 별도로 나열하지 않아도 모두 지원합니다.
 
 | 색상 | 적용 대상 |
-| ----------------- | ----------------------------------------------------------------- |
+| ---------------------- | ------------------------------------------------------------------------------ |
 | `background` | 앱, 작업공간, 터미널 배경 |
 | `foreground` | 주요 텍스트, 터미널 전경색과 커서 |
-| `raised` | 카드, 팝오버, 포인터를 올린 행 |
-| `control` | 입력, 보조 채움색, 밝은 테마의 사이드바 |
-| `border` | 테두리와 가장 높이 돌출된 표면의 색조 |
+| `raised` | 카드와 팝오버 |
+| `control` | 입력, 보조 채움색, `sidebar`를 설정하지 않은 밝은 테마의 사이드바 |
+| `border` | 테두리 |
 | `accent` | 버튼, 선택, 포커스. 선택 사항이며 생략하면 `foreground`를 사용합니다. |
 | `mutedForeground` | 보조 텍스트 |
-| `ring` | 포커스 링, 스크롤바, 터미널의 밝은 검정색 |
+| `ring` | 웹의 키보드 포커스 윤곽선과 터미널의 밝은 검정색 |
+| `sidebar` | 사이드바 배경. 선택 사항이며 어두운 테마에서는 `background`, 밝은 테마에서는 `control`이 기본값입니다. |
+| `sidebarHover` | 선택 사항. 포인터를 올린 사이드바 행의 배경입니다. |
+| `sidebarSelected` | 선택 사항. 선택된 사이드바 행의 배경입니다. |
+| `surface3` | 선택 사항. 메시지 풍선, 보조 버튼, 칩의 중립적인 채움색입니다. |
+| `surface4` | 선택 사항. 트랙과 기타 상태의 더 강한 중립 채움색입니다. |
+| `foregroundExtraMuted` | 선택 사항. 사이드바 타임스탬프를 포함한 3차 텍스트입니다. |
+
+각 선택적 재정의는 주어진 그대로 사용됩니다. 생략된 상태, 채움색, 3차 색상은 팔레트에서 각각 파생됩니다. 색상을 재정의할 때는 함께 사용되는 표면이나 텍스트와 읽기 좋은 대비를 이루는 색을 선택하세요.
+
+`sidebar`와 나머지 다섯 재정의는 Paseo 0.16.0 이상이 필요합니다. 이전 앱은 알 수 없는 색이 있는 테마를 거부하며, 그러면 해당 플러그인의 다른 기여도 함께 로드되지 않습니다. 이 항목을 사용할 때는 `requirements.paseo`를 높이세요.
 
 `appearance`는 `"light"` 또는 `"dark"`입니다. Paseo는 이 값을 사용해 해당하는 표면, 상태, diff, 구문, 터미널, 그림자의 파생 방식을 선택합니다.
 

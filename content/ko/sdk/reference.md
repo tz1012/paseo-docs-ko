@@ -119,7 +119,7 @@ Relay E2EE 클라이언트는 `e2ee.enabled` 및 `e2ee.daemonPublicKeyB64`을 �
 
 ### 타임라인 핸들
 
-`agent.timeline.refetch(options?)`이 페이지를 가져옵니다. 옵션은 `direction`, `cursor`, `limit`, `projection` 및 `requestId`입니다.
+`agent.timeline.refetch(options?)`이 페이지를 가져옵니다. 옵션은 `direction`, `cursor`, `limit`, `projection`, `wholeTurns` 및 `requestId`입니다. `wholeTurns: true`는 `tail` 또는 `before` 페이지가 포함한 가장 오래된 턴의 시작점까지 페이지 범위를 거슬러 확장하므로 `{ direction: "tail", limit: 1, wholeTurns: true }`는 최신 턴을 전체 반환합니다. `features.wholeTurnTimeline`이 필요하며, 이전 호스트는 이 옵션을 무시하고 `limit`개 항목으로 이루어진 페이지를 반환합니다.
 
 `agent.timeline.subscribe(handler)`은 이 에이전트에 대한 네트워크 수요를 설정하고 재연결 후 복원합니다. 구독 취소 함수는 해당 수요를 해제합니다. 작업을 시작하기 전에 초기 데몬 확인을 위해 `unsubscribe.ready`를 기다리세요. 전달은 라이브 전용입니다. 재연결하면 로컬 `subscription_restored` 이벤트가 발생하며 놓친 기록은 `refetch()`로 명시적으로 요청해야 합니다. 라이브 교체는 이전 epoch를 무효화합니다. 콜백 형태, 페이징, 실패 동작은 [타임라인 이벤트](./events.md#follow-timeline-events)를 참조하세요.
 

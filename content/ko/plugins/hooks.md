@@ -62,7 +62,7 @@ Paseo에는 반환된 프로미스만 보이므로 분리된 작업에는 오류
 | `agent.close.after`       | 아니요 | `{ agent }`                             |                                                  |
 | `agent.archive.after`     | 아니요 | `{ agent, archivedAt }`                 |                                                  |
 | `agent.turn.before`       | 아니요 | `{ agent, turnId }`                     |                                                  |
-| `agent.turn.after`        | 아니요 | `{ agent, turnId, outcome, timeline }`   |                                                  |
+| `agent.turn.after`        | 아니요 | `{ agent, turnId, outcome }`             |                                                  |
 | `agent.permission.before` | 아니요 | `{ agent, request }`                    |                                                  |
 | `agent.permission.after`  | 아니요 | `{ agent, requestId, resolution }`      |                                                  |
 
@@ -534,7 +534,7 @@ server.addHook("agent.turn.before", async ({ agent, turnId }) => {
 
 ## agent.turn.after
 
-실시간 턴이 완료, 실패 또는 취소되면 발생합니다. `{ agent, turnId, outcome, timeline }`을 받습니다. `outcome.kind`는 `completed`, `failed` 또는 `canceled`입니다. `timeline`은 사용 중단되었으며 항상 비어 있습니다. 아래와 같이 SDK를 통해 기록을 가져오세요.
+실시간 턴이 완료, 실패 또는 취소되면 발생합니다. `{ agent, turnId, outcome }`을 받습니다. `outcome.kind`는 `completed`, `failed` 또는 `canceled`입니다. 페이로드에는 기록이 들어 있지 않습니다. 에이전트의 타임라인에서 턴을 읽으세요. 아래처럼 `refetch({ direction: "tail", limit: 1, wholeTurns: true })`는 최신 턴 전체를 반환합니다. 다른 플러그인이 보낸 후속 작업처럼 읽기 전에 새 턴이 시작하면 그 턴이 이 턴을 최신 턴 자리에서 밀어내므로, `turnId`가 `event.turnId`와 같은 항목만 남기세요. 그런 경우와 `event.turnId`가 `null`인 경우에는 필터링된 목록이 빈 배열입니다. 이전 SDK를 기준으로 빌드했고 `event.timeline`을 읽는 플러그인은 빈 배열을 받습니다.
 
 ### 턴이 끝날 때 후속 작업 보내기
 
@@ -553,8 +553,9 @@ export default function contribute(server: PluginServerContext) {
     }
 
     const agent = context.paseo.agents.ref(event.agent.id);
-    const page = await agent.timeline.refetch({ direction: "tail", limit: 20 });
-    const text = latestOutputText(page.entries.map(({ item }) => item));
+    const page = await agent.timeline.refetch({ direction: "tail", limit: 1, wholeTurns: true });
+    const turn = page.entries.filter((entry) => entry.turnId === event.turnId);
+    const text = latestOutputText(turn.map(({ item }) => item));
     if (/out of credits/i.test(text)) {
       await agent.send("Try again.");
     }
@@ -569,9 +570,6 @@ Turn ends: "out of credits"
   → plugin sends "Try again."
   → a new turn starts
 ```
-
-핸들러는 마지막 20개 타임라인 항목만 가져옵니다. 해당 페이지 이전의 출력은 검사하지 않습니다.
-플러그인에 더 많은 기록이 필요하면 `cursor`와 `direction`을 사용해 페이지를 더 탐색하세요.
 
 기존 SDK로 새 메시지를 보냅니다. 계속 일치하면 후속 작업을 계속 보내므로 필요할 때 플러그인에
 제한이나 지연을 추가하세요. 첨부 파일과 도구 효과는 재생되지 않습니다.

@@ -75,6 +75,7 @@ my-plugin/
 | 기존 루트 진입점의 `plugin.addSidebarItem({ id, title, icon, surface })`                    | `index.client.tsx`의 `client.addSidebarHeaderItem({ id, title, Component })`; [사이드바 항목](reference#sidebar-items) 참조 |
 | 새 사이드바 푸터 기여                                                               | `index.client.tsx`의 `client.addSidebarFooterItem({ id, title, Component })`              |
 | 새 사이드바 대체 보기                                                               | `index.client.tsx`의 `client.addSidebarView({ id, title, Component })`; [사이드바 보기](sidebar-views) 참조 |
+| 사이드바 작업공간 행의 새 배지 | `index.client.tsx`의 `client.addWorkspaceRowBadgeItem({ id, title, icon, Component })`; [작업공간 행 배지 항목](reference#workspace-row-badge-items) 참조 |
 | 새 파일 패널 기여                                                                   | `index.client.tsx`의 `client.addFilePanel(panel)`                                         |
 | 기존 루트 진입점의 `plugin.addWorkspacePanel(panel)`                                       | `index.client.tsx`의 `client.addWorkspacePanel(panel)`                                    |
 | `context: "agent"`가 있는 에이전트 패널                                                  | `index.client.tsx`의 `client.addAgentPanel(panel)`; `context` 생략                        |
@@ -209,6 +210,22 @@ pill.remove();
 | `session.open`의 `config.settings` | `config.providerOptions` |
 | `ProviderSetting` 타입 | `ProviderOptionControl` |
 | `agent.create.before`의 `config.featureValues` | `config.providerOptions`. 반환된 `featureValues` 변경도 계속 적용됨 |
+
+### v0.16의 턴 기록
+
+`agent.turn.after`는 v0.13부터 빈 `timeline`을 보냈으며 SDK 타입에서는 더 이상 이를 선언하지 않습니다.
+`event.timeline`을 읽는 플러그인은 이제 타입 검사에 실패합니다. 대신 에이전트에서 턴을 읽으세요.
+
+```ts
+const turn = await context.paseo.agents
+  .ref(event.agent.id)
+  .timeline.refetch({ direction: "tail", limit: 1, wholeTurns: true });
+const items = turn.entries.filter((entry) => entry.turnId === event.turnId).map(({ item }) => item);
+```
+
+필터는 다른 플러그인이 보낸 후속 작업처럼 이 턴이 끝난 뒤 시작된 턴의 항목을 제거합니다. 그런 턴이 이미 시작했거나 `event.turnId`가 `null`이면 목록이 비어 있습니다.
+
+이전 SDK를 기준으로 빌드한 플러그인은 2027-05-31 이후에 제거될 때까지 `timeline: []`을 계속 받습니다.
 
 ## 5. 불완전한 마이그레이션 오류 알아보기
 
