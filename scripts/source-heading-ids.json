@@ -390,6 +390,7 @@
     "change-saved-configuration",
     "agentcreateafter",
     "agentopenbefore",
+    "append-instructions-on-every-session-opening",
     "inject-environment-variables-on-every-session-opening",
     "inject-mcp-servers",
     "attach-tools-to-agents",

@@ -31,7 +31,7 @@ export default function contribute(server: PluginServerContext) {
 
 모든 핸들러는 비동기여야 합니다. 턴 완료에는 성공, 실패, 취소가 포함되므로 `outcome`을 확인하세요. 권한 완료에는 모든 해결 방식이 포함되므로 `resolution`을 확인하세요.
 
-에이전트 생성은 한 번만 일어나며 `agent.create.before`는 저장되는 구성을 변경합니다. 열기는 공급자 프로세스를 시작합니다. 첫 실행, 데몬 재시작 후 재개, 기록 읽기, 외부 세션 가져오기 또는 다시 로드할 때 발생합니다. `agent.open.before`는 매번 실행 시에만 쓰이는 환경, 도구 및 MCP 서버를 제공합니다. 생성하면 에이전트가 열리지만, 기존 에이전트를 여는 것은 에이전트를 생성하지 않습니다. 닫기는 실행 중인 인스턴스를 종료합니다. 앱에서 탭을 여는 것은 별도의 작업입니다.
+에이전트 생성은 한 번만 일어나며 `agent.create.before`는 저장되는 구성을 변경합니다. 열기는 공급자 프로세스를 시작합니다. 첫 실행, 데몬 재시작 후 재개, 기록 읽기, 외부 세션 가져오기 또는 다시 로드할 때 발생합니다. `agent.open.before`는 매번 실행 시에만 쓰이는 환경, 지침, 도구 및 MCP 서버를 제공합니다. 생성하면 에이전트가 열리지만, 기존 에이전트를 여는 것은 에이전트를 생성하지 않습니다. 닫기는 실행 중인 인스턴스를 종료합니다. 앱에서 탭을 여는 것은 별도의 작업입니다.
 
 `worktree.create.after`는 작업공간이 등록되기 전에 실행됩니다. 이 훅은 `workspace.create.after`보다 먼저 실행되며, 둘 다 첫 에이전트의 `agent.create.before` / `agent.open.before`보다 먼저 실행됩니다.
 
@@ -58,7 +58,7 @@ Paseo에는 반환된 프로미스만 보이므로 분리된 작업에는 오류
 | `worktree.create.after`   | 예   | `{ worktree }`                            | 작업 트리의 파일. 생성 중단은 예외를 던짐        |
 | `agent.create.before`     | 예   | `{ request: { config, env?, metadata } }` | `cwd`를 제외한 저장 구성, `env`, `metadata`      |
 | `agent.create.after`      | 아니요 | `{ agent }`                             |                                                  |
-| `agent.open.before`       | 예   | `{ request }`                             | 실행 시에만 쓰이는 `env`, `tools`, `mcpServers`  |
+| `agent.open.before`       | 예   | `{ request }`                             | 실행 시에만 쓰이는 `env`, `appendSystemPrompt`, `tools`, `mcpServers` |
 | `agent.close.after`       | 아니요 | `{ agent }`                             |                                                  |
 | `agent.archive.after`     | 아니요 | `{ agent, archivedAt }`                 |                                                  |
 | `agent.turn.before`       | 아니요 | `{ agent, turnId }`                     |                                                  |
@@ -290,7 +290,7 @@ server.addHook("agent.create.after", async ({ agent }) => {
 
 ## agent.open.before
 
-`{ request }`를 받습니다. 이번 실행에서는 `env`, `tools`, `mcpServers`만 변경할 수 있습니다. 다른 모든 필드는 읽기 전용입니다. 예외, 유효하지 않은 결과 또는 시간 초과는 열기를 실패시킵니다.
+`{ request }`를 받습니다. 이번 실행에서는 `env`, `appendSystemPrompt`, `tools`, `mcpServers`만 변경할 수 있습니다. 다른 모든 필드는 읽기 전용입니다. 예외, 유효하지 않은 결과 또는 시간 초과는 열기를 실패시킵니다.
 
 열리는 중인 에이전트에 대한 쓰기 작업(`setMetadata`, `setLabels`, 옵션·모델·사고·모드 변경)을
 기다리지 마세요. 쓰기는 열기가 끝나기를 기다리고 열기는 훅을 기다리므로, 훅이 시간 초과되어 열기에
@@ -337,6 +337,19 @@ server.addHook("agent.open.before", async ({ request }, { paseo }) => {
 | `reason`      | `create`, `resume`, `refresh`, `import`                                                                                 |
 | `purpose`     | `interactive`, `history`                                                                                                |
 | `env`         | 실행 재정의 맵. 데몬이 상속한 환경은 제외함. 재정의를 추가, 대체 또는 제거하려면 맵을 대체                              |
+
+### 세션을 열 때마다 지침 덧붙이기
+
+```ts
+server.addHook("agent.open.before", async ({ request }) => ({
+  ...request,
+  appendSystemPrompt: [...(request.appendSystemPrompt ?? []), "Follow the team engineering guide."],
+}));
+```
+
+지침은 저장된 에이전트 프롬프트와 데몬 지침 뒤에 플러그인 순서대로 이어집니다. 에이전트 구성에는 저장되지 않으며 기록을 열 때는 무시됩니다. 데이터를 변경한 뒤 플러그인을 다시 로드하면 다음에 다시 열 때 새 지침이 적용됩니다. 실행 중인 턴은 계속되며 지침을 제거해도 대화 기록에서 제거되지는 않습니다. 내부 에이전트도 이 지침을 받습니다. ACP 어댑터는 해당 공급자에 시스템 지침을 보내지 않습니다. 플러그인 공급자는 합성된 프롬프트를 받지만 직접 적용해야 합니다.
+
+Codex 지침 업데이트에는 앱 서버가 인식 가능한 버전으로 보고하는 Codex 0.121.0 이상이 필요합니다. `0.0.0`을 보고하는 소스 빌드는 버전이 지정된 빌드를 사용해야 합니다. Paseo는 기존 스레드에 현재 지침 스냅숏을 추가하며 이전 스냅숏은 대화에 남습니다. 업데이트 중 비정상 종료가 발생하거나 스레드를 되감으면 스냅숏이 반복될 수 있습니다.
 
 ### 세션을 열 때마다 환경 변수 주입하기
 
