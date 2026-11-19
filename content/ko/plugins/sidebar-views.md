@@ -1,3 +1,11 @@
+---
+title: Build a sidebar view
+description: Replace the content of Paseo's sidebar with your own React Native view.
+nav: Sidebar views
+order: 47
+category: Plugins
+---
+
 # 사이드바 보기 만들기
 
 사이드바 보기는 Paseo의 헤더와 푸터 사이 콘텐츠를 대체합니다. 테마 토큰, 활성 엔터티 ref 및 탐색 메서드를 받은 뒤 자체 React Native UI를 렌더링합니다. 프로젝트, 작업 기반 에이전트, 중첩 에이전트 및 라벨 폴더를 시험해 보려면 [sidebar-views 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/sidebar-views)를 설치하세요.

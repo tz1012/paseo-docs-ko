@@ -19,7 +19,7 @@ category: Providers
 파일을 편집한 후 `paseo reload`를 실행하세요. 공급자 변경은 데몬을 다시 시작하지 않아도 이후 실행에 적용됩니다.
 
 공급자 ID는 하이픈이 포함된 소문자 영숫자(`/^[a-z][a-z0-9-]*$/`)여야 합니다. 새 사용자 정의 공급자에는 `extends`(1급 공급자 ID 또는 `"acp"`) 및 `label`이 필요합니다.
-번들된 공급자 플러그인을 재정의하려면 해당 공급자 ID를 사용하고 `extends`는 생략하세요. [Muse Code](/docs/muse-code)의 경우 명령 또는 환경 재정의를 `agents.providers.muse` 아래에 설정하세요.
+번들된 공급자 플러그인을 재정의하려면 해당 공급자 ID를 사용하고 `extends`는 생략하세요. [Muse Code](/docs/supported-providers/muse-code)의 경우 명령 또는 환경 재정의를 `agents.providers.muse` 아래에 설정하세요.
 
 아래 예는 간략한 둘러보기입니다. 전체 최신 참조는 GitHub: [docs/custom-providers.md](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)에 있습니다.
 

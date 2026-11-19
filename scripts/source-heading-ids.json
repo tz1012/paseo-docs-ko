@@ -25,13 +25,6 @@
     "architecture",
     "security"
   ],
-  "claude-code": [
-    "claude-code",
-    "does-claude-code-cost-extra-in-paseo",
-    "getting-started",
-    "use-claude-code-in-the-paseo-terminal",
-    "see-also"
-  ],
   "cli": [
     "cli-reference",
     "quick-reference",
@@ -61,14 +54,6 @@
     "multi-agent-workflows",
     "output-formats",
     "global-options"
-  ],
-  "codex": [
-    "codex",
-    "does-codex-cost-extra-in-paseo",
-    "getting-started",
-    "codex-is-missing-in-paseo",
-    "use-codex-in-the-paseo-terminal",
-    "see-also"
   ],
   "community": [
     "related-projects",
@@ -338,12 +323,6 @@
     "configure-a-custom-fallback-order",
     "per-project-instructions"
   ],
-  "muse-code": [
-    "muse-code",
-    "getting-started",
-    "provider-options",
-    "limitations-in-muse-141"
-  ],
   "orchestration-workflows": [
     "common-orchestration-workflows",
     "send-work-to-a-different-model",
@@ -554,7 +533,7 @@
   "providers": [
     "providers",
     "mental-model",
-    "two-tiers",
+    "native-support-and-acp-agents",
     "where-to-go-next"
   ],
   "schedules-chat": [
@@ -685,13 +664,71 @@
     "paseo-committee-committee-planning",
     "paseo-advisor-advisor"
   ],
-  "supported-providers": [
+  "supported-providers/antigravity": [
+    "antigravity",
+    "getting-started",
+    "permissions",
+    "limitations"
+  ],
+  "supported-providers/claude-code": [
+    "claude-code",
+    "does-claude-code-cost-extra-in-paseo",
+    "getting-started",
+    "use-claude-code-in-the-paseo-terminal",
+    "see-also"
+  ],
+  "supported-providers/codex": [
+    "codex",
+    "does-codex-cost-extra-in-paseo",
+    "getting-started",
+    "codex-is-missing-in-paseo",
+    "use-codex-in-the-paseo-terminal",
+    "see-also"
+  ],
+  "supported-providers/fx": [
+    "fx",
+    "getting-started",
+    "models-and-permissions"
+  ],
+  "supported-providers/github-copilot": [
+    "github-copilot",
+    "getting-started",
+    "modes"
+  ],
+  "supported-providers/hoplite": [
+    "hoplite",
+    "getting-started",
+    "projects-and-the-cloud-workspace"
+  ],
+  "supported-providers/index": [
     "supported-providers",
     "native-support",
-    "antigravity",
-    "acp-catalog",
-    "fx",
-    "hoplite"
+    "more-agents-through-acp"
+  ],
+  "supported-providers/muse-code": [
+    "muse-code",
+    "getting-started",
+    "provider-options",
+    "limitations-in-muse-141"
+  ],
+  "supported-providers/omp": [
+    "oh-my-pi",
+    "getting-started",
+    "permission-modes",
+    "tools-subagents-and-sessions"
+  ],
+  "supported-providers/opencode": [
+    "opencode",
+    "getting-started",
+    "modes",
+    "see-also"
+  ],
+  "supported-providers/pi": [
+    "pi",
+    "getting-started",
+    "modes-and-sessions",
+    "timeouts",
+    "see-also"
   ],
   "troubleshooting": [
     "troubleshooting",

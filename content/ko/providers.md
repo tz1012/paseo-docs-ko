@@ -1,6 +1,6 @@
 ---
 title: Providers
-description: How Paseo thinks about coding agents, wrapping existing CLIs, native vs ACP support, and where to go next.
+description: How Paseo thinks about coding agents, wrapping existing CLIs, native support and ACP agents, and where to go next.
 nav: Providers
 order: 20
 category: Providers
@@ -16,10 +16,10 @@ Paseo는 **설치하고 인증한 기존 코딩 에이전트**를 편집기, 터
 
 공급자는 Paseo와 하나의 외부 에이전트 CLI 간의 계약입니다. 이를 시작하는 방법, 출력을 스트리밍하는 방법, 입력을 다시 보내는 방법, 지원하는 모드 등이 있습니다. 실제 바이너리는 컴퓨터에 존재하며 일반 하위 프로세스로 실행됩니다.
 
-## 2계층
+## 네이티브 지원과 ACP 에이전트
 
-- **기본 지원**, Paseo는 주요 에이전트(Claude Code, Codex, OpenCode, Pi, [Antigravity](/docs/supported-providers#antigravity), [Muse Code](/docs/muse-code))용 번들 어댑터를 제공합니다. 해당되는 경우 모드 메타데이터 및 음성 지원과 함께 기본 CLI가 설치되면 자동으로 검색됩니다.
-- **ACP 카탈로그**, [에이전트 클라이언트 프로토콜](https://agentclientprotocol.com)을 사용하는 모든 에이전트는 일반 어댑터를 통해 지원됩니다. Paseo는 원클릭 설치로 구성된 카탈로그(Cursor, Gemini, GitHub Copilot, Hermes, Kimi, Qwen Code 등 25개 이상)를 제공하며 다른 ACP 에이전트를 직접 추가할 수 있습니다.
+- **네이티브 지원.** Paseo는 다음 각 에이전트의 통합을 제공합니다. [Antigravity](/docs/supported-providers/antigravity), [Claude Code](/docs/supported-providers/claude-code), [Codex](/docs/supported-providers/codex), [fx](/docs/supported-providers/fx), [GitHub Copilot](/docs/supported-providers/github-copilot), [Hoplite](/docs/supported-providers/hoplite), [Muse Code](/docs/supported-providers/muse-code), [Oh My Pi](/docs/supported-providers/omp), [OpenCode](/docs/supported-providers/opencode), [Pi](/docs/supported-providers/pi). 대부분은 CLI를 설치하면 Paseo에 표시되며, 해당되는 경우 모드 메타데이터와 음성 지원도 제공됩니다.
+- **ACP 에이전트.** Paseo는 [Agent Client Protocol](https://agentclientprotocol.com)을 사용하는 모든 에이전트를 범용 어댑터로 실행합니다. 인앱 카탈로그에는 Cursor, Gemini CLI, Hermes, Kimi, Qwen Code를 비롯해 30개 이상의 에이전트가 나열되며, 다른 ACP 에이전트를 직접 추가할 수도 있습니다.
 
 어느 쪽이든 **기본 CLI를 설치**합니다. Paseo가 운영합니다.
 
