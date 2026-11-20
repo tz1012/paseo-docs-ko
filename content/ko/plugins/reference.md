@@ -437,6 +437,51 @@ Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용�
 
 `ProviderRegistration.icon`은 `icon.svg`처럼 플러그인 디렉터리를 기준으로 한 파일 경로입니다. 해당 디렉터리 안에 있고 [SVG 아이콘 규칙](#svg-rules)을 따르는 일반 파일이어야 합니다. Paseo는 플러그인을 시작할 때 파일을 읽고 검증합니다. 문자열 자체를 인라인 SVG나 URL로 사용하지 않습니다.
 
+#### 공급자 설치
+
+**Paseo 0.17이 필요합니다.** 이전 버전은 `installation`을 무시합니다. `ProviderRegistration.installation`은 공급자 설정의 **설치** 섹션을 채웁니다. 모든 멤버는 선택 사항입니다. `inspect`와 `installUrl`을 모두 선언하지 않으면 Paseo가 이 섹션을 숨깁니다. 전체 예제는 [설치 및 업데이트 보고하기](/docs/plugins/providers#report-installation-and-updates)를 참조하세요. 타입은 `@getpaseo/plugin/server/provider`에서 가져옵니다.
+
+```ts
+interface ProviderInstallation {
+  installUrl?: string;
+  updateUrl?: string;
+  inspect?(context: ProviderInstallationContext): Promise<ProviderInspection>;
+  checkForUpdates?(context: ProviderUpdateCheckContext): Promise<ProviderUpdateCheck>;
+  update?(context: ProviderUpdateContext): Promise<ProviderUpdateResult>;
+}
+```
+
+| 멤버 | 호출 시점 | 제한 시간 | 결과 보관 |
+| ----------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
+| `inspect` | 공급자 목록이나 공급자 페이지를 표시할 때 | 20초 | 30초 |
+| `checkForUpdates` | `inspect`가 `installed`를 반환한 뒤, 또는 `inspect`가 없을 때 | 25초 | `current` 또는 `available`은 1시간, 그 밖에는 30초 |
+| `update` | 사용자가 **업데이트**를 선택할 때, 공급자마다 한 번에 하나씩 | 없음 | `succeeded` 뒤 Paseo가 두 결과를 다시 읽음 |
+
+공급자 설정의 **새로 고침**은 보관된 결과를 건너뛰고 실패한 업데이트를 지웁니다. Paseo는 세션을 시작하기 전이나 일정에 따라 이 멤버를 호출하지 않습니다. 제한 시간을 넘기거나 예외가 발생하면 해당 메시지를 표시하는 오류가 됩니다.
+
+`installUrl`과 `updateUrl`은 Paseo가 브라우저에서 여는 `http` 또는 `https` 페이지입니다. 다른 종류의 URL이면 플러그인을 시작하지 못합니다.
+
+컨텍스트:
+
+| 필드 | 타입 | 의미 |
+| ------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `launch` | `ProviderInstallationLaunch \| undefined` | 세션이 사용할 실행 정보와 `resolved`입니다. 등록에 `command`가 없으면 제공되지 않습니다. |
+| `signal` | `AbortSignal` | Paseo가 대기를 중단하거나 데몬이 멈추면 중단됩니다. |
+| `installedVersion` | `string \| undefined` | `checkForUpdates` 전용입니다. `inspect`가 보고한 `version` 그대로입니다. 버전을 보고하지 않았거나 `inspect`가 없으면 제공되지 않습니다. |
+| `report` | `(event: ProviderUpdateReport) => void` | `update` 전용입니다. `{ type: "stdout" \| "stderr" \| "message", text }`를 순서대로 사용자에게 표시합니다. |
+
+`ProviderInstallationLaunch`는 `{ command, args, env, resolved }`입니다. `resolved: true`이면 `command`는 실행 파일 경로입니다. `resolved: false`이면 Paseo가 실행 파일을 찾지 못한 것이며 `command`는 구성된 이름입니다.
+
+응답:
+
+| 타입 | 값 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProviderInspection` | `{ status: "installed", version?: string }` 또는 `{ status: "not_installed" }` |
+| `ProviderUpdateCheck` | `{ status: "current" }`, `{ status: "available", versions?: string[], message?: string }` 또는 `{ status: "unknown", message?: string }` |
+| `ProviderUpdateResult` | `{ status: "succeeded", message?: string }` 또는 `{ status: "failed", message: string }` |
+
+Paseo는 `version`, `versions`, `message`를 작성된 그대로 표시하며 파싱하거나 정렬하지 않습니다. `inspect`가 같은 `version`을 보고하는 동안 `current` 또는 `available` 응답은 최대 한 시간 동안 재사용합니다. `report` 출력은 마지막 65,536자를 보관합니다. 위 형식과 맞지 않는 응답은 오류입니다. `inspect`가 CLI 설치 상태를 보고하고 `update`를 선언하면 `checkForUpdates`의 선언 여부나 응답에 관계없이 **업데이트**가 표시됩니다. `update`가 없으면 같은 조건에서 `updateUrl`이 제공됩니다.
+
 ### 사용량 소스
 
 **Paseo 0.11이 필요합니다.** 서버 진입점에서 `server.registerUsageSource()`로 소스를 등록하세요. 계약과 도우미는 `@getpaseo/plugin/server/usage`에서 가져옵니다.
@@ -540,7 +585,7 @@ Claude는 Bedrock, Vertex 및 외부 `ANTHROPIC_BASE_URL` 세션을 제외합니
 토글에 사용할 하나의 유효 선택을 계산합니다. 처음 편집하면 해당 기본값의 스냅샷이 만들어지며,
 명시적으로 비운 선택은 빈 상태로 유지됩니다.
 
-CLI의 토큰 교체가 반영되도록 `fetch()`에서 선택된 저장소를 다시 읽으세요. 새로 고침 토큰을 교환하거나 자격 증명 저장소에 쓰지 마세요. 다른 곳에서 새로 고치면 CLI의 사본이 무효화될 수 있고, 파싱한 파일을 다시 쓰면 모델링하지 않은 필드가 유실될 수 있습니다. 검색 후 저장소가 사라졌다면 예외를 발생시키세요. 다음 검색에서 카드가 제거될 때까지 카드에 오류가 표시됩니다.
+CLI의 토큰 교체가 반영되도록 `fetch()`에서 선택된 저장소를 다시 읽으세요. 특정 계정을 검색했다면 입력값에 해당 ID를 전달하고 사용량을 반환하기 전에 일치하는지 확인하세요. 저장소가 사라지거나 로그인이 다른 계정으로 바뀌면 예외를 발생시키세요. 다음 검색에서 카드가 업데이트됩니다. 새로 고침 토큰을 교환하거나 자격 증명 저장소에 쓰는 작업은 CLI만 수행해야 합니다.
 
 기존 로그인이 할당량을 제공할 수 없는 이유는 `unavailable(problem)`으로 설명하세요. 문제 인자가 필수이며 인자가 없는 형식은 없습니다. `expiresAt`은 ISO 타임스탬프입니다. 거부된 로그인에는 업스트림 HTTP 상태가 포함됩니다. `refreshedBy`는 `claude`, `codex`, `opencode`, `omp`, `pi` 같은 CLI 이름입니다. 해결 안내 문장은 Paseo가 제공합니다. 이 필드에 지침이나 사용자 대상 문장을 넣지 마세요. `no_quota`의 `detail`은 그대로 표시됩니다.
 
@@ -581,7 +626,7 @@ export default function contribute(server: PluginServerContext) {
 
 내장 Claude 검색은 macOS 키체인 로그인을 우선하며, 키체인이 비어 있을 때만 Claude Code 자격 증명 파일을 사용합니다. `CLAUDE_CONFIG_DIR`은 해당 파일의 디렉터리를 선택합니다. 새 토큰은 OAuth 프로필의 계정 및 조직 ID를 사용하고, 만료되거나 거부된 프로필은 위치 식별자 해시를 사용합니다. Codex는 Codex CLI, OpenCode, Pi, OMP 순으로 우선하며 저장된 메타데이터 또는 JWT 클레임의 ChatGPT 계정 ID로 그룹화합니다. Pi와 OMP 로그인은 만료된 뒤에도 검색할 수 있습니다. OMP에는 `node:sqlite`가 필요합니다.
 
-`usage.list_reports`는 ID 없이 호출하면 계정을 검색합니다. ID를 지정하면 ID를 다시 검색하지 않고 알려진 계정을 새로 고칩니다. 저장소의 계정이 바뀌면 다음 검색 전까지 기존 카드에 새 로그인 할당량이 표시됩니다. 보고서는 5분 동안 캐시되며 `forceRefresh`는 해당 캐시를 우회합니다. 항목에는 `id`, `account.label`, `fetchedAt`이 포함됩니다. 실패한 계정에는 선택적인 `loginErrors` 항목도 포함되며, 각 항목에는 `harness`와 각 로그인의 실패한 `report`가 들어갑니다. 클라이언트는 `server_info.features.usageSources`를 기준으로 이 기능을 활성화합니다. 이전 `provider.usage.list` RPC는 0.10 클라이언트를 위해 같은 보고서를 매핑하고 문제를 `error` 문자열로 렌더링합니다.
+`usage.list_reports`는 요청한 에이전트의 계정을 검색합니다. 호스트 전체 요청은 기본값을 검색하고 Paseo가 이미 사용량을 조회한 에이전트를 다시 확인합니다. 보고서 ID를 지정한 요청은 기존 검색 입력값을 사용해 알려진 보고서를 가져옵니다. 보고서는 5분 동안 캐시됩니다. 캐시를 우회하려면 `forceRefresh`를 설정하세요. 항목에는 `id`, `account.label`, `fetchedAt`이 포함됩니다. 실패한 계정에는 선택적인 `loginErrors` 항목도 포함되며, 각 항목에는 `harness`와 각 로그인의 실패한 `report`가 들어갑니다. 클라이언트는 `server_info.features.usageSources`를 기준으로 이 기능을 활성화합니다. 이전 `provider.usage.list` RPC는 0.10 클라이언트를 위해 같은 보고서를 매핑하고 문제를 `error` 문자열로 렌더링합니다.
 
 소스 아이콘은 공급자 아이콘과 같은 규칙을 따르는 파일 경로입니다.
 
@@ -2050,8 +2095,8 @@ export default function contribute(client: PluginClientContext) {
 | 필드 또는 명령 | 의미 |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `host`, `project` | 사용자 선택인 `{ id, label }`과 `{ id, name } \| null`입니다. 읽기 전용이며 항목은 호스트나 프로젝트를 바꿀 수 없습니다. |
-| `isolation`, `setIsolation` | `"local"` 또는 `"worktree"`입니다. 작업 트리를 만들 수 없는 프로젝트는 `"local"`로 읽히며 `setIsolation("worktree")`는 reject됩니다. |
-| `baseRef`, `setBaseRef` | 새 작업 트리의 시작점입니다. `{ type: "branch", name }`, `{ type: "change-request", number }` 또는 기본값을 알기 전까지 `null`입니다. 브랜치의 `name`은 `refs/remotes/origin/main`처럼 생성에 사용하는 정확한 ref이므로 `setBaseRef(newWorkspace.baseRef)`는 아무것도 바꾸지 않습니다. `setBaseRef`는 기준 선택기가 제공하는 ref 또는 Paseo가 다른 곳과 같은 방식으로 해석하는 단순 브랜치 이름을 받습니다. 프로젝트를 선택하지 않은 동안에는 reject됩니다. |
+| `isolation`, `setIsolation` | `"local"` 또는 `"worktree"`입니다. **기존 작업 트리**는 작업 트리 디렉터리의 로컬 작업공간이므로 `"local"`로 읽히며 `setIsolation`은 그대로 둡니다. 작업 트리를 만들 수 없는 프로젝트는 `"local"`로 읽히며 `setIsolation("worktree")`는 reject됩니다. |
+| `baseRef`, `setBaseRef` | 새 작업 트리의 시작점입니다. `{ type: "branch", name }`, `{ type: "change-request", number }` 또는 기본값을 알기 전까지 `null`입니다. 브랜치의 `name`은 `refs/remotes/origin/main`처럼 생성에 사용하는 정확한 ref이므로 `setBaseRef(newWorkspace.baseRef)`는 아무것도 바꾸지 않습니다. `setBaseRef`는 기준 선택기가 제공하는 ref 또는 Paseo가 다른 곳과 같은 방식으로 해석하는 단순 브랜치 이름을 받습니다. 새 작업 트리는 이 기준에서 분기하고 브랜치 목록은 **분기**로 전환됩니다. 프로젝트를 선택하지 않은 동안에는 reject됩니다. |
 | `branch`, `setBranch` | 새 작업 트리에 만들 브랜치 이름입니다. `null`이면 Paseo가 이름을 선택합니다. 격리가 로컬이거나 기준이 변경 요청인 동안에도 유지되며, 기본 기준이나 선택한 브랜치에서 분기하는 모든 작업 트리의 새 브랜치 이름이 됩니다. 기존 브랜치나 변경 요청을 체크아웃하는 작업 트리에는 적용되지 않습니다. |
 | `metadata`, `setMetadata` | 첫 번째 에이전트가 아니라 생성되는 작업공간의 [메타데이터](/docs/plugins/hooks#metadata)입니다. 최상위 키를 대체하며 `null`은 키를 제거합니다. 메타데이터를 지원하지 않는 호스트에서는 "Update the host to use metadata." 오류로 reject됩니다. |
 

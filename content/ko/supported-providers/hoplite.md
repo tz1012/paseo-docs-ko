@@ -14,7 +14,7 @@ category: Providers
 
 1. 데몬 호스트에 [Hoplite CLI](https://hoplite.sh/docs/cli)를 설치합니다.
 2. `hoplite login`을 실행합니다.
-3. Paseo에서 **설정 → 호스트 → 해당 호스트 → 공급자**를 열고 카탈로그에서 **Hoplite**를 찾아 **추가**를 선택하세요.
+3. Paseo에서 **설정 → 호스트 → 해당 호스트 → 공급자**를 열고 **+ 공급자**를 선택한 다음 **Hoplite**를 찾아 **추가**를 선택하세요.
 
 Paseo는 `hoplite acp`를 실행합니다. 인증과 프로젝트 설정은 [Hoplite의 ACP 가이드](https://hoplite.sh/docs/cli/acp)를 참조하세요.
 

@@ -22,10 +22,13 @@ category: Browser
 
 | 도구 | 인수 | 목적 |
 | ------ | ------------- | ------------------------------------------------------------ |
-| `browser_list_tabs` | — | 연결된 호스트 전체의 에이전트 작업 영역에 열려 있는 탭을 나열합니다.           |
-| `browser_new_tab` | `url?` | 백그라운드에서 탭을 열고 `browserId`을 반환합니다.                  |
-| `browser_close_tab` | `browserId` | 탭을 닫고 웹뷰를 정리하세요.                                     |
+| `browser_list_hosts` | — | 탭이 없는 호스트를 포함해 연결된 브라우저 호스트를 이름과 ID로 나열합니다. |
+| `browser_list_tabs` | — | 작업공간 탭과 해당 브라우저 호스트를 나열합니다. |
+| `browser_new_tab` | `url?, browserHostId?` | 백그라운드에서 탭을 열고 `browserId`와 브라우저 호스트를 반환합니다. |
+| `browser_close_tab` | `browserId` | 탭을 닫고 웹뷰를 정리하세요. |
 | `browser_resize` | `browserId, width, height` | 탭의 뷰포트 크기를 조정합니다. 휴대폰이나 태블릿 크기에서 레이아웃을 확인하세요. |
+
+탭을 열 수 있는 호스트가 하나뿐이면 `browserHostId`를 생략하세요. 여러 개라면 `browser_list_hosts`에서 얻은 ID를 전달하세요. Paseo Desktop의 Command Center에서 **브라우저 호스트 이름 복사**를 검색하세요. 결과에는 에이전트에 표시되는 것과 같은 이름이 나타납니다. 선택하면 이름이 복사됩니다. 선택한 호스트를 사용할 수 없다면 호스트를 다시 나열하세요.
 
 ## 페이지 읽기
 
@@ -71,8 +74,9 @@ category: Browser
 
 | 코드 | 의미 |
 | ------ | ------------------------------------------------------------------ |
-| `browser_disabled` | 이 호스트에서는 브라우저 도구가 꺼져 있습니다.                                      |
-| `browser_no_host` | 연결된 브라우저 호스트(데스크톱 앱)가 없습니다. 재시도 가능.                          |
-| `browser_stale_ref` | 심판이 더 이상 페이지와 일치하지 않습니다. 새 스냅샷을 찍으세요.                       |
-| `browser_timeout` | 요소가 실행 가능해지지 않았거나 대기 조건이 유지되지 않았습니다.          |
+| `browser_disabled` | 이 호스트에서는 브라우저 도구가 꺼져 있습니다. |
+| `browser_no_host` | 연결된 브라우저 호스트가 없거나 선택한 호스트의 연결이 끊어졌습니다. |
+| `browser_host_ambiguous` | 여러 호스트가 탭을 열 수 있습니다. 오류에 나열된 호스트 하나를 선택하고 해당 ID로 다시 시도하세요. |
+| `browser_stale_ref` | 참조가 더 이상 페이지와 일치하지 않습니다. 새 스냅샷을 찍으세요. |
+| `browser_timeout` | 요소가 실행 가능해지지 않았거나 대기 조건이 유지되지 않았습니다. |
 | `browser_denied` | 작업이 허용되지 않습니다. `http(s)`이 아닌 URL이거나 탐색할 기록이 없습니다. |

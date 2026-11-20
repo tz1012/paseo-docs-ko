@@ -425,6 +425,7 @@
     "add-commands-and-steering",
     "permit-idle-runtime-cleanup",
     "publish-timeline-items",
+    "report-installation-and-updates",
     "adapt-an-acp-agent",
     "test-and-publish"
   ],
@@ -459,6 +460,7 @@
     "errors-and-refusal",
     "server-runtime",
     "providers",
+    "provider-installation",
     "usage-sources",
     "entry-point-and-cleanup",
     "lifecycle-hooks",
@@ -668,7 +670,7 @@
     "antigravity",
     "getting-started",
     "permissions",
-    "limitations"
+    "sessions-and-tools"
   ],
   "supported-providers/claude-code": [
     "claude-code",
@@ -795,6 +797,7 @@
     "git-worktrees",
     "layout-and-workflow",
     "create-a-worktree-backed-workspace",
+    "work-in-an-existing-worktree",
     "copy-local-files-with-worktreeinclude",
     "paseojson",
     "setup-and-teardown",

@@ -381,6 +381,105 @@ export default function contribute(client: PluginClientContext) {
 
 같은 렌더러로 공급자, 클라이언트 타임라인 변환기 또는 데몬 타임라인 추가 작업에서 내보낸 항목을 표시할 수 있습니다. 렌더러에는 공급자 구현이 필요하지 않습니다.
 
+## 설치 및 업데이트 보고하기
+
+등록에 `installation`을 추가하면 공급자 설정에 **설치** 섹션이 표시됩니다. 사용자는 CLI가 설치되어 있는지와 버전, 사용 가능한 업데이트가 있는지 확인할 수 있으며, **업데이트** 버튼으로 업데이터를 실행하고 출력을 볼 수 있습니다. 모든 멤버는 선택 사항이므로 CLI가 지원하는 항목만 선언하세요.
+
+| 멤버 | 사용자에게 표시되는 항목 | 선언할 때 |
+| ----------------- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
+| `installUrl` | **설치 지침**, 설치되지 않았을 때는 **설치** | 사용자가 CLI를 설치해야 할 때 |
+| `updateUrl` | 설치된 상태에서 `update`를 선언하지 않았을 때 **업데이트 지침** | 문서에 업데이트 방법이 있을 때 |
+| `inspect` | **버전** 또는 **설치되지 않음** | CLI가 버전을 보고할 때 |
+| `checkForUpdates` | **최신 상태**, **업데이트 가능** 또는 **업데이트를 확인할 수 없음** | CLI 업데이터가 사용하는 릴리스 소스에 조회할 수 있을 때 |
+| `update` | 설치된 상태에서 **업데이트**, 이어서 업데이터 출력 | CLI가 명령으로 자체 업데이트할 때 |
+
+다음 `example-agent`는 버전을 출력하고, `self-update --check --json`으로 업데이터가 설치할 릴리스를 조회한 다음 `self-update`로 업데이트합니다.
+
+```ts
+import { execCommand, spawnProcess, terminateProcess } from "@getpaseo/plugin/server";
+import type {
+  ProviderInstallation,
+  ProviderInstallationLaunch,
+} from "@getpaseo/plugin/server/provider";
+
+async function run(launch: ProviderInstallationLaunch, args: string[], signal: AbortSignal) {
+  const { stdout } = await execCommand(launch.command, [...launch.args, ...args], {
+    env: launch.env,
+    timeout: 20_000,
+    signal,
+  });
+  return stdout.trim();
+}
+
+export const installation: ProviderInstallation = {
+  installUrl: "https://example.com/docs/install",
+  updateUrl: "https://example.com/docs/update",
+
+  async inspect({ launch, signal }) {
+    if (!launch?.resolved) return { status: "not_installed" };
+    // `example-agent --version` prints `1.4.2`.
+    return { status: "installed", version: await run(launch, ["--version"], signal) };
+  },
+
+  async checkForUpdates({ launch, installedVersion, signal }) {
+    if (!launch) return { status: "unknown" };
+    // Prints `{"latest":"1.5.0"}`; `self-update` installs any release that differs.
+    const { latest } = JSON.parse(
+      await run(launch, ["self-update", "--check", "--json"], signal),
+    ) as { latest: string };
+    return latest === installedVersion
+      ? { status: "current" }
+      : { status: "available", versions: [latest] };
+  },
+
+  async update({ launch, signal, report }) {
+    if (!launch?.resolved) return { status: "failed", message: "example-agent is not installed" };
+    const child = spawnProcess(launch.command, [...launch.args, "self-update"], {
+      env: launch.env,
+      stdio: "pipe",
+    });
+    child.stdin.end();
+    child.stdout.on("data", (chunk: Buffer) => report({ type: "stdout", text: chunk.toString() }));
+    child.stderr.on("data", (chunk: Buffer) => report({ type: "stderr", text: chunk.toString() }));
+    const stop = () => void terminateProcess(child);
+    signal.addEventListener("abort", stop, { once: true });
+    const code = await new Promise<number | null>((resolve, reject) => {
+      child.once("error", reject);
+      child.once("close", resolve);
+    }).finally(() => signal.removeEventListener("abort", stop));
+    if (code !== 0) return { status: "failed", message: `self-update exited with code ${code}` };
+    return { status: "succeeded", message: "New sessions use the new version." };
+  },
+};
+```
+
+`command` 옆의 등록에 추가하세요.
+
+```ts
+export function createProvider(): ProviderRegistration {
+  return {
+    id: "example-agent",
+    label: "Example Agent",
+    command: ["example-agent"],
+    installation,
+    async connect(request) {
+      // ...
+    },
+  };
+}
+```
+
+각 콜백은 세션이 사용할 실행 정보를 받습니다. `launch.resolved`가 `false`이면 Paseo가 실행 파일을 찾지 못한 것이며 `command`는 구성된 이름입니다. 이때는 실행하지 말고 `not_installed`를 보고하세요. 등록에 `command`가 없으면 `launch`도 없습니다. `checkForUpdates`는 `inspect`가 CLI 설치 상태를 보고한 뒤에만 실행되며, 보고된 `version`을 `installedVersion`으로 받습니다. 버전을 다시 읽지 말고 이 값을 비교하세요. ACP 공급자는 `runAcpProvider()`를 등록에 펼친 뒤 옆에 `installation`을 추가하세요. 버전 및 업데이트 검사는 세션 하위 명령 앞에 실행 인수를 붙여 실행하세요. 예를 들어 `hoplite
+--version`을 사용하는 공급자는 `hoplite acp`를 실행합니다.
+
+Paseo는 버전을 텍스트로 취급합니다. `version`과 `versions`를 작성된 그대로 표시하고 파싱하지 않으므로 무엇이 더 최신인지 검사에서 결정해야 합니다. CLI 자체 업데이터가 조회하는 소스를 사용하고, 조회할 수 없다면 `checkForUpdates`를 생략하세요. `unknown`을 반환하거나 예외가 발생하거나 제한 시간을 넘기면 메시지와 함께 **업데이트를 확인할 수 없음**이 표시되고 **최신 상태**는 표시되지 않습니다.
+
+`update`는 사용자가 **업데이트**를 선택할 때만 실행되며 Paseo는 공급자마다 한 번에 하나의 업데이트를 실행합니다. 업데이터 출력을 변경하지 말고 `report`에 전달하세요. Paseo는 마지막 65,536자를 보관합니다. Paseo 자체 검증은 추가되지 않으므로 업데이트는 터미널에서 명령을 실행할 때와 같은 작업을 수행합니다. `succeeded`에는 새 버전이 언제 적용되는지 설명하는 메시지를, `failed`에는 이유를 반환하세요. 실패한 업데이트는 사용자가 공급자를 새로 고칠 때까지 표시됩니다. `update`가 없으면 **업데이트 지침**이 `updateUrl`을 엽니다.
+
+**업데이트**와 **업데이트 지침**은 `inspect`가 CLI 설치 상태를 보고할 때마다 표시됩니다. 업데이트 검사는 옆에 알고 있는 상태만 보여 주므로 검사할 수 없더라도 `update`를 선언하세요.
+
+Paseo는 설정을 열 때 `inspect`를 호출하고 결과를 30초 동안 보관합니다. `inspect`가 같은 버전을 보고하는 동안 `checkForUpdates`의 `current` 또는 `available` 결과는 한 시간 동안 보관하므로 Paseo 밖에서 CLI를 업데이트하면 검사 결과가 만료된 뒤 다시 확인합니다. `inspect`는 20초, `checkForUpdates`는 25초 안에 응답해야 합니다. `update`에는 제한 시간이 없습니다. Paseo가 대기를 중단하거나 데몬이 멈추면 `signal`이 중단됩니다. 모든 필드는 [`installation` 참조](/docs/plugins/reference#provider-installation)를 확인하세요.
+
 ## ACP 에이전트 연동하기
 
 에이전트가 이미 ACP를 사용하면 ACP shim을 사용하세요.
@@ -433,6 +532,16 @@ export const vendorEdits: AcpTransformer = {
   },
 };
 ```
+
+ACP 종류만으로 작업을 설명할 수 없을 때 반환된 도구 호출의 `detail`을 설정해 Paseo 도구 카드를 제공하세요. 예를 들어 에이전트가 새 파일을 ACP 편집으로 보고하더라도 플러그인은 파일 경로와 내용이 있는 `write` 상세 정보를 반환할 수 있습니다.
+
+ACP 에이전트가 `session/new` 또는 `session/load`에 확장 메타데이터를 필요로 하면 `sessionOpen`을 사용하세요. 훅은 시스템 프롬프트와 `initialize`에서 받은 에이전트 기능의 `_meta`를 받습니다. 세션 요청의 `_meta`에 필드를 추가하려면 `metadata`를 반환하세요. 플러그인이 이전에 다른 지속성 형식을 저장했다면 해당 형식의 기본 `sessionId`를 반환하세요. Paseo 자체에 저장된 세션 ID가 우선하며, 세션을 연 뒤 ACP 지속성 형식을 기록합니다.
+
+`configure` 변환기는 `catalog()`으로 에이전트의 현재 선택을 확인하고 변환된 변경 사항을 `apply(change)`에 전달할 수 있습니다. 이 방식으로 변경을 적용하면 공유 ACP 구성 매핑을 사용하며 해당 변경에 대한 변환기를 건너뜁니다.
+
+`session/load` 응답 뒤에 기록을 스트리밍하는 에이전트에는 `acpOptions.loadReplayQuietPeriodMs`를 설정하세요. Paseo는 세션 업데이트가 없는 상태로 해당 시간만큼 기다린 뒤 세션을 준비된 상태로 게시합니다. 최대 대기 시간은 이 간격의 5배입니다.
+
+특정 네이티브 모드를 기반으로 하는 무인 모드를 제공하려면 `acpOptions.autoAcceptMode`를 설정하세요. 어댑터는 Paseo 승인 화면을 열지 않고 명확한 ACP `allow_once` 작업 하나를 선택합니다. 새 세션의 기본값으로 사용하려면 `default: true`를 설정하세요. 이 모드로 전환하거나 해제하려면 보류 중인 승인이 없는 유휴 세션이어야 합니다.
 
 ## 테스트하고 게시하기
 
