@@ -215,7 +215,7 @@ server.addHook("worktree.create.before", async ({ request }) => ({
 
 Paseo는 심볼릭 링크로 된 상위 경로를 해석하고 반환된 경로를 검증합니다. 경로는 절대 경로여야 하고 존재해서는 안 되며, 파일 시스템 루트, 홈 디렉터리, 저장소 루트, `.git` 디렉터리 내부 또는 저장소의 상위 디렉터리여서는 안 됩니다. 대상이 이미 존재하면 생성이 실패합니다. Paseo는 플러그인이 선택한 경로에 접미사를 추가하지 않습니다. 플러그인은 디렉터리 생성을 Paseo에 맡겨야 합니다.
 
-순서는 `worktree.create.before` → `git worktree add` → `worktree.create.after` → 작업공간 등록입니다. 사라진 작업 트리를 복원할 때는 두 작업 트리 생성 훅을 실행하지 않고 기록된 경로에 다시 만듭니다.
+주문: `worktree.create.before` → 작업 트리 관리자 `create`(또는 `git worktree add`) → `worktree.create.after` → 작업공간 등록. `git worktree add`, 제거, 복원을 Worktrunk와 같은 외부 도구에 위임하려면 `worktree.create.before` 내부에 디렉터리를 만드는 대신 `server.registerWorktreeManager()`으로 [작업 트리 관리자](/docs/plugins/reference#worktree-managers)를 등록하세요. 누락된 작업 트리를 복원하면 생성 후크를 실행하지 않고 기록된 경로에 다시 생성되며, 소유 관리자의 선택적 `restore` 처리기가 있는 경우 이에 위임됩니다.
 
 ## worktree.create.after
 
@@ -702,12 +702,13 @@ Creation request
 
 ## 전체 예제
 
-| 플러그인                                                                                               | 포함 항목                                                                        |
+| 플러그인 | 포함 |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| [lifecycle-logger](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-logger)       | 에이전트, 작업공간, 작업 트리 훅과 환경 값을 가린 JSON 로그                       |
-| [lifecycle-actions](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-actions)     | 후속 작업, 권한, 환경, 공급자 전환, 작업 트리 선택                                |
-| [agent-configuration](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-configuration) | MCP 주입과 Codex 샌드박스/승인 옵션                                               |
-| [agent-tools](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-tools)                 | 레이블 대상 도구와 플러그인 프로세스의 파일 작업                                  |
+| [라이프사이클 로거](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-logger) | 에이전트, 작업공간 및 작업트리 후크 환경 값이 수정된 JSON 로그 |
+| [수명주기-작업](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-actions) | 후속 조치, 권한, 환경, 공급자 전환, 워크트리 선택 |
+| [에이전트 구성](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-configuration) | MCP 주입 및 Codex 샌드박스/승인 옵션 |
+| [에이전트 도구](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-tools) | 플러그인 프로세스의 라벨 대상 도구 및 파일 작업 |
+| [작업트렁크](https://github.com/getpaseo/paseo/tree/main/plugin-examples/worktrunk) | Worktree 관리자(`create`, `remove`, `restore`) 및 에이전트 활동 마커 |
 
 로거 출력은 `paseo plugin logs lifecycle-logger` 또는 호스트의 `daemon.log`에서 읽으세요.
 

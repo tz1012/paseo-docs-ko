@@ -117,81 +117,72 @@
   "hub/activity": [
     "hub-activity",
     "where-to-look",
-    "nothing-happened-when-i-mentioned-the-bot",
-    "sync-failures",
-    "nothing-is-retried"
+    "nothing-happened-when-an-event-arrived",
+    "webhook-and-schedule-runs"
   ],
   "hub/api": [
     "hub-public-api",
     "api-reference",
     "authentication",
-    "trigger-validation-and-installation",
-    "project-list",
-    "legacy-configuration-validation",
-    "legacy-configuration-install",
+    "trigger-list-validation-and-installation",
+    "webhook-secrets",
     "manual-run-dispatch",
     "daemon-enrollment",
-    "keys-scopes-and-audit-information"
+    "keys-and-audit-trails"
   ],
   "hub/concepts": [
     "how-hub-works",
-    "the-pieces",
+    "core-concepts",
     "from-event-to-agent",
-    "activation",
+    "authoring-and-validation",
+    "open-in-paseo-links",
     "security-boundaries"
-  ],
-  "hub/configuration/hub-yml": [
-    "hub-configuration-reference",
-    "hubyml",
-    "environments",
-    "named-agents",
-    "workflow-files",
-    "github-events-and-filters",
-    "inputs-and-values",
-    "steps",
-    "prompt-semantics",
-    "output-capabilities",
-    "migrating-a-monolithic-file",
-    "agent-continuation",
-    "upgrading"
   ],
   "hub/configuration/index": [
     "hub-configuration",
     "generated-starter-trigger",
     "startup-timeout",
-    "deploy-from-the-cli",
-    "legacy-project-bundles",
-    "github-sync",
-    "revisions-and-source-changes"
+    "deploy-from-the-cli"
+  ],
+  "hub/configuration/reference": [
+    "trigger-yaml-reference",
+    "top-level-fields",
+    "event-definitions-on",
+    "target-and-worktree",
+    "agent-selection",
+    "agent-continuation",
+    "prompt-context-and-title",
+    "output-capabilities",
+    "tools-github-and-environment"
   ],
   "hub/daemons": [
     "daemons-in-hub",
-    "connect",
-    "let-hub-run-agents-on-it",
-    "reference-it-from-configuration",
-    "what-hub-owns",
-    "status"
+    "connect-a-daemon",
+    "grant-execution-permission",
+    "target-a-daemon-from-a-trigger",
+    "provider-discovery",
+    "recovery-and-ownership",
+    "daemon-status"
   ],
   "hub/faq": [
     "hub-faq",
     "do-i-need-hub-to-use-paseo",
-    "can-one-organization-connect-several-github-organizations",
-    "how-should-i-split-my-work-into-projects",
-    "can-two-projects-watch-the-same-repository",
-    "can-the-configuration-live-somewhere-other-than-the-repository-being-watched",
-    "where-do-triggers-go-now",
-    "can-i-edit-configuration-in-the-dashboard",
+    "which-agent-providers-can-hub-run",
+    "where-do-triggers-live",
+    "can-one-organization-connect-multiple-github-linear-slack-or-discord-workspaces",
     "who-can-trigger-an-agent",
-    "what-happens-if-the-daemon-is-offline",
+    "can-an-agent-reply-back-to-github-linear-slack-or-discord",
+    "can-a-schedule-or-webhook-post-to-slack-or-discord",
+    "what-happens-when-a-daemon-is-offline",
     "does-logging-out-disconnect-my-daemon",
-    "can-an-agent-reply-back-to-slack-or-discord",
-    "can-i-use-it-without-github"
+    "can-i-use-hub-without-github"
   ],
   "hub/github": [
     "github-access",
     "fields",
     "agent-environment",
-    "keep-authority-on-the-worker"
+    "continuation-and-token-lifecycle",
+    "other-connection-values"
   ],
   "hub/hosted": [
     "hosted-hub"
@@ -200,13 +191,13 @@
     "hub",
     "what-lives-in-your-repository",
     "reading-order",
-    "run-hub-yourself"
+    "hosted-or-self-hosted"
   ],
   "hub/quickstart": [
     "hub-quickstart",
     "1-start-hub",
     "2-connect-slack",
-    "3-connect-the-machine-your-code-is-on",
+    "3-connect-your-machine",
     "4-create-the-starter-trigger",
     "5-mention-the-bot",
     "next"
@@ -214,15 +205,16 @@
   "hub/security": [
     "hub-security",
     "choose-daemon-authority",
-    "treat-requests-as-untrusted",
-    "protect-configuration-authority",
-    "keep-authority-on-the-step-that-needs-it",
-    "use-a-finite-classifier-boundary",
+    "treat-external-input-as-untrusted",
+    "protect-trigger-and-deployment-authority",
+    "scope-replies-github-and-integration-tools",
+    "open-in-paseo-link-privacy",
     "provider-native-controls",
     "review-checklist"
   ],
   "hub/self-hosting/discord-app": [
     "discord-for-hub",
+    "set-up-the-discord-app",
     "configure-from-environment"
   ],
   "hub/self-hosting/github-app": [
@@ -230,7 +222,6 @@
     "public-url-requirements",
     "subscribe-to-github-events",
     "connect-repositories",
-    "what-the-connection-provides",
     "configure-from-environment"
   ],
   "hub/self-hosting/index": [
@@ -245,25 +236,39 @@
     "fly",
     "upgrades"
   ],
+  "hub/self-hosting/linear-app": [
+    "linear-for-hub",
+    "set-up-the-linear-app",
+    "configure-from-environment"
+  ],
   "hub/self-hosting/slack-app": [
     "slack-for-hub",
     "set-up-socket-mode",
     "use-webhooks",
     "configure-from-environment"
   ],
+  "hub/tools": [
+    "integration-tools",
+    "configure-in-the-dashboard-or-yaml",
+    "grant-fields",
+    "available-hub-mcp-tools",
+    "enforcement-and-behavior"
+  ],
   "hub/triggers/discord": [
     "discord-triggers",
+    "filters-and-prompt-text",
+    "replies-and-continuation",
     "find-your-discord-ids"
   ],
   "hub/triggers/github": [
     "github-triggers",
     "triage-new-issues",
-    "review-new-pull-requests",
-    "respond-to-new-comments",
-    "start-work-when-an-issue-becomes-ready",
-    "choose-the-event",
-    "filter-github-events",
-    "legacy-event-compatibility"
+    "review-pull-requests",
+    "respond-to-comments",
+    "start-work-on-a-label",
+    "supported-events",
+    "filters",
+    "replies-and-github-tokens"
   ],
   "hub/triggers/index": [
     "triggers",
@@ -272,24 +277,38 @@
     "continue-the-same-agent",
     "events",
     "filters",
-    "which-connection-an-event-comes-from",
+    "pinning-a-connection",
     "when-two-triggers-match",
-    "replying"
+    "replying-and-open-in-paseo-links"
+  ],
+  "hub/triggers/linear": [
+    "linear-triggers",
+    "supported-events",
+    "respond-to-issue-comments",
+    "start-work-when-an-issue-enters-scope",
+    "filters-and-linear-uuids",
+    "context-and-replies"
+  ],
+  "hub/triggers/schedules": [
+    "scheduled-triggers",
+    "create-a-schedule-in-the-dashboard",
+    "author-a-schedule-in-yaml",
+    "recurrence-rules",
+    "timing-overlap-and-recovery"
   ],
   "hub/triggers/slack": [
     "slack-triggers",
+    "filters-and-prompt-text",
+    "replies-and-continuation",
     "find-your-slack-ids"
   ],
-  "hub/workflows": [
-    "hub-workflows",
-    "your-first-workflow",
-    "choose-where-a-step-runs",
-    "choose-an-agent",
-    "route-from-a-classifier",
-    "prompt-and-context",
-    "conditions-and-ordered-output",
-    "tell-the-agent-which-tool-to-call",
-    "deadlines"
+  "hub/triggers/webhooks": [
+    "inbound-webhooks",
+    "create-a-webhook-trigger",
+    "create-or-rotate-the-webhook-secret",
+    "send-a-webhook-request",
+    "request-limits-and-responses",
+    "how-the-payload-reaches-the-agent"
   ],
   "index": [
     "getting-started",
@@ -425,7 +444,9 @@
     "add-commands-and-steering",
     "permit-idle-runtime-cleanup",
     "publish-timeline-items",
+    "report-metrics",
     "report-installation-and-updates",
+    "help-users-fix-problems",
     "adapt-an-acp-agent",
     "test-and-publish"
   ],
@@ -461,7 +482,9 @@
     "server-runtime",
     "providers",
     "provider-installation",
+    "provider-troubleshooting",
     "usage-sources",
+    "worktree-managers",
     "entry-point-and-cleanup",
     "lifecycle-hooks",
     "sidebar-views",
@@ -670,19 +693,22 @@
     "antigravity",
     "getting-started",
     "permissions",
-    "sessions-and-tools"
+    "sessions-and-tools",
+    "troubleshooting",
+    "new-models-are-missing",
+    "paseo-shows-different-models-than-agy-models"
   ],
   "supported-providers/claude-code": [
     "claude-code",
-    "does-claude-code-cost-extra-in-paseo",
     "getting-started",
+    "does-claude-code-cost-extra-in-paseo",
     "use-claude-code-in-the-paseo-terminal",
     "see-also"
   ],
   "supported-providers/codex": [
     "codex",
-    "does-codex-cost-extra-in-paseo",
     "getting-started",
+    "does-codex-cost-extra-in-paseo",
     "codex-is-missing-in-paseo",
     "use-codex-in-the-paseo-terminal",
     "see-also"
@@ -710,6 +736,7 @@
   "supported-providers/muse-code": [
     "muse-code",
     "getting-started",
+    "modes-and-skills",
     "provider-options",
     "limitations-in-muse-141"
   ],

@@ -1,53 +1,43 @@
 ---
 title: Hub activity
-description: Read what Hub did with an event, tell a filtered event from an unrouted one, and debug a trigger that did nothing.
+description: Inspect trigger runs, distinguish filtered events from unrouted ones, and debug a trigger that did not run.
 nav: Activity
-order: 72
+order: 75
 category: Hub
 ---
 
 # 허브 활동
 
-Hub가 수락하는 모든 이벤트는 실행 여부에 관계없이 기록됩니다. 해당 레코드는 트리거를 디버깅하는 방법입니다.
+Hub는 실행 시작 여부에 관계없이 허용된 모든 이벤트를 기록합니다. **활동** 및 **통합**을 사용하여 게재를 검사하고 트리거를 디버그하세요.
 
 ## 어디를 봐야할지
 
-**프로젝트 → 활동**에는 라우팅된 트리거 실행 및 실행 상태가 나열됩니다.
+**활동**에는 조직의 최근 트리거 실행이 나열됩니다. 각 행에는 트리거, 공급자, 소스, 상태 및 Hub가 이벤트를 수신한 시기가 표시됩니다.
 
-**연결 → 알려진 라우팅되지 않은 이벤트**는 구성된 트리거를 시작하지 않은 허용된 공급자 이벤트의 조직 수준 보기입니다. Hub는 다음 네 가지 제한된 이유 중 하나를 기록합니다.
+**통합 → 알려진 라우팅되지 않은 이벤트**에는 실행을 시작하지 않았지만 가장 최근에 허용된 50개의 공급자 이벤트가 표시됩니다. Hub는 다음 네 가지 이유 중 하나를 기록합니다.
 
 | 이유 | 의미 |
-| -------------- | ---------------------------------- |
-| `no_project_route` | 이벤트에 대해 구성된 프로젝트 경로가 없습니다 |
-| `no_trigger_for_source` | 해당 이벤트 소스를 처리하는 구성된 트리거가 없습니다 |
-| `trigger_filters_rejected` | 트리거가 소스를 처리하지만 해당 필터가 소스를 거부했습니다 |
-| `configuration_unavailable` | 관련 구성 또는 연결을 확인할 수 없습니다 |
+| --------------------------- | ------------------------------------------------------------ |
+| `no_project_route` | 이벤트의 통합 또는 리소스와 일치하는 활성화된 경로가 없습니다 |
+| `no_trigger_for_source` | 활성화된 트리거가 해당 이벤트 소스를 처리하지 않습니다 |
+| `trigger_filters_rejected` | 트리거가 소스와 일치했지만 해당 필터가 이를 거부했습니다 |
+| `configuration_unavailable` | 참조된 트리거 또는 통합을 해결할 수 없습니다. |
 
-## 봇을 언급했는데 아무 일도 일어나지 않았습니다
+## 이벤트가 도착했을 때 아무 일도 일어나지 않았습니다
 
-이 목록을 작성해 보세요.
+다음 항목을 순서대로 확인하세요.
 
-1. **프로젝트의 활동에 이벤트가 있습니까?** 그렇지 않은 경우 **연결 → 알려진 라우팅되지 않은 이벤트**를 확인하고 그 이유를 사용하여 라우팅, 소스, 필터 및 구성 실패를 구별합니다.
-2. **이벤트가 어디에 있나요?** 그렇지 않다면 이벤트가 허브에 도달하지 못한 것입니다. 공급자의 자체 배달 로그를 확인하세요: GitHub의 앱 → 고급 → 최근 배달 또는 Slack의 이벤트 구독 페이지. 그런 다음 앱이 해당 이벤트 유형을 구독하고 있는지 확인하세요.
-3. **사용자가 `from_users`에 있습니까?** 이것이 가장 일반적인 원인입니다. GitHub는 귀하의 로그인을 사용합니다. Slack과 Discord는 표시 이름이 아닌 사용자 ID를 사용합니다. [Slack ID 찾기](/docs/hub/triggers/slack#find-your-slack-ids)와 [Discord ID 찾기](/docs/hub/triggers/discord#find-your-discord-ids)를 참조하세요.
-4. **호출이 일치했습니까?** GitHub에서는 `contains`이 댓글 본문에 표시되어야 합니다. Slack 및 Discord에서는 봇을 언급해야 하며, `pattern` 또는 레거시 `contains` 별칭은 언급 뒤에 텍스트 접두사로 붙여야 합니다.
-5. **활성이라고 생각하는 구성이 실제로 활성화되어 있습니까?** 구성 탭에는 활성 개정판과 마지막 동기화 시도가 표시됩니다. 푸시가 실패하면 이전 버전이 계속 제공됩니다.
-6. **데몬이 연결되어 있습니까?** 오프라인 데몬이 `daemon_not_connected`을(를) 사용하여 디스패치에 실패했습니다.
-7. **실행하고 일찍 중지했습니까?** 실행을 단계에서 작성된 `idle_timeout` 및 `max_runtime`, 워크플로의 `max_runtime`과 비교합니다. 세 가지 제한은 모두 워크플로에 명시되어 있습니다.
-8. **실행했지만 아무것도 전달하지 않았나요?** 단계의 프롬프트를 확인하세요. `hub.reply` 및 `hub.finish_execution`으로 호출하라는 지시를 받지 않은 에이전트는 자체 기록으로 답변할 수 있으며 다시 보고하지 않습니다. [에이전트에게 호출할 도구 알려주기](/docs/hub/workflows#tell-the-agent-which-tool-to-call)를 참조하세요.
+1. **활동**을 엽니다. 이벤트가 누락된 경우 **통합 → 알려진 라우팅되지 않은 이벤트**를 확인하고 기록된 이유를 읽어보세요.
+2. 두 보기 모두에서 이벤트가 누락된 경우 공급자 배달 로그를 사용하여 Hub가 이벤트를 수락했는지 확인합니다. GitHub의 경우 **앱 → 고급 → 최근 배달**을 엽니다. 공급자가 전송을 보내지 않은 경우 통합이 이벤트 유형을 구독하는지 확인하세요.
+3. `from_users`을(를) 확인하세요. GitHub는 로그인 이름을 사용하고, Linear, Slack, Discord는 사용자 ID([Linear](/docs/hub/triggers/linear#filters-and-linear-uuids), [Slack](/docs/hub/triggers/slack#find-your-slack-ids), [Discord](/docs/hub/triggers/discord#find-your-discord-ids))를 사용합니다.
+4. 텍스트 필터(`contains`, `pattern` 및 GitHub `exclude_contains`)를 확인합니다. Slack 및 Discord에서는 메시지에 봇이 언급되어야 하며 `pattern`이 언급 뒤에 와야 합니다.
+5. **트리거**에서 트리거가 활성화되어 있는지 확인합니다.
+6. 대상 데몬이 **Daemons** 아래에 연결되어 있고 `hub.execute` 권한을 보유하고 있는지 확인합니다.
+7. 실행이 일찍 시작되고 중지된 경우 해당 기간을 `max_runtime`, `idle_timeout` 및 `startup_timeout`과 비교합니다.
+8. 다시 게시하지 않고 실행이 완료된 경우 `run.prompt`을 확인합니다. 프롬프트는 에이전트에게 `reply`(또는 `slack_post` / `discord_post`) 및 `finish_execution`을 호출하라고 지시해야 합니다.
 
-## 동기화 실패
+## 웹훅 및 일정 실행
 
-구성 탭에는 최신 동기화 상태가 표시됩니다.
+인바운드 웹훅으로 시작된 실행은 `webhook.received` 아래의 **활동**에 표시됩니다. HTTP `POST`가 오류 상태(`400`, `401`, `403`, `409`, `413` 또는 `429`)를 반환하면 [인바운드 웹훅](/docs/hub/triggers/webhooks#request-limits-and-responses)을 참조하세요.
 
-| 상태 | 해야 할 일 |
-| ---------- | ----------------------------------------------------------- |
-| 가져오기 실패 | 해당 커밋에서 파일이 누락되었거나 앱이 저장소를 읽을 수 없습니다 |
-| 유효하지 않음 | 유효성 검사가 실패했거나 구성 이름에 연결할 수 없는 항목이 있음 |
-| 대체된 푸시가 무시됨 | 새로운 커밋은 이미 브랜치 헤드를 옮겼습니다. 아무 문제 없어요 |
-
-"접근할 수 없는 이름 지정"은 일반적으로 설치에서 다루지 않는 저장소, 이름이 변경된 데몬 또는 더 이상 존재하지 않는 연결 슬러그입니다. [허브 작동 방식](/docs/hub/concepts)을 참조하세요.
-
-## 아무것도 재시도되지 않습니다
-
-허브는 이벤트를 대기열에 추가하지 않습니다. 데몬이 오프라인 상태였기 때문에 실패한 디스패치는 실패한 상태로 유지되므로 데몬이 돌아오면 다시 트리거하십시오.
+예약된 실행은 `schedule.tick` 아래 **활동**에 표시됩니다. 예약된 실행이 여전히 활성 상태인 동안 Hub는 활성 실행이 완료되거나 실패할 때까지 해당 트리거에 대해 새로 발생하는 발생을 건너뜁니다.

@@ -8,15 +8,17 @@ category: Providers
 
 # Pi
 
-기존 `pi` 설치, 자격 증명, 설정을 사용해 Paseo에서 Pi를 실행합니다.
+Paseo는 설치된 `pi` CLI를 통해 Pi를 실행합니다. 기존 자격 증명과 설정을 사용합니다.
 
 ## 시작하기
+
+Pi는 Paseo에 내장되어 있으며 기본적으로 활성화되어 있습니다.
 
 1. 데몬 호스트에 [Pi](https://pi.dev)를 설치합니다.
 2. Pi를 모델 공급자에 연결하고 터미널에서 `pi`가 실행되는지 확인합니다.
 3. Paseo에서 에이전트를 시작할 때 **Pi**를 선택하세요.
 
-데몬이 `pi`를 실행할 수 있으면 Pi가 Paseo에 표시됩니다. `pi`가 데몬의 PATH 밖에 있다면 [명령 재정의](/docs/custom-providers#custom-binary)를 사용하세요.
+Pi는 데몬이 `pi`을 시작할 수 있을 때 Paseo에 나타납니다. `pi`이 데몬 PATH 외부에 있는 경우 [명령 재정의](/docs/custom-providers#custom-binary)를 사용하세요.
 
 ## 모드와 세션
 

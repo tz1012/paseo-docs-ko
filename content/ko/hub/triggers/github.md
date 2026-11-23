@@ -1,210 +1,208 @@
 ---
 title: GitHub triggers
-description: Start Hub workflows from specific GitHub issues, pull requests, comments, and labels.
+description: Start Hub agents from GitHub issues, pull requests, comments, pushes, and labels.
 nav: GitHub
-order: 67
+order: 65
 category: Hub
 ---
 
 # GitHub 트리거
 
-의미 기반 GitHub 이벤트를 사용해 하나의 특정 GitHub 동작에서 워크플로를 시작하세요. `.paseo/hub.yml`에 `dev` 환경과 `codex` 에이전트가 정의된 저장소에 아래 워크플로를 추가한 뒤 번들을 활성화합니다.
+의미 체계 GitHub 이벤트를 사용하여 하나의 GitHub 작업에서 에이전트를 시작합니다. 먼저 **통합**에서 GitHub 계정을 연결하세요(또는 자체 호스팅 Hub에서 [GitHub 앱](/docs/hub/self-hosting/github-app)을 구성하세요).
 
 ## 새 이슈 분류
 
-`.paseo/workflows/triage-issue.yml`:
+`.paseo/triggers/triage-issue.yml`:
 
 ```yaml
 name: triage-issue
-on: github.issue_created
-max_runtime: 2h
-filters:
-  repo: example/project
-  from_users: [maintainer]
-steps:
-  - id: triage
-    environment: dev
-    max_runtime: 30m
-    idle_timeout: 5m
-    agent: codex
-    github:
-      connection: example-github
-      repositories: [example/project]
-      permissions:
-        issues: write
-    prompt:
-      - text: |
-          Triage the new issue. Add the appropriate labels and leave a short comment
-          explaining the result with gh. Use this event context:
-          ${{ paseo.context }}
-          Call hub.finish_execution when done.
+on:
+  github.issue_created:
+    connection: acme-github
+    filters:
+      repo: acme/project
+      from_users: [maintainer]
+run:
+  target:
+    daemon: devbox
+    cwd: /workspace/project
+  agent:
+    provider: codex
+    mode: full-access
+  max_runtime: 30m
+  idle_timeout: 5m
+  github:
+    connection: acme-github
+    repositories: [acme/project]
+    permissions:
+      issues: write
+  prompt: |
+    Triage the new issue, apply appropriate labels with gh, and post a short summary using reply.
+    Event context:
+    ${{ paseo.context }}
+    Call finish_execution when done.
 ```
 
-`github.issue_created`는 누군가 이슈를 열 때만 실행됩니다. `from_users`는 필수이며 이벤트를 발생시킨 GitHub 로그인과 일치합니다.
+`github.issue_created`은 이슈가 공개된 경우에만 실행됩니다. `from_users`은 필수이며 이벤트를 발생시킨 GitHub 로그인과 일치합니다.
 
-## 새 끌어오기 요청 검토
+## 풀 요청 검토
 
-`.paseo/workflows/review-pull-request.yml`:
+`.paseo/triggers/review-pr.yml`:
 
 ```yaml
-name: review-pull-request
-on: github.pull_request_created
-max_runtime: 2h
-filters:
-  repo: example/project
-  from_users: [maintainer]
-steps:
-  - id: review
-    environment: dev
-    max_runtime: 90m
-    idle_timeout: 10m
-    agent: codex
-    github:
-      connection: example-github
-      repositories: [example/project]
-      permissions:
-        contents: read
-        pull_requests: write
-    prompt:
-      - text: |
-          Review the new pull request and submit your findings with gh. Use this event context:
-          ${{ paseo.context }}
-          Call hub.finish_execution when done.
+name: review-pr
+on:
+  github.pull_request_ready_for_review:
+    connection: acme-github
+    filters:
+      repo: acme/project
+      from_users: [maintainer]
+run:
+  target:
+    daemon: devbox
+    cwd: /workspace/project
+  agent:
+    provider: codex
+    mode: full-access
+  max_runtime: 90m
+  idle_timeout: 10m
+  github:
+    connection: acme-github
+    repositories: [acme/project]
+    permissions:
+      contents: read
+      pull_requests: write
+  prompt: |
+    Review the pull request and submit your findings with gh.
+    Fetch live PR state with gh pr view before reviewing and before posting.
+    Skip posting if the PR is draft or its head SHA changed.
+    Event context:
+    ${{ paseo.context }}
+    Call finish_execution when done.
 ```
 
-`github.pull_request_created`는 누군가 끌어오기 요청을 열 때만 실행됩니다.
+풀 요청이 열릴 때 실행하려면 `github.pull_request_created`을 사용하고, 초안이 준비로 표시될 때까지 기다리려면 `github.pull_request_ready_for_review`을 사용하고, 공개 풀 요청에 새 커밋이 푸시될 때 실행하려면 `github.pull_request_synchronized`을 사용합니다.
 
-초안이 끝날 때까지 기다리려면 위 예제의 `on`을 `github.pull_request_ready_for_review`로 바꾸세요. 초안이 검토 준비 상태로 표시될 때만 발생하며, 해당 전환을 한 사용자를 `from_users`와 대조합니다. 끌어오기 요청 열기, 이후 push, 다시 초안으로 전환하기는 이 이벤트를 발생시키지 않습니다.
+풀 요청 컨텍스트에는 `github.pull_request.draft` 및 `github.pull_request.head_sha`이 포함됩니다. 끌어오기 요청을 초안으로 다시 변환해도 이미 진행 중인 실행은 취소되지 않으므로 게시하기 전에 `gh pr view`으로 실시간 상태를 확인하세요.
 
-끌어오기 요청 webhook 컨텍스트에는 GitHub가 전달한 `github.pull_request.draft`와 `github.pull_request.head_sha`가 포함됩니다. 끌어오기 요청의 대화 댓글을 비롯한 다른 이벤트에서는 `github.pull_request`가 `null`입니다. 검토하기 전과 게시하기 전에 다시 `gh pr view`로 현재 끌어오기 요청을 가져오세요. 현재 초안이거나 head가 검토한 SHA와 다르면 게시하지 않고 끝내세요. 다시 초안으로 전환해도 이미 진행 중인 Hub 실행은 취소되지 않으므로 워크플로가 이러한 현재 상태 검사를 담당합니다.
+## 댓글에 응답
 
-## 새 댓글에 응답
-
-`.paseo/workflows/respond-to-issue-comment.yml`:
+`.paseo/triggers/respond-issue-comment.yml`:
 
 ```yaml
-name: respond-to-issue-comment
-on: github.issue_comment_created
-max_runtime: 2h
-filters:
-  repo: example/project
-  contains: "@paseo"
-  from_users: [maintainer]
-steps:
-  - id: respond
-    environment: dev
-    max_runtime: 30m
-    idle_timeout: 5m
-    agent: codex
-    github:
-      connection: example-github
-      repositories: [example/project]
-      permissions:
-        issues: write
-    prompt:
-      - text: |
-          Respond to the new issue comment with gh. Address this request:
-          ${{ paseo.prompt }}
-          Use this event context:
-          ${{ paseo.context }}
-          Call hub.finish_execution when done.
+name: respond-issue-comment
+on:
+  github.issue_comment_created:
+    connection: acme-github
+    filters:
+      repo: acme/project
+      contains: "@paseo"
+      exclude_contains: "@paseo-deploy"
+      from_users: [maintainer]
+run:
+  target:
+    daemon: devbox
+    cwd: /workspace/project
+  agent:
+    provider: codex
+    mode: full-access
+  max_runtime: 30m
+  idle_timeout: 5m
+  prompt: |
+    Answer the issue comment using reply, then call finish_execution.
+
+    <user-prompt>
+    ${{ paseo.prompt }}
+    </user-prompt>
+    Event context:
+    ${{ paseo.context }}
+  outputs:
+    github.reply:
+      max: 1
+      required: true
 ```
 
-`.paseo/workflows/respond-to-pull-request-comment.yml`:
+이슈에 대한 댓글에는 `github.issue_comment_created`을 사용하고 풀 요청에 대한 대화 댓글에는 `github.pull_request_comment_created`을 사용하세요. GitHub는 두 가지를 모두 문제 설명으로 보내고 Hub는 이를 분리합니다.
 
-```yaml
-name: respond-to-pull-request-comment
-on: github.pull_request_comment_created
-max_runtime: 2h
-filters:
-  repo: example/project
-  contains: "@paseo"
-  from_users: [maintainer]
-steps:
-  - id: respond
-    environment: dev
-    max_runtime: 30m
-    idle_timeout: 5m
-    agent: codex
-    github:
-      connection: example-github
-      repositories: [example/project]
-      permissions:
-        pull_requests: write
-    prompt:
-      - text: |
-          Respond to the new pull-request conversation comment with gh. Address this request:
-          ${{ paseo.prompt }}
-          Use this event context:
-          ${{ paseo.context }}
-          Call hub.finish_execution when done.
-```
+`exclude_contains`은 별도의 명령 접두사와 같이 다른 트리거에서 주장하는 텍스트가 포함된 주석을 건너뜁니다.
 
-이슈 토론의 댓글에는 `github.issue_comment_created`를, 끌어오기 요청 대화의 댓글에는 `github.pull_request_comment_created`를 사용하세요. GitHub는 둘 다 이슈 댓글로 전달하지만 Hub가 구분해 줍니다. 변경된 줄의 댓글은 diff 댓글이며 레거시 `github.pull_request_review_comment` 이벤트에서 다룹니다.
+`github.issue_comment_created`, `github.pull_request_comment_created`, `github.issue_comment` 및 `github.pull_request_review_comment`에서 Hub는 실행이 진행됨에 따라 반응을 추가합니다. 즉, 수락 시 🙌, 시작 시 🚀, 완료 시 👍, 실패 시 👎입니다.
 
-`github.issue_comment_created`, `github.pull_request_comment_created`, `github.issue_comment`, `github.pull_request_review_comment`에서 Hub는 전달을 수락하면 👀, 에이전트가 시작하면 🚀, 완료되면 👍, 실패하면 👎 반응을 추가합니다.
+## 레이블 작업 시작
 
-## 이슈가 준비되면 작업 시작
-
-`.paseo/workflows/implement-ready-issue.yml`:
+`.paseo/triggers/implement-ready-issue.yml`:
 
 ```yaml
 name: implement-ready-issue
-on: github.issue_label_added
-max_runtime: 2h
-filters:
-  repo: example/project
-  label: ready-for-agent
-  from_users: [maintainer]
-steps:
-  - id: implement
-    environment: dev
-    max_runtime: 90m
-    idle_timeout: 10m
-    agent: codex
-    github:
-      connection: example-github
-      repositories: [example/project]
-      permissions:
-        contents: write
-        issues: write
-        pull_requests: write
-    prompt:
-      - text: |
-          Implement the issue that was marked ready for an agent. Create a branch,
-          push it, and open a pull request with gh. Use this event context:
-          ${{ paseo.context }}
-          Call hub.finish_execution when done.
+on:
+  github.issue_label_added:
+    connection: acme-github
+    filters:
+      repo: acme/project
+      label: ready-for-agent
+      from_users: [maintainer]
+run:
+  target:
+    daemon: devbox
+    cwd: /workspace/project
+    worktree:
+      mode: branch-off
+      newBranch: trigger-${{ paseo.execution.id }}
+      base: origin/main
+  agent:
+    provider: codex
+    mode: full-access
+  max_runtime: 90m
+  idle_timeout: 10m
+  github:
+    connection: acme-github
+    repositories: [acme/project]
+    permissions:
+      contents: write
+      issues: write
+      pull_requests: write
+  prompt: |
+    Implement the labeled issue on this worktree branch, push it, and open a pull request with gh.
+    Post the PR link to the issue using reply, then call finish_execution.
+    Event context:
+    ${{ paseo.context }}
 ```
 
-`label`은 이 이벤트에서 추가된 레이블과 일치합니다. 대소문자를 구분하지 않으므로 `ready-for-agent`는 `Ready-For-Agent`와도 일치합니다.
+`label`은 이 이벤트에 의해 추가된 정확한 라벨과 대소문자를 구분하지 않고 일치합니다. 풀 요청에 추가된 레이블에는 `github.pull_request_label_added`을 사용하세요.
 
-## 이벤트 선택
+## 지원되는 이벤트
 
-| `on`                                   | 다음 경우에 발생                                      |
-| -------------------------------------- | ----------------------------------------------------- |
-| `github.issue_created`                 | 이슈가 열릴 때.                                       |
-| `github.pull_request_created`          | 끌어오기 요청이 열릴 때.                              |
-| `github.pull_request_ready_for_review` | 초안 끌어오기 요청이 검토 준비 상태로 표시될 때.      |
-| `github.issue_comment_created`         | 이슈에 댓글이 작성될 때.                              |
-| `github.pull_request_comment_created`  | 끌어오기 요청의 대화 댓글이 작성될 때.                |
-| `github.issue_label_added`             | 이슈에 레이블이 추가될 때.                            |
-| `github.pull_request_label_added`      | 끌어오기 요청에 레이블이 추가될 때.                   |
+| `on` | 다음 경우에 발생 |
+| -------------------------------------- | --------------------------------------------------- |
+| `github.issue_created` | 문제가 열렸습니다.                                 |
+| `github.pull_request_created` | 끌어오기 요청이 열립니다.                           |
+| `github.pull_request_ready_for_review` | 풀 요청 초안은 검토 준비가 완료된 것으로 표시됩니다.    |
+| `github.pull_request_synchronized` | 새로운 커밋은 공개 풀 요청으로 푸시됩니다.     |
+| `github.issue_comment_created` | 이슈에 댓글이 게시되었습니다.                    |
+| `github.pull_request_comment_created` | 풀 리퀘스트에는 대화 댓글이 게시됩니다. |
+| `github.issue_label_added` | 이슈에 라벨이 추가됩니다.                       |
+| `github.pull_request_label_added` | 풀 요청에 레이블이 추가됩니다.                 |
 
-이슈 댓글에는 `github.issue_comment_created`를, 끌어오기 요청의 대화 댓글에는 `github.pull_request_comment_created`를 선택하세요. GitHub는 둘 다 이슈 댓글로 전달하지만 Hub가 구분해 줍니다. 변경된 줄의 댓글은 diff 댓글이며 레거시 `github.pull_request_review_comment` 이벤트에서 다룹니다.
+또한 Hub는 diff 검토 댓글이나 푸시 이벤트가 필요할 때 원시 웹훅 이벤트 이름(`github.issues`, `github.issue_comment`, `github.pull_request`, `github.pull_request_review`, `github.pull_request_review_comment`, `github.push`)을 허용합니다. 새로운 트리거에 대해 의미론적 이벤트를 선호합니다.
 
-## GitHub 이벤트 필터링
+## 필터
 
-외부 소스의 모든 워크플로에는 비어 있지 않은 `from_users` 허용 목록이 필요합니다. GitHub 필터는 AND로 결합되므로 저장소, 연결, 발신자, 콘텐츠, 변경된 레이블, 필수 현재 레이블이 모두 일치해야 합니다.
+모든 GitHub 트리거에는 비어 있지 않은 `from_users` 허용 목록이 필요합니다. 제공된 모든 필터는 AND로 구성됩니다.
 
-`contains`와 `pattern`은 이슈 및 끌어오기 요청 이벤트에서 제목과 본문을 함께 검사합니다. 댓글 이벤트에서는 댓글 본문을 검사합니다. `contains`는 부분 문자열 일치이고 `pattern`은 시작 부분과 일치합니다.
+모든 발신자의 푸시를 수락하려면 `from_users: ["*"]`을 사용하세요. Hub는 푸시 이벤트에서 보낸 사람 로그인을 추출하지 않으므로 명명된 로그인 목록이 일치하지 않습니다.
 
-추가된 레이블 자체가 중요할 때는 `github.issue_label_added` 또는 `github.pull_request_label_added`와 함께 `label`을 사용하세요. 항목에 나열한 모든 레이블이 현재 있어야 한다면 `labels`를 사용하세요. 둘 다 대소문자를 구분하지 않습니다. 예를 들어 `labels: [bug, backend]`에는 두 레이블이 모두 필요하며 둘 중 하나를 의미하지 않습니다.
+| 필터 | 적용 대상 | 의미 |
+| ------------------ | ------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `from_users` | 모든 GitHub 이벤트 | 실행을 트리거하는 데 허용되는 GitHub 로그인입니다.                                  |
+| `repo` | 모든 GitHub 이벤트 | `owner/name` 형식의 저장소입니다.                                           |
+| `contains` | 이슈, 풀 요청 및 댓글 이벤트 | 이슈 또는 PR 제목과 본문 또는 댓글 본문의 하위 문자열입니다.      |
+| `exclude_contains` | 이슈, 풀 요청 및 댓글 이벤트 | 이벤트 일치를 방지하는 하위 문자열입니다.                           |
+| `pattern` | 이슈, 풀 요청 및 댓글 이벤트 | 동일한 텍스트의 시작 부분에 접두사를 붙입니다.                                     |
+| `label` | `github.issue_label_added`, `github.pull_request_label_added` | 필수의. 이 전달에 의해 추가된 라벨은 대소문자를 구분하지 않습니다.            |
+| `labels` | 이슈, 풀 요청 및 댓글 이벤트 | 나열된 모든 라벨은 이슈나 PR에 있어야 하며 대소문자를 구분하지 않습니다. |
 
-모든 GitHub 이벤트와 필터는 [구성 참조](/docs/hub/configuration/hub-yml#github-events-and-filters)에 나와 있습니다.
+## 응답 및 GitHub 토큰
 
-## 레거시 이벤트 호환성
+문제 또는 풀 요청에 대한 GitHub 트리거는 `reply` 도구(`github.reply`)를 자동으로 부여합니다. 이 도구는 해당 문제 또는 풀 요청에 대한 댓글을 게시하고 Hub가 HTTPS를 통해 실행될 때 **Paseo**에서 열기 링크를 추가합니다. `max` 답변을 제한하려면 `run.outputs.github.reply`을 추가하거나 `required: true`을 설정하세요.
 
-기존 워크플로는 `github.issues`, `github.issue_comment`, `github.pull_request_review`, `github.pull_request_review_comment`, `github.push`를 사용해도 기존 동작을 유지합니다. 새 워크플로에는 위의 의미 기반 이벤트를 사용하세요. 의미 기반 워크플로와 레거시 워크플로가 같은 전달에 모두 일치하면 별도의 실행이 시작됩니다.
-
-GitHub 트리거는 토큰을 부여하지 않습니다. 권한은 필요한 단계의 `github` 블록에서 지정합니다. GitHub에는 `hub.reply` 기능이 없으며, 에이전트는 선언된 연결, 저장소, 권한 범위 안에서 `gh`를 통해 작업합니다.
+GitHub 트리거는 기본적으로 `GH_TOKEN`을 부여하지 않습니다. 에이전트가 분기 푸시, 풀 요청 열기 또는 레이블 편집을 위해 `git` 또는 `gh` 액세스가 필요한 경우 [`run.github` 블록](/docs/hub/github)을 추가하세요.

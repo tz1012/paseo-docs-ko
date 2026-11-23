@@ -8,26 +8,17 @@ category: Providers
 
 # Oh My Pi
 
-기존 `omp` 설치와 설정을 사용해 Paseo에서 Oh My Pi(OMP)를 실행합니다.
+Paseo는 설치된 `omp` CLI를 통해 Oh My Pi(OMP)를 실행합니다. 기존 자격 증명과 설정을 사용합니다.
 
 ## 시작하기
 
-1. 데몬 호스트에 [Oh My Pi](https://github.com/can1357/oh-my-pi)를 설치하고 터미널에서 `omp`가 실행되는지 확인합니다.
-2. Paseo에서 **설정 → 호스트 → 해당 호스트 → 공급자**를 열고 **Oh My Pi**를 켭니다.
+Oh My Pi는 Paseo에 내장되어 있으며 기본적으로 꺼져 있습니다.
 
-Oh My Pi는 기본적으로 꺼져 있습니다. `~/.paseo/config.json`에서 켤 수도 있습니다.
+1. 데몬 호스트에 [오마이파이](https://github.com/can1357/oh-my-pi)를 설치하고, 터미널에서 `omp`이 실행되는지 확인하세요.
+2. Paseo에서 **설정 → 호스트 → 호스트 → 공급자**를 열고 **Oh My Pi**를 켭니다.
+3. 에이전트를 시작할 때 **Oh My Pi**를 선택하세요.
 
-```json
-{
-  "agents": {
-    "providers": {
-      "omp": { "enabled": true }
-    }
-  }
-}
-```
-
-`omp`가 데몬의 PATH 밖에 있다면 [명령 재정의](/docs/custom-providers)를 사용하세요. 자체 설정을 사용하는 두 번째 OMP 프로필을 실행하려면 GitHub의 [OMP 프로필](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md#omp-profiles-and-pi-compatible-forks)을 참조하세요.
+`omp`이 데몬 PATH 외부에 있는 경우 [명령 재정의](/docs/custom-providers#custom-binary)를 사용하세요. `agents.providers.omp` 아래의 `~/.paseo/config.json`에서 `omp`을 활성화할 수도 있습니다. 자체 설정으로 두 번째 OMP 프로필을 실행하려면 GitHub의 [OMP 프로필](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md#omp-profiles-and-pi-compatible-forks)을 참조하세요.
 
 ## 권한 모드
 

@@ -8,93 +8,95 @@ category: Hub
 
 # Hub 빠른 시작
 
-Hub를 사용자의 머신에서 실행하고 공개 서버 없이 Slack에 연결한 뒤, 저장소의 에이전트로 멘션에 응답합니다. Hub의 브라우저 설정이 터미널로 이어지고, `paseo hub init`이 시작용 트리거를 작성해 배포합니다.
+컴퓨터에서 Hub를 실행하고, 공용 서버 없이 소켓 모드를 통해 Slack을 연결하고, 저장소에 있는 에이전트를 통해 멘션에 응답하세요.
 
 [Paseo가 설치되어 실행 중](/docs)이어야 하며, Node.js와 앱을 만들 수 있는 Slack 워크스페이스가 필요합니다.
 
 ## 1. Hub 시작
 
+Hub를 로컬에서 실행합니다.
+
 ```sh
 npx @getpaseo/hub
 ```
 
-출력된 주소(일반적으로 <http://localhost:3000>)를 열고 Hub가 요청하는 운영자 계정을 만드세요.
+인쇄된 주소(보통 <http://localhost:3000>,)를 열고 운영자 계정을 생성하세요. 첫 번째 실행에는 외부 데이터베이스, Docker 또는 환경 변수가 필요하지 않습니다. Hub는 내장형 데이터베이스와 조직을 자동으로 생성합니다.
 
-처음 실행할 때 데이터베이스, Docker, 환경 변수, API 키가 필요하지 않습니다. Hub가 임베디드 데이터베이스와 조직을 만듭니다.
-
-Hub는 멘션이 에이전트를 시작하기 전에 반드시 충족해야 하는 네 가지, 즉 앱 연결, 데몬 연결, 트리거 생성, 실행을 나타내는 체크리스트 **Home**을 엽니다. 아래 단계는 이 네 가지 항목에 해당합니다. Home은 조직의 실제 상태에서 각 항목을 파악하고, 다음 단계에 필요한 명령을 표시하며, 네 가지가 모두 완료되면 접힙니다.
+Hub는 통합 연결, 데몬 연결, 트리거 생성 및 실행의 4단계 설정 안내를 통해 **홈**을 엽니다.
 
 ## 2. Slack 연결
 
-**Set up your apps**에서 Slack 앱을 만드는 방법을 설명하고 Slack에 붙여 넣을 매니페스트를 제공합니다. **Socket Mode**를 선택한 상태로 두세요. Hub에서 외부로 연결하므로 공개 주소나 HTTPS가 필요하지 않습니다.
+**앱 → Slack**을 열고 **소켓 모드**를 선택한 상태로 유지하세요. 소켓 모드는 Hub에서 연결되며 공개 HTTPS 주소가 필요하지 않습니다.
 
-App-level token과 Bot token을 Hub에 붙여 넣은 뒤 **Connect Slack**을 선택하세요. 봇을 사용할 채널에 초대합니다.
+Hub의 단계에 따라 생성된 매니페스트에서 Slack 앱을 만들고, `connections:write`을 사용하여 앱 수준 토큰을 만들고, 앱을 설치합니다. 앱 수준 토큰과 봇 토큰을 Hub에 붙여넣은 다음 **Slack 연결**을 선택합니다.
+
+언급할 Slack 채널에 봇을 초대하세요.
 
 ```text
 /invite @Paseo
 ```
 
-GitHub와 Discord는 나중에 설정해도 됩니다. 설정은 **Apps**에서 계속 사용할 수 있습니다.
+나중에 **앱**에서 GitHub, Linear 및 Discord를 설정할 수 있습니다.
 
-## 3. 코드가 있는 머신 연결
+## 3. 기기를 연결하세요
 
-**Connect a daemon**에 이 Hub의 주소가 이미 포함된 명령 하나가 표시됩니다.
+에이전트가 작동할 저장소를 연 다음 로컬 Hub에 로그인합니다.
 
 ```sh
 paseo hub login http://localhost:3000
 ```
 
-코드가 있는 머신에서 에이전트가 작업할 저장소를 현재 디렉터리로 두고 실행하세요. 아래 초기화 명령을 해당 디렉터리에서 실행하면 이 위치가 트리거의 작업 디렉터리가 됩니다.
+브라우저에서 로그인을 승인하세요. 터미널에서 이 데몬을 Paseo Hub에 연결하려면 **예**로 대답하고, Hub 자동화가 에이전트를 실행할 수 있도록 하려면 **예**로 대답하세요.
 
-열린 브라우저 탭에서 로그인을 승인하세요. Hub 탭은 열어 두세요. 데몬을 감시하다가 자동으로 **Daemon connected**를 표시합니다. 데몬이 연결되면 **Continue**를 선택하세요.
+실행 권한의 기본값은 no입니다. 아니요라고 대답했다면 나중에 머신에서 승인하세요.
+
+```sh
+paseo hub permissions grant hub.execute
+```
 
 ## 4. 시작용 트리거 만들기
 
-로그인을 승인한 뒤 **Connect this daemon to Paseo Hub?**와 **Allow Hub automations to run agents on this daemon?**에 **Yes**라고 답하세요. 실행 권한의 기본값은 아니요이므로 이 설정에서는 명시적으로 활성화해야 합니다. 아니요라고 답했다면 Home에 데몬이 연결되었지만 에이전트를 실행할 수 없는 것으로 표시되며, 이를 해결하는 `paseo hub permissions grant hub.execute` 명령이 함께 표시됩니다.
+절대 경로가 `/`으로 시작하는 저장소 디렉터리를 사용합니다. `paseo hub init`이 트리거의 유효성을 검사할 때 Hub는 `C:\work\project`과 같은 Windows 드라이브 경로를 거부합니다. [대상 및 작업 트리](/docs/hub/configuration/reference#target-and-worktree)를 참조하세요.
 
-그런 다음 다음 명령을 실행하세요.
+해당 저장소 디렉터리에서 시작 트리거를 생성하고 배포합니다.
 
 ```sh
 paseo hub init
 ```
 
-**Custom endpoint**를 선택하고 `http://localhost:3000`을 확인하세요. 설정은 로그인과 데몬 연결을 재사용한 다음 이 트리거에 사용할 준비가 된 앱 연결을 나열합니다. 연결된 Slack 워크스페이스가 하나면 해당 연결을 자동으로 선택합니다. 사용할 수 있는 연결이 여러 개면 **Trigger connection**을 선택하세요. 준비된 연결이 없으면 **Hub → Apps**로 안내하고 에이전트를 선택하거나 파일을 쓰기 전에 중지합니다.
+로컬 Hub 엔드포인트(`http://localhost:3000`)를 선택하고 메시지가 표시되면 Slack 연결을 선택합니다. 설치 프로그램에서는 세 가지 질문을 합니다.
 
-| 질문 | 필요한 답변 |
-| --------------------------------------- | -------------------------------------------------------------------------------------- |
-| Starter agent provider, model, and mode | 데몬의 Claude, Codex 또는 OpenCode입니다. 제안되는 모델과 모드는 데몬의 기본값입니다. |
-| Your Slack member ID | `U01234567`, 봇을 트리거하도록 허용할 유일한 계정입니다. |
-| Deploy now? | 예. 이 트리거를 Hub에서 활성화합니다. |
+| 프롬프트 | 제공할 가치 |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 스타터 에이전트 제공자, 모델 및 모드 | 선택 가능한 모델과 하나 이상의 실행 모드(예: Claude, Codex 또는 OpenCode)가 있는 데몬에서 활성화된 공급자. |
+| Slack 회원 ID | `U01234567`과 같은 Slack ID입니다. 나열된 사용자만 봇을 실행할 수 있습니다.                                                       |
+| 지금 배포하시겠습니까?                             | 예, Hub에서 트리거를 검증하고 설치합니다.                                                                                 |
 
-공급자는 선택 가능한 모델과 실행 모드를 제공해야 합니다. 기본 모드가 없으면 에이전트에서 사용할 모드를 선택하세요. Hub는 에이전트를 무인으로 실행하므로 Claude, Codex, OpenCode만 허용하며, 배포 전에 데몬을 통해 모델, 모드, 옵션을 검사합니다. 다른 공급자나 데몬이 제공하지 않는 값은 첫 실행 시점이 아니라 여기서 거부됩니다.
+제로 실행 모드(예: Pi)를 광고하는 공급자는 `paseo hub init`으로 건너뛰지만 Hub 대시보드나 `.paseo/triggers/*.yml`에서 구성하고 `paseo hub deploy`을 사용하여 배포할 수 있습니다.
 
-[Slack ID 찾기](/docs/hub/triggers/slack#find-your-slack-ids)에서 멤버 ID를 복사하는 방법을 확인할 수 있습니다. Slack 워크스페이스는 선택한 앱 연결에서 가져옵니다.
+회원 ID를 복사하려면 [Slack ID 찾기](/docs/hub/triggers/slack#find-your-slack-ids)를 참조하세요.
 
-설정은 트리거를 검증하고 다음 파일을 작성합니다.
+설치 프로그램은 연결된 데몬에 대해 에이전트 구성의 유효성을 검사하고 `.paseo/triggers/slack-help.yml`을 쓴 후 배포합니다. 설정 중에 배포를 건너뛰는 경우 준비가 되면 저장소 루트에서 `paseo hub deploy`을 실행하세요.
 
-```text
-.paseo/
-└── triggers/
-    └── slack-help.yml
-```
-
-`slack-help.yml`이 이미 있으면 설정은 해당 파일을 교체하기 전에 확인합니다. 다른 파일은 그대로 둡니다. 배포를 거부했다면 준비가 되었을 때 이 저장소에서 `paseo hub deploy`를 실행하세요.
+Hub 대시보드의 **트리거**에서 직접 트리거를 생성하고 편집할 수도 있습니다.
 
 ## 5. 봇 멘션하기
 
-봇을 초대한 채널에서 다음과 같이 입력합니다.
+봇을 초대한 Slack 채널에서 다음 멘션을 보내세요.
 
 ```text
-@Paseo have a look
+@Paseo summarize this repository
 ```
 
-Hub는 사용자의 데몬에서 에이전트를 시작하고 Slack 스레드에 응답을 게시합니다. 터미널은 트리거를 관리하고 실행을 살펴볼 수 있는 **Triggers**로 연결합니다. 아무것도 실행되지 않으면 [Activity](/docs/hub/activity)에서 필터링된 멘션과 트리거에 일치하지 않은 멘션을 구분하는 방법을 확인하세요.
+Hub는 데몬에서 에이전트를 시작하고 Slack 스레드에 응답을 게시합니다. Hub에서 **활동**을 열어 실행 상태를 확인하세요. Hub가 HTTPS 뒤에서 실행되는 경우 응답에는 **Paseo**에서 열기 링크도 포함되어 조직 구성원이 라이브 세션으로 바로 이동할 수 있습니다.
+
+아무 것도 실행되지 않으면 [활동](/docs/hub/activity)을 확인하여 라우팅되지 않은 이벤트에서 필터링된 멘션을 알려주세요.
 
 ## 다음
 
-- [Hub 작동 방식](/docs/hub/concepts) — 이벤트가 데몬의 워크플로 실행이 되는 과정입니다.
-- [생성된 시작용 트리거](/docs/hub/configuration#generated-starter-trigger) — 설정이 작성한 파일을 필드별로 설명합니다.
-- [워크플로](/docs/hub/workflows) — 라우팅, 프롬프트, 공급자 응답을 설명합니다.
-- [Hub 보안](/docs/hub/security) — `from_users` 범위를 넓히거나 에이전트에 GitHub 권한을 주기 전에 읽으세요.
+- [Hub 작동 방식](/docs/hub/concepts)에서는 통합, 데몬, 트리거 및 지속을 설명합니다.
+- [트리거](/docs/hub/triggers)에는 GitHub, Linear, 일정, 웹훅을 포함한 모든 이벤트 소스가 나열됩니다.
+- [생성된 스타터 트리거](/docs/hub/configuration#generated-starter-trigger)는 `.paseo/triggers/slack-help.yml`을 통과합니다.
+- [Hub 보안](/docs/hub/security)에서는 사용자나 권한을 추가하기 전에 호스트 경계와 안전한 허용 목록을 설명합니다.
 
-Hub는 로컬 상태를 사용자 데이터 디렉터리(일반적으로 `~/.local/share/paseo-hub`)에 보관합니다. 로컬 실행이 부족해졌을 때 필요한 배포와 고급 구성은 [자체 호스팅](/docs/hub/self-hosting)을 참조하세요.
+Hub는 기본적으로 `~/.local/share/paseo-hub` 아래에 로컬 데이터를 저장합니다. PostgreSQL 또는 공개 HTTPS 배포가 준비되면 [자체 호스팅](/docs/hub/self-hosting)을 참조하세요.

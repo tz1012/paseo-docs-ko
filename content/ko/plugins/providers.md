@@ -381,6 +381,48 @@ export default function contribute(client: PluginClientContext) {
 
 같은 렌더러로 공급자, 클라이언트 타임라인 변환기 또는 데몬 타임라인 추가 작업에서 내보낸 항목을 표시할 수 있습니다. 렌더러에는 공급자 구현이 필요하지 않습니다.
 
+## 보고서 측정항목
+
+공급자가 측정한 값을 `label` 및 `value` 쌍으로 보고하세요. Paseo는 각 값을 받은 그대로 표시하므로 `12431` 대신 `12.4s`처럼 읽기 쉬운 형식을 사용하세요. 에이전트에 적합한 측정항목은 직접 선택할 수 있습니다.
+
+`completed` 턴 이벤트에 `metrics`를 추가하세요. Paseo는 해당 턴의 바닥글에 이를 표시합니다.
+
+```ts
+emit({
+  type: "session.turn",
+  sessionId,
+  turnId,
+  state: "completed",
+  metrics: [
+    { label: "Model", value: "example-1" },
+    { label: "Elapsed", value: "12.4s" },
+    { label: "Tokens", value: "18.9K ↑ · 2.3K ↓" },
+    { label: "Cache", value: "82%", tone: "ok" },
+  ],
+});
+```
+
+전체 세션의 합계를 표시하려면 `session.metrics`를 게시하세요. Paseo는 이를 컨텍스트 창 세부 정보에 표시합니다. 각 이벤트는 이전 목록을 대체하며, 빈 목록은 값을 지웁니다. `session.metrics`를 지원 기능에 추가하고 해당 기능이 협상된 경우에만 이벤트를 게시하세요.
+
+```ts
+if (capabilities.includes("session.metrics")) {
+  emit({
+    type: "session.metrics",
+    sessionId,
+    metrics: [
+      { label: "Turns", value: "7" },
+      { label: "Cost", value: "$0.42" },
+    ],
+  });
+}
+```
+
+세션 측정항목 기능이 추가되기 전 버전의 Paseo는 이 기능을 제공하지 않으며, 해당 이벤트를 보내는 연결을 닫습니다. 턴의 `metrics`는 무시하므로 턴 측정항목에는 별도 기능 확인이 필요하지 않습니다.
+
+값에 색상을 지정하려면 `tone`을 `"ok"`, `"warning"` 또는 `"danger"`로 설정하세요. 완료된 턴에 `Model` 측정항목이 없으면 Paseo가 세션 모델을 추가합니다.
+
+`history`가 `"replay"`이면 각 이전 턴의 항목 뒤에 해당 턴의 `completed` 이벤트를 게시하세요. Paseo는 측정항목을 턴 바닥글에 다시 표시합니다.
+
 ## 설치 및 업데이트 보고하기
 
 등록에 `installation`을 추가하면 공급자 설정에 **설치** 섹션이 표시됩니다. 사용자는 CLI가 설치되어 있는지와 버전, 사용 가능한 업데이트가 있는지 확인할 수 있으며, **업데이트** 버튼으로 업데이터를 실행하고 출력을 볼 수 있습니다. 모든 멤버는 선택 사항이므로 CLI가 지원하는 항목만 선언하세요.
@@ -480,6 +522,37 @@ Paseo는 버전을 텍스트로 취급합니다. `version`과 `versions`를 작�
 
 Paseo는 설정을 열 때 `inspect`를 호출하고 결과를 30초 동안 보관합니다. `inspect`가 같은 버전을 보고하는 동안 `checkForUpdates`의 `current` 또는 `available` 결과는 한 시간 동안 보관하므로 Paseo 밖에서 CLI를 업데이트하면 검사 결과가 만료된 뒤 다시 확인합니다. `inspect`는 20초, `checkForUpdates`는 25초 안에 응답해야 합니다. `update`에는 제한 시간이 없습니다. Paseo가 대기를 중단하거나 데몬이 멈추면 `signal`이 중단됩니다. 모든 필드는 [`installation` 참조](/docs/plugins/reference#provider-installation)를 확인하세요.
 
+## 사용자가 문제를 해결하도록 돕습니다.
+
+잘못된 결과를 얻은 사용자는 도움을 요청하기 전에 공급자의 설정을 엽니다. 그거 줘
+필요한 페이지: `docsUrl`을 선언하고 잘못된 결과를 설명하는 사실을 반환합니다.
+`status`.
+
+```ts
+export function createProvider(): ProviderRegistration {
+  return {
+    id: "example-agent",
+    label: "Example Agent",
+    command: ["example-agent"],
+    docsUrl: "https://example.com/docs/paseo#troubleshooting",
+    async status({ launch }) {
+      if (!launch) return { available: false, diagnostic: "example-agent has no command" };
+      return { available: true, diagnostic: `Profile: ${launch.env.EXAMPLE_PROFILE ?? "default"}` };
+    },
+    async connect(request) {
+      // ...
+    },
+  };
+}
+```
+
+**문서**는 `docsUrl`을 엽니다. **진단 보고서**에는 명령, 실행 파일 경로 및
+Paseo가 찾은 버전과 `Profile` 행이 표시됩니다. CLI가 읽은 내용을 보고합니다.
+사용 중인 계정, 프로필, 구성 파일 등의 환경. 그것들은 다르다
+데몬과 사용자 터미널 사이에 존재하며 사용자는 앱에서 이를 볼 수 없습니다.
+행에 대해서는 [문제 해결 참조](/docs/plugins/reference#provider-troubleshooting)를 확인하세요.
+Paseo가 작성하고 `status`의 규칙을 따릅니다.
+
 ## ACP 에이전트 연동하기
 
 에이전트가 이미 ACP를 사용하면 ACP shim을 사용하세요.
@@ -503,7 +576,13 @@ export default function contribute(server: PluginServerContext) {
 
 shim이 ACP 프로세스, 기능 매핑, 세션 수명 주기, 프롬프트, 권한, 타임라인 변환을 맡습니다. 이 기능을 플러그인에 복사하지 마세요.
 
-ACP로 표현할 수 없는 공급업체별 차이에만 `transformers`를 사용하세요. 공급업체 페이로드는 Zod로 검증하고, 형식이 잘못되었거나 관련 없는 값은 변경하지 않습니다.
+ACP가 설명할 수 없는 공급업체 차이점이 있는 경우 `transformers`을 사용하세요. 는
+[구스 모델 트랜스포머](https://github.com/getpaseo/paseo/blob/main/plugins/goose-provider/server/models.ts)
+`context.request`을 사용하여 에이전트의 모델 인벤토리를 읽고 `config`을 사용하여 세션 모델 ID 앞에 붙습니다.
+활성 공급자와 함께. [ACP 어댑터 참조](/docs/plugins/reference#providers)를 확인하세요.
+
+공급업체 페이로드를 검증합니다.
+Zod를 사용하고 형식이 잘못되었거나 관련되지 않은 값을 변경하지 않고 그대로 둡니다.
 
 ```ts
 import type { AcpTransformer } from "@getpaseo/plugin/server/acp";
@@ -539,9 +618,16 @@ ACP 에이전트가 `session/new` 또는 `session/load`에 확장 메타데이�
 
 `configure` 변환기는 `catalog()`으로 에이전트의 현재 선택을 확인하고 변환된 변경 사항을 `apply(change)`에 전달할 수 있습니다. 이 방식으로 변경을 적용하면 공유 ACP 구성 매핑을 사용하며 해당 변경에 대한 변환기를 건너뜁니다.
 
-`session/load` 응답 뒤에 기록을 스트리밍하는 에이전트에는 `acpOptions.loadReplayQuietPeriodMs`를 설정하세요. Paseo는 세션 업데이트가 없는 상태로 해당 시간만큼 기다린 뒤 세션을 준비된 상태로 게시합니다. 최대 대기 시간은 이 간격의 5배입니다.
+`session/load` 이후 기록을 스트리밍하는 에이전트에 대해 `acpOptions.loadReplayQuietPeriodMs`을 설정합니다.
+응답. Paseo는 기록 업데이트 없이 해당 간격이 지나면 세션을 준비된 것으로 게시합니다.
+비기록 상태 및 메타데이터 업데이트(예: 명령, 구성, 모드, 사용법, 세션)
+정보) 대기 시간을 연장하지 마세요.
 
 특정 네이티브 모드를 기반으로 하는 무인 모드를 제공하려면 `acpOptions.autoAcceptMode`를 설정하세요. 어댑터는 Paseo 승인 화면을 열지 않고 명확한 ACP `allow_once` 작업 하나를 선택합니다. 새 세션의 기본값으로 사용하려면 `default: true`를 설정하세요. 이 모드로 전환하거나 해제하려면 보류 중인 승인이 없는 유휴 세션이어야 합니다.
+
+다음에 대해서만 `thought_level` 선택 사항을 나열하는 에이전트에 대해 `acpOptions.perModelThinkingOptions`을 설정합니다.
+선택한 모델. 카탈로그 검색은 각 모델을 차례로 선택하고 사고 옵션을 제공합니다.
+에이전트가 목록을 작성합니다. `thought_level` 옵션이 없는 모델은 사고 선택자가 없습니다.
 
 ## 테스트하고 게시하기
 

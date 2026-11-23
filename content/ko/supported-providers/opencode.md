@@ -8,9 +8,11 @@ category: Providers
 
 # OpenCode
 
-기존 `opencode` 설치, 자격 증명, 구성을 사용해 Paseo에서 OpenCode를 실행합니다.
+Paseo는 설치된 `opencode` CLI를 통해 OpenCode를 실행합니다. 기존 자격 증명과 구성을 사용합니다.
 
 ## 시작하기
+
+OpenCode는 Paseo에 내장되어 있으며 기본적으로 활성화되어 있습니다.
 
 1. 데몬 호스트에 [OpenCode](https://opencode.ai/)를 설치합니다.
 
@@ -21,13 +23,13 @@ category: Providers
 2. OpenCode를 모델 공급자에 연결하고 터미널에서 `opencode`가 실행되는지 확인합니다.
 3. Paseo에서 에이전트를 시작할 때 **OpenCode**를 선택하세요.
 
-OpenCode v2를 사용한다면 2.0.10 이상을 설치하세요. Paseo는 그보다 오래된 v2 버전을 거부합니다.
+OpenCode v2를 사용하는 경우 버전 2.0.10 이상을 설치하세요. Paseo는 이전 v2 버전을 거부합니다.
 
-`opencode`가 데몬의 PATH 밖에 있다면 [명령 재정의](/docs/custom-providers#custom-binary)를 사용하세요.
+`opencode`이 데몬 PATH 외부에 있는 경우 [명령 재정의](/docs/custom-providers#custom-binary)를 사용하세요.
 
 ## 모드
 
-Paseo는 OpenCode의 에이전트를 모드로 표시합니다.
+Paseo는 OpenCode 에이전트를 모드로 표시합니다.
 
 | 모드 | 효과 |
 | ----- | ----------------------------------------------- |

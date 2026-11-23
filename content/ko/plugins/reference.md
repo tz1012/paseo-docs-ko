@@ -422,7 +422,11 @@ Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpa
 
 `@getpaseo/plugin/server/provider`의 `ProviderRegistration`을 `server.registerProvider()`에 전달하세요. 연결은 `send()`로 입력을 받고 `onEvent()`를 통해 완전한 상태 스냅샷을 내보냅니다. `send()`는 수락 여부만 보고합니다. 프롬프트 처리 결과, 턴, 구성, 지속성, 권한, 실패는 이벤트로 전달됩니다.
 
-메시지, 구조화된 명령, 방향 조정, 명령 부수 효과에는 하나의 `session.prompt` 입력을 사용하세요. 실시간 사용자 타임라인 항목에 `clientMessageId`를 반복하고 정확히 하나의 일치하는 `session.prompt_result`를 게시합니다. 공급자가 만든 하위 항목은 `parentSessionId`가 있는 세션으로 게시하세요.
+메시지, 구조화된 명령, 조정 및 명령 측에 단일 `session.prompt` 입력을 사용합니다.
+효과. 라이브 사용자 타임라인 항목에서 `clientMessageId`을 반복하고 일치하는 항목 하나만 게시하세요.
+`session.prompt_result`. `parentSessionId`을 사용하여 공급자가 만든 하위 항목을 세션으로 게시합니다.
+완료된 `session.turn`에 대해 `metrics`으로 측정값을 보고하고 `session.metrics`을 통해 보고합니다. 참조
+[보고서 지표](/docs/plugins/providers#report-metrics).
 
 공급자 옵션은 `session.open`의 `ProviderSessionConfig.providerOptions`에 있는 하나의 레코드입니다.
 구성된 기본값과 에이전트별 재정의를 포함하며, 공급자에서 검증하고 적용해야 합니다. 작성기에 토글이나
@@ -433,7 +437,28 @@ Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpa
 
 Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용해 다시 여는 방식으로 에이전트를 새로 고칩니다. 공급자는 `session.open` 중에 외부 상태를 다시 읽습니다.
 
-명령 기반 ACP를 연동하려면 `@getpaseo/plugin/server/acp`의 `runAcpProvider()`를 사용하세요. 공급업체별 검색, 구성, 알림 또는 도구 호출 차이에만 변환기 훅을 추가합니다.
+명령 지원 ACP를 적용하려면 `@getpaseo/plugin/server/acp`에서 `runAcpProvider()`을 사용하세요. 변환기 추가
+벤더 행동에 대한 후크. [ACP 에이전트 적응](/docs/plugins/providers#adapt-an-acp-agent)을 참조하세요.
+
+`discover` 및 `configure`에서 `context.request(method, params)`을 호출하여 ACP 확장을 보냅니다.
+요청. Promise는 JSON 값을 반환하거나 에이전트의 JSON-RPC 오류로 인해 거부됩니다.
+
+`toolCall`에서 `context.mcpServerNames`을 사용하여 Paseo가 열릴 때 제공한 서버를 인식합니다.
+ACP 세션. 이전 SDK 버전 또는 구성된 서버에 대한 빈 목록 대체를 포함합니다.
+에이전트에서 직접.
+
+`config(state, context)`을 사용하여 Paseo가 표시하는 구성 스냅샷을 반환합니다.
+Paseo는 초기, 알림 및 커밋된 구성 스냅샷에 대해 이 동기 후크를 호출합니다.
+에이전트에 변경 사항을 보내려면 `configure`을 사용하세요.
+
+슬래시 명령과 기술을 광고하려면 `session.commands`을 게시하세요. 각 항목에는 `name`이 포함됩니다.
+`description`, 선택 사항 `argumentHint` 및 `kind`. 작곡가는 두 가지 유형을 모두 제안합니다.
+프롬프트의 시작. 에이전트가 일반 작업의 일부로 스킬 인라인을 수락하는 경우 `kind: "skill"`을 사용하세요.
+메시지. 기본 종류는 `"command"`입니다.
+
+ACP shim에서 `command(entry, context)`을 사용하여 광고된 각 항목에 대해 다시 작성된 항목을 반환합니다.
+슬래시 명령. 예를 들어 공급업체 기술 레지스트리가 있는 플러그인은 다음을 사용하여 종류를 설정할 수 있습니다.
+`return { ...entry, kind: skills.has(entry.name) ? "skill" : "command" }`.
 
 `ProviderRegistration.icon`은 `icon.svg`처럼 플러그인 디렉터리를 기준으로 한 파일 경로입니다. 해당 디렉터리 안에 있고 [SVG 아이콘 규칙](#svg-rules)을 따르는 일반 파일이어야 합니다. Paseo는 플러그인을 시작할 때 파일을 읽고 검증합니다. 문자열 자체를 인라인 SVG나 URL로 사용하지 않습니다.
 
@@ -482,9 +507,52 @@ interface ProviderInstallation {
 
 Paseo는 `version`, `versions`, `message`를 작성된 그대로 표시하며 파싱하거나 정렬하지 않습니다. `inspect`가 같은 `version`을 보고하는 동안 `current` 또는 `available` 응답은 최대 한 시간 동안 재사용합니다. `report` 출력은 마지막 65,536자를 보관합니다. 위 형식과 맞지 않는 응답은 오류입니다. `inspect`가 CLI 설치 상태를 보고하고 `update`를 선언하면 `checkForUpdates`의 선언 여부나 응답에 관계없이 **업데이트**가 표시됩니다. `update`가 없으면 같은 조건에서 `updateUrl`이 제공됩니다.
 
+#### 제공업체 문제 해결
+
+**Paseo 0.18이 필요합니다.** 이전 버전은 `docsUrl`을 무시하고 `diagnostic` 텍스트만 표시합니다.
+공급자의 설정에는 **진단 보고서**가 포함된 **문제 해결** 섹션이 있으며
+**문서**. 사용자는 보고서를 버그 보고서에 복사하여 사실을 입력합니다.
+잘못된 결과를 설명하는 것입니다.
+
+`ProviderRegistration.docsUrl`은 **문서**가 열리는 `http` 또는 `https` 페이지입니다. 그것을 가리킨다.
+공급자를 설정하는 방법과 일반적인 문제를 해결하는 방법을 설명하는 페이지입니다. 플러그인이 실패합니다
+다른 종류의 URL인 경우 시작됩니다. Paseo는 없음을 선언하면 **문서**를 숨깁니다.
+
+보고서는 제공업체의 `label`과 한 줄에 하나의 `Label: value` 행으로 구성됩니다. Paseo는 다음 행을 작성합니다.
+
+| 행 | 표시됨 |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `Command source`, `Configured command` | `command` 선언 시 |
+| `Daemon PATH`, `Daemon shell`, `PATH matches`, `Resolved path` | `command` 선언 시 |
+| `Version` | Paseo가 실행 파일을 발견하고 `installation.inspect`을 선언하면 |
+| `Models`, `Status` | 항상 |
+
+`status(request)`은 그 뒤에 행을 추가합니다. `request.launch`은 세션에서 사용할 실행입니다.
+
+```ts
+async status({ launch }) {
+  if (!launch) return { available: false, diagnostic: "example-agent has no command" };
+  const profile = launch.env.EXAMPLE_PROFILE ?? "default";
+  return { available: true, diagnostic: `Profile: ${profile}\nSign-in: ${signInSource(launch.env)}` };
+}
+```
+
+| 답변 | 결과 |
+| ---------------------------------- | ------------------------------------------------------------------------------ |
+| `{ available: true, diagnostic? }` | `diagnostic`의 각 줄은 한 행입니다. 각 줄을 `Label: value`으로 작성합니다.       |
+| `{ available: false, diagnostic }` | 공급자를 사용할 수 없습니다. 보고서의 `Error` 행에 `diagnostic`이 표시됩니다. |
+
+Paseo는 공급자가 사용 가능한지 확인할 때마다 `status`을 호출합니다.
+보고. 보고서는 줄바꿈하지 않으므로 짧은 행을 작성합니다.
+
 ### 사용량 소스
 
 **Paseo 0.11이 필요합니다.** 서버 진입점에서 `server.registerUsageSource()`로 소스를 등록하세요. 계약과 도우미는 `@getpaseo/plugin/server/usage`에서 가져옵니다.
+
+플러그인의 공급자 명령이 필요한 소스는 `provider`을 해당 공급자의 ID로 설정할 수 있습니다.
+데몬은 전역 검색을 위해 `scope.launch`에서 해결된 실행을 제공합니다.
+제공자의 세션. 출시에는 신뢰할 수 있는 프로세스 환경이 포함됩니다. 데몬 측에 유지하고
+불투명한 매장 검색 기능을 입력으로 사용하세요. 제공자를 사용할 수 없는 경우 부재합니다.
 
 소스는 두 가지 호출을 구현합니다.
 
@@ -497,13 +565,20 @@ interface UsageAccount {
 }
 
 type UsageScope =
-  | { kind: "global" }
-  | { kind: "session"; provider: string; model?: string; env: Record<string, string> };
+  | { kind: "global"; launch?: ProviderLaunch }
+  | {
+      kind: "session";
+      provider: string;
+      model?: string;
+      env: Record<string, string>;
+      launch?: ProviderLaunch;
+    };
 
 interface UsageSourceRegistration {
   id: string;
   label: string;
   icon?: string;
+  provider?: string;
   input: ZodType;
   discover(scope: UsageScope): Promise<UsageAccount[]>;
   fetch(input: unknown): Promise<UsageReport>;
@@ -571,10 +646,15 @@ Claude는 Bedrock, Vertex 및 외부 `ANTHROPIC_BASE_URL` 세션을 제외합니
 없습니다. 공급자가 기간을 생략하면 “롤링”이나 “기본 한도” 같은 중립적 이름을 사용하고 어댑터 옆에
 메타데이터가 없음을 설명하세요.
 
-숫자 기간에는 `@getpaseo/plugin/server/usage`의 `windowFromReportedDuration()`(Paseo 0.11 이상)을
-사용하세요. 보고된 초 또는 `null`, 중립적인 `unknown` ID와 이름, 선택적인 안정적 할당량 `scope`를
-전달합니다. 도우미는 ID, 레이블, 짧은 레이블을 함께 도출하며 기간 레이블 재정의를 받지 않습니다. 이름
-있는 API 기간에는 해당 필드로 이름을 정당화할 수 있는 `windowFromUsedPct()`를 사용하세요.
+숫자 기간의 경우 `windowFromReportedDuration()`을 사용하세요.
+`@getpaseo/plugin/server/usage`(Paseo 0.11+). 보고된 초 또는 중립인 `null`을 전달합니다.
+`unknown` 신원 및 이름, 선택적 고정 할당량 `scope`. 도우미는 ID를 파생하고,
+라벨과 짧은 라벨을 함께; 기간 레이블 재정의를 허용하지 않습니다. 명명된 API 기간의 경우
+해당 필드에 의해 정당화된 이름과 함께 `windowFromUsedPct()`을 사용하십시오. `durationSeconds`을 설정하는 경우
+기간은 알려진 고정 길이를 갖습니다. 사용량 세부정보는 재설정 시간 및
+할당량이 재설정될 때까지 지속될지 여부를 예측하기 위한 최신 판독값입니다. 소스가 반환되는 경우
+이전 판독값에는 측정 시간을 보고서의 ISO 타임스탬프로 포함시킵니다.
+`observedAt` 필드.
 
 창 ID는 응답 위치, 사용률, 재설정 시점이 아니라 할당량 범위와 기간을 식별합니다. 모델별 할당량의
 범위에는 공급자의 안정적인 기능 ID를 사용하고, ID가 없으면 보고된 한도 이름을 사용하세요. 슬롯 이동과
@@ -629,6 +709,96 @@ export default function contribute(server: PluginServerContext) {
 `usage.list_reports`는 요청한 에이전트의 계정을 검색합니다. 호스트 전체 요청은 기본값을 검색하고 Paseo가 이미 사용량을 조회한 에이전트를 다시 확인합니다. 보고서 ID를 지정한 요청은 기존 검색 입력값을 사용해 알려진 보고서를 가져옵니다. 보고서는 5분 동안 캐시됩니다. 캐시를 우회하려면 `forceRefresh`를 설정하세요. 항목에는 `id`, `account.label`, `fetchedAt`이 포함됩니다. 실패한 계정에는 선택적인 `loginErrors` 항목도 포함되며, 각 항목에는 `harness`와 각 로그인의 실패한 `report`가 들어갑니다. 클라이언트는 `server_info.features.usageSources`를 기준으로 이 기능을 활성화합니다. 이전 `provider.usage.list` RPC는 0.10 클라이언트를 위해 같은 보고서를 매핑하고 문제를 `error` 문자열로 렌더링합니다.
 
 소스 아이콘은 공급자 아이콘과 같은 규칙을 따르는 파일 경로입니다.
+
+## 워크트리 관리자 {#worktree-managers}
+
+**Paseo 0.17이 필요합니다.** `index.server.ts`에서 작업 트리 관리자를 등록합니다.
+`server.registerWorktreeManager()` Worktrunk와 같은 외부 도구가 생성을 소유해야 하는 경우,
+`git worktree add`을 실행하는 Paseo 대신 Git 작업 트리를 제거 및 복원하고
+`git worktree remove` 직접.
+
+```ts
+import { execCommand, type PluginServerContext } from "@getpaseo/plugin/server";
+
+export default function contribute(server: PluginServerContext) {
+  return server.registerWorktreeManager({
+    async create(request, { signal }) {
+      if (request.kind !== "branch-off") return;
+      const { stdout } = await execCommand(
+        "wt",
+        [
+          "-C",
+          request.repoRoot,
+          "switch",
+          "--create",
+          request.branch,
+          "--base",
+          request.startPoint ?? request.baseRef,
+          "--no-cd",
+          request.untrusted ? "--no-hooks" : "--yes",
+          "--format=json",
+        ],
+        { signal },
+      );
+      const { path } = JSON.parse(stdout) as { path: string };
+      return { type: "created", path };
+    },
+    async remove({ repoRoot, path, force, untrusted }, { signal }) {
+      const skipHooks = untrusted || repoRoot === null;
+      await execCommand(
+        "wt",
+        [
+          "-C",
+          repoRoot ?? path,
+          "remove",
+          "--foreground",
+          "--no-delete-branch",
+          skipHooks ? "--no-hooks" : "--yes",
+          ...(force ? ["--force"] : []),
+          path,
+        ],
+        { signal },
+      );
+      return { type: "removed" };
+    },
+    async restore({ repoRoot, path, target, untrusted }, { signal }) {
+      if (target.type !== "branch") return;
+      const { stdout } = await execCommand(
+        "wt",
+        [
+          "-C",
+          repoRoot,
+          "switch",
+          target.branch,
+          "--path",
+          path,
+          "--no-cd",
+          untrusted ? "--no-hooks" : "--yes",
+          "--format=json",
+        ],
+        { signal },
+      );
+      const { path: restoredPath } = JSON.parse(stdout) as { path: string };
+      return { type: "restored", path: restoredPath };
+    },
+  });
+}
+```
+
+- **생성**은 모든 `worktree.create.before` 훅 이후, `worktree.create.after` 이전에 실행됩니다.
+  모든 manager는 생성 요청 하나당 120초를 공유합니다. 생성을 맡으려면 `{ type: "created", path }`를 반환하세요. `undefined`를 반환하면 Paseo는 다음 manager를 시도하거나 내장 Git을 사용합니다.
+  branch-off에서는 Paseo가 manager를 호출하기 전에 `baseRef`를 해석하고 원격 추적 시작 ref를 갱신합니다. fetch가 실패하면 캐시된 ref를 사용합니다. `request.untrusted`가 `true`인 경우(예: fork의 변경 요청) 저장소에서 정의한 훅을 건너뛰세요.
+  Paseo는 `path`가 같은 저장소의 이름 있는 브랜치에 안전하게 새로 생성된 Git worktree인지 확인한 다음, 체크아웃된 `HEAD` 브랜치를 기록하고(manager가 브랜치 이름을 정규화하거나 고유하게 만들 수 있으며 `branch-off`에서는 새 브랜치를 만들어야 함), 비교 기준 메타데이터를 쓰고 `paseo.json`을 초기화합니다.
+  이후 채택이나 생성 단계가 실패하면 반환된 경로로 롤백합니다. 콜백이 예외를 던지거나 반환 전에 signal이 중단되면 manager가 자신이 만든 worktree를 정리해야 합니다. manager가 만든 worktree에는 첫 에이전트 브랜치 자동 이름 변경을 적용하지 않습니다.
+- **제거**는 선택 사항이며, Paseo가 `paseo.json` teardown을 실행하고 복원용 `refs/paseo/kept-commits/<sha>`를 저장한 뒤 작업공간 보관 및 생성 롤백 시 실행됩니다.
+  디렉터리를 제거한 뒤 `{ type: "removed" }`를 반환하거나, Git으로 대체하려면 `undefined`를 반환하세요. `untrusted`가 `true`(예: fork의 변경 요청)이거나 `repoRoot`가 `null`이면 저장소에서 정의한 훅을 건너뛰고, 가능한 경우 `repoRoot`를 기준으로 실행하세요.
+  Paseo는 worktree를 만든 플러그인으로 제거 요청을 보내며, 해당 플러그인이 비활성화되거나 제거된 경우 Git으로 대체합니다. 디렉터리에 연결된 다른 Git worktree가 있으면 디렉터리를 유지합니다. 독립형 clone과 submodule에는 일반 제거 규칙을 적용합니다. 보관 중 디렉터리 안에 활성 작업공간이 중첩되어 있어도 디스크에 유지합니다.
+  콜백이 예외를 던지거나 120초 후 시간 초과되면 Git 대체를 건너뜁니다. 보관 중에는 콜백 실패를 기록하면서 작업공간 보관을 계속하며, 콜백이 남긴 파일은 디스크에 유지됩니다.
+- **복원**은 선택 사항이며, worktree 디렉터리가 삭제된 작업공간을 보관 해제할 때 실행됩니다.
+  다시 만든 worktree가 차지해야 하는 기록된 `path`, `target`(`branch`, `commit`, `from-base` 중 하나), `untrusted`를 전달받습니다. `{ type: "restored", path }`를 반환하거나, Git으로 대체하려면 `undefined`를 반환하세요.
+  Paseo는 checkout이 요청된 브랜치, detached commit 또는 요청된 기준 commit의 새 브랜치와 일치하는지 확인합니다. 생성과 동일한 정리 규칙이 적용됩니다. `restore`가 Git으로 대체되면 Paseo는 작업공간의 manager 소유권을 지워 이후 보관에도 Git을 사용합니다.
+
+전체 [작업 트렁크 예시](https://github.com/getpaseo/paseo/tree/main/plugin-examples/worktrunk)를 참조하세요.
 
 ## 진입점과 정리
 
@@ -720,6 +890,16 @@ export default function contribute(client: PluginClientContext) {
 | `layout` | `compact`와 `ios`, `android` 또는 `web` 플랫폼. |
 | `params` | 화면을 열 때 전달한 매개변수. 문자열 키와 값으로 구성되며 없으면 `{}`. |
 | `navigation` | 선택적 클라이언트 탐색 기능. `openAgent({ agentId, serverId? })`와 `openWorkspace({ workspaceId, serverId? })`는 `serverId`의 대상을 열며, 생략하면 선택한 호스트에서 엽니다. `openBrowser({ url, workspaceId, serverId? })`는 Electron에서만 사용할 수 있습니다. [링크와 브라우저](#external-links-and-workspace-browsers)를 참고하세요. |
+
+`navigation?.supportsFocusHost`이 true인 경우 `focusHost: true`을 `openAgent` 또는 `openWorkspace`에 전달합니다.
+Paseo 작업공간 사이드바에서 대상 호스트만 선택하고 프로젝트와 레이블을 지웁니다.
+필터링하고 그룹화 모드를 유지합니다. 기존 필터를 유지하려면 옵션을 생략하세요.
+
+```ts
+if (navigation?.supportsFocusHost) {
+  navigation.openAgent({ agentId, serverId, focusHost: true });
+}
+```
 
 Paseo는 경로, 헤더, 닫기 작업, 호스트 선택기, 오류 경계, 쿼리 클라이언트를 관리합니다. 플러그인은 화면 본문을 관리합니다.
 

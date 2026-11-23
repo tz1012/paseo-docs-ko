@@ -1,57 +1,81 @@
 ---
 title: Slack triggers
-description: Configure Slack mentions and thread replies in one workflow file.
+description: Start Hub agents from Slack channel and thread mentions and reply in thread.
 nav: Slack
-order: 68
+order: 67
 category: Hub
 ---
 
 # Slack 트리거
 
-`slack.mention` 봇이 존재하는 채널에서 봇이 언급되면 실행됩니다. 직접 메시지, 슬래시 명령 및 대화형 구성 요소는 이 트리거를 생성하지 않습니다.
+`slack.mention`은 누군가 Slack 채널이나 봇이 있는 스레드에서 봇을 언급할 때 실행됩니다. 직접 메시지, 슬래시 명령 및 대화형 구성 요소는 이 이벤트를 실행하지 않습니다.
 
-`.paseo/workflows/slack-help.yml`:
+먼저 **통합**에서 Slack 작업 공간을 연결하고(또는 자체 호스팅 Hub에서 [Slack 앱](/docs/hub/self-hosting/slack-app) 구성) 봇이 시청하는 채널에 초대합니다.
+
+`.paseo/triggers/slack-help.yml`:
 
 ```yaml
 name: slack-help
-on: slack.mention
-max_runtime: 1h
-filters:
-  workspace: T01234567
-  channels: [C01234567]
-  from_users: [U01234567]
-steps:
-  - id: answer
-    environment: dev
-    max_runtime: 30m
-    idle_timeout: 5m
-    agent: codex
-    prompt:
-      - text: |
-          Answer with hub.reply, then call hub.finish_execution.
-          ${{ paseo.prompt }}
-    allow_outputs:
-      - { type: slack.reply, max: 1, required: true }
+on:
+  slack.mention:
+    connection: acme-slack
+    filters:
+      workspace: T01234567
+      channels: [C01234567]
+      from_users: [U01234567]
+run:
+  target:
+    daemon: devbox
+    cwd: /workspace/project
+  agent:
+    provider: codex
+    mode: full-access
+  continuation:
+    mode: conversation
+  max_runtime: 30m
+  idle_timeout: 5m
+  prompt: |
+    Answer the request using reply, then call finish_execution.
+
+    <user-prompt>
+    ${{ paseo.prompt }}
+    </user-prompt>
+  outputs:
+    slack.reply:
+      max: 1
+      required: true
 ```
 
-Slack 필터는 표시 이름이나 Hub 연결 슬러그가 아닌 ID를 사용합니다. `from_users`는 작성자, `workspace`는 팀, `channels`는 채널과 일치합니다. `pattern`은 멘션 뒤의 필수 접두사입니다. `contains`는 레거시 별칭이며 같은 접두사 동작을 갖습니다. 모든 필터가 통과해야 합니다.
+## 필터 및 프롬프트 텍스트
 
-응답은 트리거 스레드에 게시됩니다. 루트 메시지는 스레드를 얻습니다. 스레드된 메시지가 그대로 유지됩니다. `slack.reply`은 `hub.reply`을 부여하지만 프롬프트에 응답 지침을 추가하지 않습니다.
+Slack 필터는 표시 이름이나 연결 슬러그가 아닌 ID를 사용합니다. 모든 필터는 AND로 구성됩니다.
 
-주요 선언 입력은 다음과 같습니다.
+- `from_users`은 필수이며 보낸 사람의 Slack 회원 ID와 일치합니다.
+- `workspace`은 Slack 팀 ID와 일치하고 `channels`은 실행을 트리거할 수 있는 채널을 제한합니다.
+- `pattern`은 멘션 뒤에 접두사가 필요합니다(`contains`은 접두사 동작이 동일한 레거시 별칭입니다).
+
+`${{ paseo.prompt }}`에는 전체 메시지가 포함되어 있습니다. Hub는 선언한 입력에 대한 언급 이후 주요 `key=value` 토큰을 구문 분석합니다. `inputs.repo`을 선언하는 경우 `run.prompt`에 `${{ paseo.inputs.repo }}`을 사용하여 해당 값을 삽입합니다.
 
 ```text
-@Paseo repo=project agent=claude investigate the failed sync
+@Paseo repo=project investigate the failed sync
 ```
 
-Hub는 연속적으로 선언된 헤더를 사용하고 나머지를 `${{ paseo.prompt }}`으로 노출합니다. [워크플로](/docs/hub/workflows)를 참조하세요.
+`${{ paseo.context }}`을 `run.prompt`에 포함하여 Slack 스레드 기록 및 실행 범위 첨부 설명자를 JSON으로 전달합니다.
+
+## 답변 및 계속
+
+Hub는 트리거하는 Slack 스레드에 응답을 게시합니다. 채널 메시지는 스레드를 시작하고 스레드 내부의 응답은 해당 스레드에 유지됩니다. 동일한 스레드의 후속 멘션은 기본적으로 동일한 에이전트를 계속합니다.
+
+Slack 트리거는 자동으로 `reply` 도구(`slack.reply`)를 부여합니다. `max` 답변을 제한하거나 `required: true`을 설정하려면 `run.outputs.slack.reply`을 선언하세요. Hub가 HTTPS를 통해 실행되면 회신에는 **Paseo**에서 열기 링크가 포함됩니다.
+
+일정, 웹훅 또는 다른 트리거에서 Slack 채널을 읽거나 게시하려면 [통합 도구](/docs/hub/tools)를 사용하세요. 에이전트 저장소 액세스 권한을 부여하려면 [`run.github` 블록](/docs/hub/github)을 추가하세요.
 
 ## Slack ID 찾기
 
-| 필터         | 복사 위치                                                                                             |
-| ------------ | ----------------------------------------------------------------------------------------------------- |
-| `workspace`  | 브라우저에서 Slack을 여세요. 팀 ID는 URL의 `T…` 구간입니다.                                          |
-| `from_users` | 아바타 → **Profile** → **⋮** → **Copy member ID**를 선택하세요. 멤버 ID는 `U`로 시작합니다.           |
-| `channels`   | 채널 이름 → **About**을 선택하세요. 채널 ID는 패널 아래쪽에 있고 `C`로 시작합니다.                     |
+| 필터 | 복사할 위치 |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| `workspace` | 브라우저에서 Slack을 엽니다. 팀 ID는 URL의 `T...` 세그먼트입니다.                     |
+| `from_users` | 아바타를 열고 **프로필**, **⋮**, **회원 ID 복사**(`U`으로 시작)를 엽니다. |
+| `channels` | 채널 이름을 연 다음 **정보**를 엽니다. 채널 ID는 하단에 있습니다(`C`으로 시작).  |
 
-[안내형 설정](/docs/hub/quickstart)은 연결한 Slack 앱에서 `workspace`를 채우고 멤버 ID를 묻기 때문에, 생성된 시작용 워크플로에는 두 값이 모두 들어 있습니다.
+`paseo hub init`은 Slack 연결을 자동으로 읽고 회원 ID만 묻는 메시지를 표시합니다.

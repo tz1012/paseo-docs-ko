@@ -1,6 +1,6 @@
 ---
 title: Hub
-description: The layer above your daemons. Register them, give them capabilities, and share them with your team.
+description: Automate coding agents on your Paseo daemons from GitHub, Linear, Slack, Discord, schedules, and webhooks.
 nav: Overview
 order: 60
 category: Hub
@@ -8,27 +8,30 @@ category: Hub
 
 # Hub
 
-데몬은 한 머신에서 사용자를 위해 에이전트를 실행합니다. Paseo Hub는 데몬 위의 계층입니다. 데몬을 Hub에 등록하면 데몬만으로는 제공할 수 없는 기능을 사용할 수 있습니다.
+Paseo 데몬은 한 컴퓨터에서 코딩 에이전트를 실행합니다. Paseo Hub는 데몬 위에 위치하므로 외부 이벤트, 일정 및 웹후크가 해당 시스템에서 에이전트를 시작하고 팀과 기록을 공유할 수 있습니다.
 
 ```text
-             Hub
-    ┌─────────┼─────────┐
-    ▼         ▼         ▼
- laptop    devbox    build server
+GitHub · Linear · Slack · Discord · Schedules · Webhooks
+                           │
+                           ▼
+                          Hub
+               ┌───────────┼───────────┐
+               ▼           ▼           ▼
+            laptop       devbox   build server
 ```
 
-현재 제공되는 기능은 다음과 같습니다.
+Hub는 팀에게 다음 네 가지 기능을 제공합니다.
 
-- GitHub, Slack, Discord의 활동을 계기로 자동 시작되는 에이전트
-- 저장소에 보관하고 CLI에서 배포할 수 있는 트리거
-- 도착한 모든 요청과 일치 결과, 실행 내역을 담은 기록
-- 팀이 모든 정보를 한곳에서 볼 수 있는 공간
+- GitHub, Linear, Slack, Discord, 반복 일정 및 인바운드 웹후크에서 시작되는 이벤트 기반 에이전트입니다.
+- 트리거는 브라우저에서 편집하거나 `.paseo/triggers/*.yml`에 저장하고 CLI에서 배포할 수 있습니다.
+- 모든 트리거가 Slack 및 Discord를 읽거나 게시하거나 GitHub에서 작동할 수 있도록 하는 범위가 지정된 통합 도구입니다.
+- 최근 실행의 경우 [활동](/docs/hub/activity), 실행을 시작하지 않은 전송의 경우 **통합 → 알려진 라우팅되지 않은 이벤트**입니다.
 
-데몬은 늘 실행되던 곳에서 계속 에이전트를 실행합니다. Hub는 언제 데몬에 작업을 요청할지 결정합니다.
+데몬은 기존 구독, 모델 및 기술을 사용하여 머신에서 에이전트를 계속 실행합니다. Hub는 언제 호출할지 결정합니다.
 
 ## 저장소에 포함되는 항목
 
-`paseo hub init`은 자체 완결형 시작용 트리거 하나를 만듭니다.
+Hub 대시보드에서 트리거를 관리하거나 각 트리거를 리포지토리에 하나의 YAML 파일로 저장할 수 있습니다.
 
 ```text
 .paseo/
@@ -36,23 +39,23 @@ category: Hub
     └── slack-help.yml
 ```
 
-파일에는 앱 연결, 허용된 사용자, 데몬, 작업 디렉터리, 에이전트 런타임, 프롬프트, 출력이 지정됩니다. 설정은 파일을 검증한 뒤 배포할지 묻습니다. 봇을 멘션하면 사용자의 머신에서 에이전트가 시작됩니다. [빠른 시작](/docs/hub/quickstart)은 전체 과정을 안내하고, [생성된 시작용 트리거](/docs/hub/configuration#generated-starter-trigger)는 설정이 작성한 내용을 보여줍니다.
+각 파일은 독립적입니다. 이벤트, 허용된 보낸 사람, 대상 데몬, 작업 디렉터리, 에이전트 구성, 프롬프트 및 도구나 응답 범위의 이름을 지정합니다. `paseo hub init`을 실행하여 시작 파일을 생성하거나 `paseo hub deploy`을 실행하여 트리거를 검증하고 설치합니다.
 
 ## 읽는 순서
 
 1. [빠른 시작](/docs/hub/quickstart)
-2. [작동 방식](/docs/hub/concepts)
+2. [작동 원리](/docs/hub/concepts)
 3. [데몬](/docs/hub/daemons)
 4. [트리거](/docs/hub/triggers)
-5. [워크플로](/docs/hub/workflows)
-6. [GitHub 액세스](/docs/hub/github)
+5. [통합 도구](/docs/hub/tools)
+6. [GitHub 접속](/docs/hub/github)
 7. [구성](/docs/hub/configuration)
 8. [보안](/docs/hub/security)
 
-워크플로가 GitHub, Slack, Discord 또는 API의 요청을 받는다면 에이전트에 작업 디렉터리나 출력 기능에 대한 액세스 권한을 부여하기 전에 [Hub 보안](/docs/hub/security)을 읽으세요.
+작업 디렉터리, GitHub 권한 또는 채팅 채널에 대한 트리거 액세스 권한을 부여하기 전에 [Hub 보안](/docs/hub/security)을 읽어보세요.
 
-## Hub 직접 실행하기
+## 호스팅 또는 자체 호스팅
 
-먼저 임베디드 데이터베이스를 사용해 로컬 머신에서 시작하고, 필요할 때만 PostgreSQL이나 공개 배포를 추가하세요. [자체 호스팅](/docs/hub/self-hosting)에서 각 단계를 설명합니다.
+[호스팅 Hub](/docs/hub/hosted)는 귀하를 위해 서버 및 공급자 앱을 관리합니다. [hub.paseo.sh](https://hub.paseo.sh)에서 카드나 만료 기한이 없는 무료 계정을 만드세요.
 
-[호스팅 Hub](/docs/hub/hosted)도 같은 트리거, 데몬, 활동 모델을 사용합니다. [무료 계정을 만드세요](https://hub.paseo.sh). 카드가 필요 없고 계정은 만료되지 않습니다.
+자체 머신이나 서버에서 Hub를 실행하려면 `npx @getpaseo/hub` 및 내장형 데이터베이스로 시작한 다음 필요할 때 PostgreSQL 또는 공용 HTTPS 배포를 추가하세요. [셀프 호스팅](/docs/hub/self-hosting)을 참조하세요.
