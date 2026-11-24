@@ -59,7 +59,7 @@ Paseo는 [에이전트 클라이언트 프로토콜](https://agentclientprotocol
 - [GLM 에이전트](https://github.com/stefandevo/glm-acp-agent), Zhipu AI의 GLM 코딩 에이전트.
 - [goose](https://block.github.io/goose/), 블록의 로컬 오픈소스 AI 에이전트. Paseo는 goose가 모델 인벤토리 검색을 지원할 때 goose에 구성된 모든 공급자의 모델을 나열합니다.
 - [Grok](https://docs.x.ai/build/overview), xAI의 Grok Build 에이전트 코딩 CLI.
-- [Hermes Agent](https://hermes-agent.nousresearch.com/docs/user-guide/features/acp), Nous Research의 자기 개선 에이전트.
+- [Hermes Agent](https://hermes-agent.nousresearch.com/docs/user-guide/features/acp), Nous Research의 자기 개선 에이전트. Paseo는 각 터미널 호출의 전체 명령을 표시합니다.
 - [Junie](https://junie.jetbrains.com/docs/junie-cli-acp.html), JetBrains의 코딩 에이전트.
 - [Kilo Code](https://kilo.ai/docs/code-with-ai/platforms/cli), 오픈소스 코딩 에이전트.
 - [Kimi Code CLI](https://github.com/MoonshotAI/kimi-code), Moonshot AI의 코딩 도우미.

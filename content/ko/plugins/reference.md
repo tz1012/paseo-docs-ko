@@ -445,7 +445,10 @@ Paseo는 현재 공급자 세션을 닫고 현재 구성과 지속성을 사용�
 
 `toolCall`에서 `context.mcpServerNames`을 사용하여 Paseo가 열릴 때 제공한 서버를 인식합니다.
 ACP 세션. 이전 SDK 버전 또는 구성된 서버에 대한 빈 목록 대체를 포함합니다.
-에이전트에서 직접.
+에이전트에서 직접. `toolCall.content`에는 호출의 ACP `content` 블록이 들어 있고,
+`context.previous`는 모든 변환기를 거친 뒤 Paseo가 마지막으로 표시한 호출입니다. 이전 SDK 버전에서는
+둘 다 없으며, 호출의 첫 업데이트에는 `previous`가 없습니다. 표준 도구 카드는
+[ACP 에이전트 적응](/docs/plugins/providers#adapt-an-acp-agent)을 참조하세요.
 
 `config(state, context)`을 사용하여 Paseo가 표시하는 구성 스냅샷을 반환합니다.
 Paseo는 초기, 알림 및 커밋된 구성 스냅샷에 대해 이 동기 후크를 호출합니다.

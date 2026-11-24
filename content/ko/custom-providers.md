@@ -13,7 +13,7 @@ category: Providers
 - 다른 API(Z.AI, Alibaba/Qwen, 프록시, 자체 호스팅 엔드포인트)를 가리키도록 일류 공급자를 **확장**합니다.
 - **프로필 추가**, 다양한 자격 증명 또는 선별된 모델 목록을 사용하여 동일한 기본 공급자에 대한 여러 항목을 추가합니다.
 - **바이너리를 재정의**하고 설치된 CLI 대신 야간 빌드, 래퍼 스크립트 또는 Docker 이미지를 실행합니다.
-- **ACP 에이전트**, Gemini CLI, Hermes 또는 stdio를 통해 에이전트 클라이언트 프로토콜을 사용하는 에이전트를 추가하세요.
+- **ACP 에이전트**, Gemini CLI, Qwen Code 또는 stdio를 통해 에이전트 클라이언트 프로토콜을 사용하는 에이전트를 추가하세요.
 - 사용하지 않는 공급자를 **비활성화**합니다.
 
 파일을 편집한 후 `paseo reload`를 실행하세요. 공급자 변경은 데몬을 다시 시작하지 않아도 이후 실행에 적용됩니다.
@@ -162,11 +162,6 @@ stdio를 통해 [ACP](https://agentclientprotocol.com)를 사용하는 에이전
         "extends": "acp",
         "label": "Google Gemini",
         "command": ["gemini", "--acp"]
-      },
-      "hermes": {
-        "extends": "acp",
-        "label": "Hermes",
-        "command": ["hermes", "acp"]
       }
     }
   }

@@ -612,7 +612,20 @@ export const vendorEdits: AcpTransformer = {
 };
 ```
 
-ACP 종류만으로 작업을 설명할 수 없을 때 반환된 도구 호출의 `detail`을 설정해 Paseo 도구 카드를 제공하세요. 예를 들어 에이전트가 새 파일을 ACP 편집으로 보고하더라도 플러그인은 파일 경로와 내용이 있는 `write` 상세 정보를 반환할 수 있습니다.
+Paseo는 각 호출의 ACP `kind`로 표준 도구 카드를 만듭니다. `execute`에는 Shell, `read`에는 Read,
+`edit`와 `delete`에는 Edit, `search`에는 Search, `fetch`에는 Fetch를 사용합니다. 카드는 호출의
+`input`(ACP `rawInput`), `output`(`rawOutput`), `content`, `locations`를 읽습니다. 다른 종류의 호출은
+원시 입력과 출력을 표시하며, 에이전트가 둘 다 보내지 않으면 텍스트 콘텐츠를 표시합니다.
+
+표준 카드를 대체하려면 반환된 도구 호출의 `detail`을 설정하세요. 예를 들어 에이전트가 새 파일을
+ACP 편집으로 보고하더라도 플러그인은 파일 경로와 내용이 있는 `write` 상세 정보를 반환할 수 있습니다.
+원시 값을 표시하려면 `{ type: "unknown", input, output }`을 반환하세요.
+
+`toolCall`은 호출의 업데이트가 누적될 때마다 실행됩니다. ACP 정의에 따라 `content`를 보내는 업데이트는
+이전 콘텐츠를 대체합니다. 에이전트가 값을 초기 업데이트에만 보내는 경우 Paseo가 마지막으로 표시한
+호출인 `context.previous`에서 값을 읽으세요.
+[Hermes 터미널 변환기](https://github.com/getpaseo/paseo/blob/main/plugins/hermes-provider/server/terminal-command.ts)는
+이 방식으로 Hermes의 첫 업데이트에 담긴 명령을 유지합니다.
 
 ACP 에이전트가 `session/new` 또는 `session/load`에 확장 메타데이터를 필요로 하면 `sessionOpen`을 사용하세요. 훅은 시스템 프롬프트와 `initialize`에서 받은 에이전트 기능의 `_meta`를 받습니다. 세션 요청의 `_meta`에 필드를 추가하려면 `metadata`를 반환하세요. 플러그인이 이전에 다른 지속성 형식을 저장했다면 해당 형식의 기본 `sessionId`를 반환하세요. Paseo 자체에 저장된 세션 ID가 우선하며, 세션을 연 뒤 ACP 지속성 형식을 기록합니다.
 
