@@ -15,15 +15,18 @@ category: Plugins
 로컬 플러그인은 하나의 Paseo 데몬에 설치되는 디렉토리 소스입니다. 플러그인은 다음 기능을 제공할 수 있습니다.
 
 - Paseo 클라이언트의 React Native 화면과 사이드바 헤더/푸터 항목
+- 사이드바 목록을 대체하는 [사이드바 보기](/docs/plugins/sidebar-views)와 작업공간 행의 [배지](#workspace-row-badge-items)
 - 작업공간 탭으로 열리는 작업공간 및 에이전트 패널
 - 일치하는 파일을 보거나 편집하는 [파일 패널](#file-panels)
 - Command Center의 전역, 작업공간 및 에이전트 작업
-- 메시지 작성기의 슬래시 명령
+- 메시지 작성기의 슬래시 명령, [제어 항목](#composer-items), 필, 검색 가능한 외부 리소스
+- 작업공간 헤더의 [버튼](#header-buttons)과 새 작업공간 화면의 [필드](#new-workspace-items)
+- Settings → Appearance의 [설정 화면](#settings-screens), 밝은 테마와 어두운 테마
 - 변환하거나 데몬에서 푸시하는 에이전트 타임라인 행
-- Settings → Appearance의 밝은 테마와 어두운 테마
-- 데몬 옆에서 실행되는 스키마 검증 RPC 핸들러
+- 데몬 옆에서 실행되는 스키마 검증 RPC 핸들러 및 이벤트 스트림
+- 작업공간, 작업 트리 및 에이전트 작업을 변경하거나 관찰하는 [훅](/docs/plugins/hooks)
+- [에이전트 공급자](/docs/plugins/providers), [사용량 소스](#usage-sources), [작업 트리 관리자](#worktree-managers)
 - TypeScript SDK를 통한 일반 Paseo 작업
-- 메시지 작성기에서 검색할 수 있는 외부 리소스
 
 플러그인 코드는 신뢰된 코드로 취급되며 샌드박스 없이 실행됩니다. 클라이언트 표면은 Paseo 앱에서 실행됩니다. 백엔드 기여는 데몬 머신의 파일, 프로세스, 자격 증명, 네트워크에 접근할 수 있는 하위 프로세스에서 실행됩니다.
 
@@ -414,7 +417,7 @@ openBrowser({ url, workspaceId: remoteWorkspaceId, serverId: remoteServerId });
 
 ### 서버 런타임
 
-Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpaseo/plugin/server/provider`, `@getpaseo/plugin/server/acp`, `zod`를 제공합니다. 백엔드 기여는 데몬 하위 프로세스에서 실행되며 Node를 통해 호스트 머신에 접근할 수 있습니다. 파일 시스템, 프로세스, 자격 증명 및 기타 머신 로컬 작업은 `server/` 아래에 두세요. `index.server.ts`가 없는 플러그인은 하위 프로세스를 시작하지 않습니다.
+Paseo는 서버 코드에 `@getpaseo/plugin`, `@getpaseo/plugin/server`, `@getpaseo/plugin/server/provider`, `@getpaseo/plugin/server/acp`, `@getpaseo/plugin/server/usage`, `zod`를 제공합니다. 백엔드 기여는 데몬 하위 프로세스에서 실행되며 Node를 통해 호스트 머신에 접근할 수 있습니다. 파일 시스템, 프로세스, 자격 증명 및 기타 머신 로컬 작업은 `server/` 아래에 두세요. `index.server.ts`가 없는 플러그인은 하위 프로세스를 시작하지 않습니다.
 
 ### 공급자
 
@@ -1713,6 +1716,7 @@ const [state, setState] = useTabState(tab, schema, { view: "preview" });
 | `statusEnteredAt` | ISO 타임스탬프 또는 `null` |
 | `archivingAt` | ISO 타임스탬프 또는 `null` |
 | `diffStat` | `{ additions: number; deletions: number } \| null` |
+| `parentWorkspace` | `WorkspaceRef \| null` |
 
 에이전트 스냅샷 필드:
 

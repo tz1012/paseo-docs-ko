@@ -10,7 +10,7 @@ category: Schedules
 
 `paseo schedule`은 헤드리스 박스 및 스크립트에 유용한 new-agent [일정](/docs/schedules)을 터미널에서 생성하고 관리합니다. 실행될 때마다 새로운 에이전트가 시작됩니다.
 
-실행 작업공간은 각 실행이 끝날 때 기본적으로 보관됩니다. CLI에는 **완료 시 보관** 플래그가 없습니다. 이후 실행 작업공간을 활성 상태로 유지하려면 [앱에서 옵션을 변경하세요](/docs/schedules#keep-run-workspaces).
+실행 작업공간은 각 실행이 끝날 때 기본적으로 보관됩니다. 이후 실행 작업공간을 활성 상태로 [유지하려면](/docs/schedules#keep-run-workspaces) `paseo schedule create` 또는 `paseo schedule update`에 `--no-archive-on-finish`를 전달하세요. 앱에서는 **완료 시 보관** 옵션입니다.
 
 ## 만들기
 
@@ -96,6 +96,7 @@ paseo schedule pause <id>
 paseo schedule resume <id>
 paseo schedule run-once <id>
 paseo schedule update <id> --every 10m --max-runs 6
+paseo schedule update <id> --no-archive-on-finish
 paseo schedule delete <id>
 ```
 

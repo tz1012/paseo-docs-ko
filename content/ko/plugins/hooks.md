@@ -24,14 +24,14 @@ export default function contribute(server: PluginServerContext) {
 
 ## 이름과 실행 시점
 
-이름은 `subject.operation.position` 형식을 따릅니다. 주체, 작업, `before` 또는 `after`가 차례로 옵니다. 이름은 수명 주기의 위치를 식별합니다. Paseo가 기다리는지는 아래 표에 나온 훅별 속성입니다. `workspace`는 모든 작업공간을, `worktree`는 Git 작업 트리만 포함합니다.
+이름은 `subject.operation.position` 형식을 따릅니다. 주체, 작업, `before` 또는 `after`가 차례로 옵니다. 이름은 수명 주기의 위치를 식별합니다. Paseo가 기다리는지는 아래 표에 나온 훅별 속성입니다. `workspace`는 모든 작업공간을, `worktree`는 Git 작업 트리만 포함합니다. `terminal`은 Paseo가 작업공간에서 시작하는 모든 터미널을, `command`는 작업 트리 설정 및 정리 명령을 포함합니다.
 
 - 대기 훅은 Paseo가 계속 진행하기 전에 끝납니다. 예외를 던지거나, 유효하지 않은 데이터를 반환하거나, 30초를 초과하면 작업이 `Plugin <id> <hook> failed: …` 오류로 실패합니다. 요청 변경 훅은 `{ request }`를 받고 완전한 대체 요청 또는 `undefined`를 반환할 수 있습니다.
 - 알림은 이벤트 객체를 받고 `Promise<void>`를 반환합니다. Paseo는 기다리지 않습니다. 오류는 플러그인에 기록되고 작업은 계속됩니다. `agent.turn.before`와 `agent.permission.before`는 턴이 시작되거나 권한 요청이 대기 상태가 될 때 발생하는 알림입니다.
 
 모든 핸들러는 비동기여야 합니다. 턴 완료에는 성공, 실패, 취소가 포함되므로 `outcome`을 확인하세요. 권한 완료에는 모든 해결 방식이 포함되므로 `resolution`을 확인하세요.
 
-에이전트 생성은 한 번만 일어나며 `agent.create.before`는 저장되는 구성을 변경합니다. 열기는 공급자 프로세스를 시작합니다. 첫 실행, 데몬 재시작 후 재개, 기록 읽기, 외부 세션 가져오기 또는 다시 로드할 때 발생합니다. `agent.open.before`는 매번 실행 시에만 쓰이는 환경, 지침, 도구 및 MCP 서버를 제공합니다. 생성하면 에이전트가 열리지만, 기존 에이전트를 여는 것은 에이전트를 생성하지 않습니다. 닫기는 실행 중인 인스턴스를 종료합니다. 앱에서 탭을 여는 것은 별도의 작업입니다.
+에이전트 생성은 한 번만 일어나며 `agent.create.before`는 저장되는 구성을 변경합니다. 열기는 공급자 프로세스를 시작합니다. 첫 실행, 데몬 재시작 후 재개, 기록 읽기, 외부 세션 가져오기 또는 다시 로드할 때 발생합니다. `agent.open.before`는 매번 실행 시에만 쓰이는 환경, 지침, 도구, MCP 서버 및 실행 래퍼를 제공합니다. 생성하면 에이전트가 열리지만, 기존 에이전트를 여는 것은 에이전트를 생성하지 않습니다. 닫기는 실행 중인 인스턴스를 종료합니다. 앱에서 탭을 여는 것은 별도의 작업입니다.
 
 `worktree.create.after`는 작업공간이 등록되기 전에 실행됩니다. 이 훅은 `workspace.create.after`보다 먼저 실행되며, 둘 다 첫 에이전트의 `agent.create.before` / `agent.open.before`보다 먼저 실행됩니다.
 
@@ -49,22 +49,24 @@ Paseo에는 반환된 프로미스만 보이므로 분리된 작업에는 오류
 
 ## 훅
 
-| 훅                        | 대기 | payload                                   | 핸들러가 변경할 수 있는 항목                     |
-| ------------------------- | ---- | ----------------------------------------- | ------------------------------------------------ |
-| `workspace.create.before` | 예   | `{ request }`                             | 전체 생성 요청                                   |
-| `workspace.create.after`  | 아니요 | `{ workspace }`                         |                                                  |
-| `workspace.archive.after` | 아니요 | `{ workspace }`                         |                                                  |
-| `worktree.create.before`  | 예   | `{ request }`                             | 생성 옵션과 대상                                 |
-| `worktree.create.after`   | 예   | `{ worktree }`                            | 작업 트리의 파일. 생성 중단은 예외를 던짐        |
-| `agent.create.before`     | 예   | `{ request: { config, env?, metadata } }` | `cwd`를 제외한 저장 구성, `env`, `metadata`      |
-| `agent.create.after`      | 아니요 | `{ agent }`                             |                                                  |
-| `agent.open.before`       | 예   | `{ request }`                             | 실행 시에만 쓰이는 `env`, `appendSystemPrompt`, `tools`, `mcpServers` |
-| `agent.close.after`       | 아니요 | `{ agent }`                             |                                                  |
-| `agent.archive.after`     | 아니요 | `{ agent, archivedAt }`                 |                                                  |
-| `agent.turn.before`       | 아니요 | `{ agent, turnId }`                     |                                                  |
-| `agent.turn.after`        | 아니요 | `{ agent, turnId, outcome }`             |                                                  |
-| `agent.permission.before` | 아니요 | `{ agent, request }`                    |                                                  |
-| `agent.permission.after`  | 아니요 | `{ agent, requestId, resolution }`      |                                                  |
+| 훅                        | 대기   | payload                                                | 핸들러가 변경할 수 있는 항목                                             |
+| ------------------------- | ------ | ------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `workspace.create.before` | 예     | `{ request }`                                          | 전체 생성 요청                                                           |
+| `workspace.create.after`  | 아니요 | `{ workspace }`                                        |                                                                          |
+| `workspace.archive.after` | 아니요 | `{ workspace }`                                        |                                                                          |
+| `worktree.create.before`  | 예     | `{ request }`                                          | 생성 옵션과 대상                                                         |
+| `worktree.create.after`   | 예     | `{ worktree }`                                         | 작업 트리의 파일. 생성 중단은 예외를 던짐                                |
+| `agent.create.before`     | 예     | `{ request: { config, env?, metadata, workspaceId } }` | `cwd`를 제외한 저장 구성, `env`, `metadata`                              |
+| `agent.create.after`      | 아니요 | `{ agent }`                                            |                                                                          |
+| `agent.open.before`       | 예     | `{ request }`                                          | 실행 시에만 쓰이는 `env`, `appendSystemPrompt`, `tools`, `mcpServers`, `wrap` |
+| `agent.close.after`       | 아니요 | `{ agent }`                                            |                                                                          |
+| `agent.archive.after`     | 아니요 | `{ agent, archivedAt }`                                |                                                                          |
+| `agent.turn.before`       | 아니요 | `{ agent, turnId }`                                    |                                                                          |
+| `agent.turn.after`        | 아니요 | `{ agent, turnId, outcome }`                           |                                                                          |
+| `agent.permission.before` | 아니요 | `{ agent, request }`                                   |                                                                          |
+| `agent.permission.after`  | 아니요 | `{ agent, requestId, resolution }`                     |                                                                          |
+| `terminal.create.before`  | 예     | `{ request }`                                          | `env`, `wrap`. 거부하려면 예외를 던짐                                    |
+| `command.run.before`      | 예     | `{ request }`                                          | `env`, `wrap`. 거부하려면 예외를 던짐                                    |
 
 ## 공유 payload
 
@@ -130,6 +132,23 @@ await paseo.workspaces.ref(workspaceId).setMetadata({ "linear.issue": { id: "ENG
 `workspace.create.before`와 `agent.create.before`는 호출자가 보낸 메타데이터를 받고, `after` 훅과
 `agent.open.before`는 저장된 메타데이터를 받습니다. 메타데이터를 지원하기 전 버전의 호스트에서
 이 호출을 사용하면 "Update the host to use metadata." 오류가 발생합니다.
+
+## 실행 래퍼 {#launch-wraps}
+
+`agent.open.before`, `terminal.create.before`, `command.run.before`는 `PluginLaunchWrap`인 `wrap: [executable, ...args]`를 반환할 수 있습니다. 그러면 Paseo는 샌드박스 안에서 실행하는 다음 예처럼 프로세스를 `[...wrap, command, ...args]`로 시작합니다.
+
+```ts
+import type { PluginLaunchWrap } from "@getpaseo/plugin/server";
+
+const sandbox: PluginLaunchWrap = ["/usr/local/bin/sandbox-run", "--profile", "agent"];
+```
+
+- 실행 파일은 데몬 호스트의 절대 경로여야 합니다. Paseo는 셸 없이 실행합니다. 단, Windows `.cmd`와 `.bat` 실행기는 cmd.exe를 거칩니다. 각 요소는 하나의 인수로 유지됩니다.
+- 래퍼를 처음 반환한 훅이 래퍼를 선택합니다. 같은 플러그인이나 그 뒤의 플러그인에 있는 훅은 `wrap`을 생략하거나 같은 값을 반환할 수 있습니다. 다른 값을 반환하면 작업이 실패합니다.
+- 래퍼는 저장되지 않습니다. 실행할 때마다 훅에 다시 요청합니다.
+- `wrap`을 지원하지 않는 이전 호스트는 이 필드를 거부하므로 래퍼 없이 실행되는 대신 작업이 실패합니다.
+
+아래의 각 훅 섹션은 해당 래퍼가 무엇을 포함하는지 설명합니다.
 
 ## workspace.create.before
 
@@ -231,9 +250,63 @@ server.addHook("worktree.create.after", async ({ worktree }) => {
 });
 ```
 
+## terminal.create.before {#terminalcreatebefore}
+
+Paseo는 작업공간에서 터미널을 시작하기 전에 이 훅을 기다립니다.
+
+- 앱의 **새 터미널**과 터미널 프로필, CLI·SDK·플러그인을 통해 생성한 터미널
+- 에이전트가 Paseo 도구로 여는 터미널
+- `paseo.json` 스크립트, 서비스, 작업 트리 터미널이 실행되는 터미널
+
+`{ request }`를 받습니다. 대체 요청이나 `undefined`를 반환하세요. `env`와 `wrap`만 변경할 수 있습니다. 예외를 던지면 터미널이 거부되고 이를 요청한 쪽은 `Plugin <id> terminal.create.before failed: …` 오류를 받습니다.
+
+```ts
+server.addHook("terminal.create.before", async ({ request }) => {
+  if (!sandboxed.has(request.workspaceId)) return;
+  return { ...request, wrap: ["/usr/local/bin/sandbox-run", "--profile", "terminal"] };
+});
+```
+
+| 요청 필드         | 의미                                                                                                                                                                          |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workspaceId`     | 읽기 전용. 터미널의 작업공간                                                                                                                                                  |
+| `cwd`             | 읽기 전용. 터미널이 시작되는 위치                                                                                                                                             |
+| `source`          | 읽기 전용. `agent`: 에이전트의 Paseo 도구. `script`: `paseo.json` 스크립트 또는 서비스. `worktree`: `paseo.json` 작업 트리 터미널. `client`: 앱, CLI, SDK 또는 플러그인 |
+| `name`            | 읽기 전용. 탭 이름 또는 null                                                                                                                                                  |
+| `input`           | 읽기 전용. `script`와 `worktree`에서는 셸이 시작된 뒤 Paseo가 입력하는 명령이고, 그 외에는 null                                                                               |
+| `command`, `args` | 읽기 전용. 프로그램과 인수. 기본 셸이면 `command`는 null                                                                                                                      |
+| `env`             | Paseo가 터미널 환경에 추가하는 변수                                                                                                                                           |
+| `wrap`            | 선택적 [실행 래퍼](#launch-wraps). Paseo는 `[...wrap, command, ...args]`를 시작하며, `command`가 없으면 래퍼 뒤에 기본 셸을 둠                                                 |
+
+스크립트, 서비스, 작업 트리 터미널은 기본 셸을 시작한 뒤 명령을 입력하므로 셸에 적용된 래퍼는 해당 명령도 포함합니다. 래핑된 셸은 Paseo의 셸 통합 없이 시작되므로 래핑된 `paseo.json` 스크립트는 명령이 끝나는 시점을 보고하지 않습니다. 데몬 재시작 후에도 살아남은 터미널은 새로 생성되는 대신 채택되므로 훅을 다시 실행하지 않습니다. 플러그인이 이 훅 안에서 터미널을 만들면 그 터미널에도 훅이 실행됩니다.
+
+## command.run.before {#commandrunbefore}
+
+Paseo는 `paseo.json` 작업 트리의 각 `setup` 및 `teardown` 명령 전에 이 훅을 기다립니다. `{ request }`를 받습니다. 대체 요청이나 `undefined`를 반환하세요. `env`와 `wrap`만 변경할 수 있습니다. 예외를 던지면 명령이 거부됩니다. 설정은 중단되고 플러그인 오류를 보고하며, 정리는 실패한 명령과 마찬가지로 중단되어 작업 트리 디렉터리를 유지합니다.
+
+```ts
+server.addHook("command.run.before", async ({ request }) => ({
+  ...request,
+  wrap: ["/usr/local/bin/sandbox-run", "--profile", request.purpose],
+}));
+```
+
+| 요청 필드     | 의미                                                                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workspaceId` | 읽기 전용. 작업공간. 작업 트리를 경로로 보관했고 작업공간 레코드가 남아 있지 않으면 null                                                                                  |
+| `cwd`         | 읽기 전용. 명령이 실행되는 위치                                                                                                                                           |
+| `purpose`     | 읽기 전용. `setup` 또는 `teardown`                                                                                                                                         |
+| `command`     | 읽기 전용. `paseo.json`에 작성된 명령. Paseo는 macOS와 Linux에서 `bash -c`로, Windows에서 PowerShell 또는 `cmd.exe`로 실행                                                |
+| `env`         | Paseo가 데몬 환경에 추가하는 변수. `PASEO_SOURCE_CHECKOUT_PATH`, `PASEO_WORKTREE_PATH`, `PASEO_BRANCH_NAME` 등                                                            |
+| `wrap`        | 선택적 [실행 래퍼](#launch-wraps). Paseo는 셸을 래퍼 뒤에서 시작함. macOS와 Linux에서는 `[...wrap, "bash", "-c", command]`                                             |
+
+설정은 작업공간이 등록되고 `workspace.create.after`가 발생한 뒤 첫 에이전트와 함께 실행됩니다. 설정이 차단된 작업 트리에서 **설정 실행**을 선택하는 경우처럼 설정을 다시 실행하면 각 명령이 훅을 다시 실행합니다. 정리는 작업 트리의 마지막 작업공간을 보관할 때, Paseo가 디렉터리를 제거하기 전에 실행됩니다.
+
 ## agent.create.before
 
-`{ request: { config, env?, metadata } }`를 받습니다. 구성과 `metadata` 변경은 저장되어 플러그인이 비활성화되거나 제거된 뒤에도 남습니다. `env`는 첫 실행에 적용되며 저장되지 않습니다. `config.cwd`는 변경할 수 없습니다. 예외, 유효하지 않은 결과 또는 시간 초과는 생성을 실패시킵니다.
+`{ request: { config, env?, metadata, workspaceId } }`를 받습니다. 구성과 `metadata` 변경은 저장되어 플러그인이 비활성화되거나 제거된 뒤에도 남습니다. `env`는 첫 실행에 적용되며 저장되지 않습니다. `config.cwd`와 `workspaceId`는 변경할 수 없습니다. 예외, 유효하지 않은 결과 또는 시간 초과는 생성을 실패시킵니다.
+
+`workspaceId`는 에이전트가 생성되는 작업공간이며 없으면 null입니다. 작업공간을 찾을 때는 `config.cwd` 대신 이 값을 사용하세요. 여러 작업공간이 같은 디렉터리를 공유할 수 있고, 한 작업공간 안에서 다른 작업공간 내부의 디렉터리를 사용해 에이전트를 만들 수도 있습니다.
 
 **`agent.create.before.config`**는 `AgentSessionConfig`를 사용합니다.
 
@@ -290,7 +363,7 @@ server.addHook("agent.create.after", async ({ agent }) => {
 
 ## agent.open.before
 
-`{ request }`를 받습니다. 이번 실행에서는 `env`, `appendSystemPrompt`, `tools`, `mcpServers`만 변경할 수 있습니다. 다른 모든 필드는 읽기 전용입니다. 예외, 유효하지 않은 결과 또는 시간 초과는 열기를 실패시킵니다.
+`{ request }`를 받습니다. 이번 실행에서는 `env`, `appendSystemPrompt`, `tools`, `mcpServers`, `wrap`만 변경할 수 있습니다. 다른 모든 필드는 읽기 전용입니다. 예외, 유효하지 않은 결과 또는 시간 초과는 열기를 실패시킵니다.
 
 열리는 중인 에이전트에 대한 쓰기 작업(`setMetadata`, `setLabels`, 옵션·모델·사고·모드 변경)을
 기다리지 마세요. 쓰기는 열기가 끝나기를 기다리고 열기는 훅을 기다리므로, 훅이 시간 초과되어 열기에
@@ -325,18 +398,37 @@ server.addHook("agent.open.before", async ({ request }, { paseo }) => {
 }
 ```
 
-| 필드          | 값                                                                                                                      |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `workspaceId` | 문자열 또는 `null`                                                                                                     |
-| `title`       | 읽기 전용 문자열 또는 `null`. 생성 시에는 생성 제목, 재개 시에는 저장된 제목                                           |
-| `background`  | [백그라운드 에이전트](#background-agents)이면 읽기 전용 `true`. 생성 시 고정됨                                         |
-| `labels`      | 읽기 전용 문자열 맵. 생성 시에는 생성 레이블, 재개 시에는 저장된 레이블                                                |
-| `metadata`    | 읽기 전용 JSON 맵. 에이전트에 저장된 [메타데이터](#metadata)                                                           |
-| `tools`       | 이 플러그인 로컬의 편집 가능한 `AgentToolDefinition[]`. [에이전트에 도구 연결하기](#attach-tools-to-agents) 참고       |
-| `mcpServers`  | 이 플러그인 로컬의 편집 가능한 실행 전용 서버 맵. [MCP 서버 주입하기](#inject-mcp-servers) 참고                         |
-| `reason`      | `create`, `resume`, `refresh`, `import`                                                                                 |
-| `purpose`     | `interactive`, `history`                                                                                                |
-| `env`         | 실행 재정의 맵. 데몬이 상속한 환경은 제외함. 재정의를 추가, 대체 또는 제거하려면 맵을 대체                              |
+| 필드          | 값                                                                                                                                                             |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workspaceId` | 문자열 또는 `null`                                                                                                                                            |
+| `title`       | 읽기 전용 문자열 또는 `null`. 생성 시에는 생성 제목, 재개 시에는 저장된 제목                                                                                  |
+| `background`  | [백그라운드 에이전트](#background-agents)이면 읽기 전용 `true`. 생성 시 고정됨                                                                                |
+| `labels`      | 읽기 전용 문자열 맵. 생성 시에는 생성 레이블, 재개 시에는 저장된 레이블                                                                                       |
+| `metadata`    | 읽기 전용 JSON 맵. 에이전트에 저장된 [메타데이터](#metadata)                                                                                                  |
+| `tools`       | 이 플러그인 로컬의 편집 가능한 `AgentToolDefinition[]`. [에이전트에 도구 연결하기](#attach-tools-to-agents) 참고                                              |
+| `mcpServers`  | 이 플러그인 로컬의 편집 가능한 실행 전용 서버 맵. [MCP 서버 주입하기](#inject-mcp-servers) 참고                                                                |
+| `reason`      | `create`, `resume`, `refresh`, `import`                                                                                                                        |
+| `purpose`     | `interactive`, `history`                                                                                                                                       |
+| `env`         | 실행 재정의 맵. 데몬이 상속한 환경은 제외함. 재정의를 추가, 대체 또는 제거하려면 맵을 대체                                                                     |
+| `wrap`        | 하네스를 뒤에서 시작하는 선택적 [실행 래퍼](#launch-wraps). [실행 래퍼 뒤에서 하네스 실행하기](#run-the-harness-behind-a-launch-wrap) 참고                    |
+
+### 실행 래퍼 뒤에서 하네스 실행하기
+
+공급자 하네스를 `[...wrap, command, ...args]`로 시작하려면 [실행 래퍼](#launch-wraps)를 반환하세요.
+
+```ts
+server.addHook("agent.open.before", async ({ request }) => ({
+  ...request,
+  wrap: ["/usr/local/bin/sandbox-run", "--profile", "agent"],
+}));
+```
+
+- 공급자는 공급자 스냅숏 항목에 `launchWrap: true`가 있을 때 래퍼를 적용합니다. 모든 내장 공급자와 모든 사용자 정의 ACP 공급자가 지원합니다. 플러그인 공급자는 지원을 선언한 경우 적용하며, Muse Code와 Antigravity 같은 ACP 플러그인 공급자가 여기에 해당합니다. `agent.create.before`에서 `paseo.providers.snapshot()`으로 필드를 읽고 공급자를 선택하세요. 그 밖의 공급자에 래퍼를 적용하면 열기가 실패하며 래퍼를 무시하지 않습니다.
+- 기록을 열 때도 래퍼를 유지합니다.
+- 래핑된 OpenCode 세션은 자체 OpenCode 서버를 사용하며 이 서버도 래퍼 뒤에서 시작됩니다. 기존 서버를 사용하도록 구성된 OpenCode 공급자는 서버를 시작할 수 없으므로 래핑된 열기가 실패합니다.
+- 하네스가 항상 에이전트 디렉터리에서 시작되는 것은 아닙니다. Codex는 데몬 디렉터리에서 시작하고 OpenCode는 Paseo 홈 아래의 `opencode-home` 디렉터리에서 서버를 시작합니다. 둘 다 세션 디렉터리는 프로토콜을 통해 전달합니다. 실행기에 디렉터리가 필요하면 래퍼 인수에 `request.cwd`를 넣으세요.
+- 래퍼 내부에서 시스템 임시 디렉터리를 볼 수 있게 유지하세요. Paseo는 Pi를 시작하기 전에 그곳에 Pi 확장을 쓰고, Claude Code도 그곳에 도구 출력을 씁니다. 빈 비공개 디렉터리 뒤로 숨기는 실행기는 해당 세션을 망가뜨립니다.
+- 래퍼는 Paseo가 세션을 위해 시작하는 프로세스, 즉 하네스, Paseo가 에이전트용으로 호스팅하는 stdio MCP 서버, ACP 에이전트가 Paseo에 실행을 요청하는 터미널을 포함합니다. Paseo의 호스트 터미널 도구, 공급자 가용성 및 카탈로그 프로브, 초안 검색은 래퍼 밖에서 실행됩니다.
 
 ### 세션을 열 때마다 지침 덧붙이기
 
@@ -507,13 +599,25 @@ Paseo는 공급자가 지원하는 MCP 또는 네이티브 등록을 사용해 �
 
 | 변경 사항                                                     | 에이전트가 변경을 받는 시점                                                                                                                                                                                |
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agent.open.before`를 선언한 플러그인 시작, 중지 또는 다시 로드 | 열린 세션이 오래된 상태가 됨. 다음 유휴 프롬프트 전에 각 세션을 다시 열며, 실행 중인 턴은 중단 없이 계속됨. 다시 연 뒤의 다음 프롬프트는 세션을 재사용 |
+| `agent.open.before`를 선언한 플러그인 시작, 중지 또는 다시 로드 | 아래 설명처럼 세션의 다음 에이전트 도구 호출이나 프롬프트 전에 적용                                                                                                    |
 | 콜백 대상 에이전트 변경                                      | 이 예제를 편집한 뒤 `paseo plugin reload agent-tools`를 실행하고, 에이전트가 유휴 상태일 때 프롬프트를 보냄                                                                                                |
 | 즉시 적용                                                     | `await paseo.agents.ref(id).reload({ requestId: "reload-notes" })`를 호출. `requestId`는 선택 사항. 공급자 세션을 다시 열고 `reason: "refresh"`로 훅을 다시 실행하며 실행 중인 턴을 중단                   |
 | 현재 스냅숏 읽기                                              | `await paseo.agents.ref(id).refresh()`를 호출. 세션을 다시 열지 않고 상태를 읽음                                                                                                                           |
 
-자동 다시 열기가 실패하면 이를 유발한 프롬프트가 해당 오류로 실패합니다.
-[전체 agent-tools 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-tools)를 참고하세요.
+`agent.open.before`를 선언한 플러그인이 시작, 중지 또는 다시 로드되면 Paseo는 열린 각 세션의 다음 에이전트 도구 호출이나 프롬프트 전에 해당 플러그인의 콜백을 다시 실행합니다. 콜백은 세션을 마지막으로 열었을 때 받은 요청에 `reason: "refresh"`와 에이전트의 현재 제목, 작업공간, 레이블, 메타데이터를 반영해 받습니다. 체인의 뒤쪽 플러그인도 자신이 받는 환경이나 지침이 달라지면 다시 실행됩니다. 그 밖의 콜백은 실행되지 않습니다.
+
+다시 로드는 하나의 변경으로 계산됩니다. 다시 로드되는 동안 들어온 도구 호출이나 프롬프트는 플러그인이 시작될 때까지 기다리므로 그 사이 세션에서 플러그인 도구가 사라지지 않습니다. 플러그인 시작에 실패하면 세션은 플러그인이 중지된 것처럼 계속됩니다.
+
+- 콜백이 반환한 도구는 실행 중인 턴에서도 기존 도구를 즉시 대체합니다. 새 플러그인 인스턴스가 호출에 응답합니다.
+- 환경, 지침, MCP 서버, 도구 정의 또는 도구를 제공하는 플러그인이 세션을 시작했을 때와 다르면 다음 유휴 프롬프트 전에 세션을 다시 엽니다. 실행 중인 턴은 중단 없이 계속됩니다. 결과가 `reason`에 따라 달라지는 콜백은 언제나 `create` 열기와 다른 결과를 냅니다. 해당 프롬프트 전에 변경을 되돌리면 다시 열기가 취소됩니다.
+- 달라진 내용이 없으면 세션은 백그라운드 작업과 하위 에이전트를 유지한 채 계속 실행됩니다. 에이전트를 대상으로 하지 않는 플러그인은 세션을 그대로 둡니다.
+- 콜백이 예외를 던지거나 시간 초과되면 해당 도구가 꺼지고 다음 유휴 프롬프트 전에 세션을 다시 엽니다. 같은 플러그인 인스턴스에 대해서는 콜백을 다시 실행하지 않습니다.
+- 반환된 도구가 Paseo 도구나 다른 플러그인의 도구와 충돌하면 해당 플러그인의 도구가 꺼지고 다음 유휴 프롬프트 전에 세션을 다시 엽니다.
+- 두 플러그인이 같은 MCP 서버 이름을 반환하면 두 플러그인 모두 에이전트 도구는 유지하지만, 다음 유휴 프롬프트 전에 다시 열기가 충돌 오류로 실패합니다.
+
+Paseo 도구를 네이티브로 받는 에이전트(브리지를 사용하는 OpenCode, OMP)는 다시 열기 전까지 시작할 때의 도구 목록을 유지합니다. 목록에 있는 도구를 호출하면 해당 도구를 연결한 플러그인의 새 인스턴스에 도달하며, 그 플러그인이 더 이상 연결하지 않으면 실패합니다.
+
+자동 다시 열기가 실패하면 이를 유발한 프롬프트가 해당 오류로 실패합니다. 세션은 이전 도구를 유지한 채 계속 실행되고, 이후의 각 유휴 프롬프트에서 다시 열기를 재시도합니다. [전체 agent-tools 예제](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-tools)를 참고하세요.
 
 ## agent.close.after
 
@@ -704,7 +808,7 @@ Creation request
 
 | 플러그인 | 포함 |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| [라이프사이클 로거](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-logger) | 에이전트, 작업공간 및 작업트리 후크 환경 값이 수정된 JSON 로그 |
+| [라이프사이클 로거](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-logger) | 에이전트, 작업공간, 작업 트리, 터미널 및 명령 훅. 환경 값을 가린 JSON 로그 |
 | [수명주기-작업](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-actions) | 후속 조치, 권한, 환경, 공급자 전환, 워크트리 선택 |
 | [에이전트 구성](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-configuration) | MCP 주입 및 Codex 샌드박스/승인 옵션 |
 | [에이전트 도구](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-tools) | 플러그인 프로세스의 라벨 대상 도구 및 파일 작업 |

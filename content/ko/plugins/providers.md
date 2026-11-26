@@ -99,6 +99,25 @@ const { stdout } = await execCommand(launch.command, [...launch.args, "--version
 });
 ```
 
+### 실행 래퍼 뒤에서 세션 실행하기
+
+`agent.open.before`의 [실행 래퍼](./hooks.md#launch-wraps)는 `session.open`의 `config.wrap`으로 공급자에 전달됩니다. 이를 지원하려면 다음과 같이 하세요.
+
+1. 등록에 `launchWrap: true`를 설정합니다. Paseo가 공급자 스냅숏에 `launchWrap: true`를 게시하므로 플러그인은 공급자가 연결되기 전에 해당 공급자를 선택할 수 있습니다.
+2. 연결의 지원 기능에 `session.launch_wrap`을 추가합니다. Paseo는 이를 협상한 연결에만 `config.wrap`을 보내며, 그 밖의 연결에서 래핑된 열기는 실패합니다.
+3. `wrap` 옵션을 사용해 세션 프로세스를 시작합니다. 그러면 `spawnProcess`가 `[...wrap, command, ...args]`를 시작하고 래퍼 실행 파일의 Windows 실행기도 처리합니다.
+
+```ts
+const child = spawnProcess(launch.command, [...launch.args, "serve"], {
+  wrap: input.config.wrap,
+  env: launch.env,
+  cwd: input.config.cwd,
+  stdio: "pipe",
+});
+```
+
+세션 작업을 수행하는 모든 프로세스를 래퍼 뒤에서 시작하세요. 하나의 프로세스가 여러 세션을 제공한다면 래핑된 세션에는 별도 프로세스를 시작하세요. `runAcpProvider({ command })`는 ACP 에이전트에 이 모든 작업을 수행합니다.
+
 ## 모델, 모드, 사고 옵션 반환하기
 
 Paseo는 세션을 만들기 전에 카탈로그를 요청합니다. 에이전트 양식에 필요한 선택 항목을 반환하세요.
